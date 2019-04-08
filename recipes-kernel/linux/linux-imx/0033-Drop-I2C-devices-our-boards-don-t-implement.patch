@@ -1,0 +1,171 @@
+From 10480731c909132d2eeb06d01101fee66fd2b309 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Fri, 5 Apr 2019 19:46:16 +0530
+Subject: [PATCH 33/47] Drop I2C devices our boards don't implement.
+
+- no Freescale MMA8451 accelerometer
+- no eGalax I2C touch-screen (twice)
+- no Maxim MAX11801 I2C touch-screen
+- no Intersil ISL29023 light sensor
+- no Xtrinsic MAG3110 3-axis magnetometer
+
+Also remove related power gating regulator and pinctrl groups.
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 111 ----------------------------------------
+ 1 file changed, 111 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 6033fdb..1aa5882 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -128,25 +128,6 @@
+ 			regulator-boot-on;
+ 		};
+ 
+-		reg_audio: regulator@2 {
+-			compatible = "regulator-fixed";
+-			reg = <2>;
+-			regulator-name = "wm8962-supply";
+-			gpio = <&gpio4 10 0>;
+-			enable-active-high;
+-		};
+-
+-		reg_sensor: regulator@4 {
+-			compatible = "regulator-fixed";
+-			reg = <4>;
+-			regulator-name = "sensor-supply";
+-			regulator-min-microvolt = <3300000>;
+-			regulator-max-microvolt = <3300000>;
+-			gpio = <&gpio2 31 0>;
+-			startup-delay-us = <500>;
+-			enable-active-high;
+-		};
+-
+ #if CONFIG_I2S_AUDIO == 2
+ 		/* Power supplies on the LEC-Base R2 carrier. They cannot be
+ 		 * controlled, but the SGTL5000 driver won't work without
+@@ -488,40 +469,6 @@
+ 		reg = <0x58>;
+ 	};
+ 
+-	codec: wm8962@1a {
+-		compatible = "wlf,wm8962";
+-		reg = <0x1a>;
+-		clocks = <&clks IMX6QDL_CLK_CKO>;
+-		DCVDD-supply = <&reg_audio>;
+-		DBVDD-supply = <&reg_audio>;
+-		AVDD-supply = <&reg_audio>;
+-		CPVDD-supply = <&reg_audio>;
+-		MICVDD-supply = <&reg_audio>;
+-		PLLVDD-supply = <&reg_audio>;
+-		SPKVDD1-supply = <&reg_audio>;
+-		SPKVDD2-supply = <&reg_audio>;
+-		gpio-cfg = <
+-			0x0000 /* 0:Default */
+-			0x0000 /* 1:Default */
+-			0x0013 /* 2:FN_DMICCLK */
+-			0x0000 /* 3:Default */
+-			0x8014 /* 4:FN_DMICCDAT */
+-			0x0000 /* 5:Default */
+-		>;
+-		amic-mono;
+-	};
+-
+-	mma8451@1c {
+-		compatible = "fsl,mma8451";
+-		reg = <0x1c>;
+-		position = <0>;
+-		vdd-supply = <&reg_sensor>;
+-		vddio-supply = <&reg_sensor>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <18 8>;
+-		interrupt-route = <1>;
+-	};
+-
+ #if CONFIG_I2S_AUDIO == 2
+ 	codec: sgtl5000@0a {		/* Audio codec on LEC-Base R2 carrier */
+ 		compatible = "fsl,sgtl5000";
+@@ -575,24 +522,6 @@
+ 	sda-gpios = <&gpio4 13 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
+ 
+-	egalax_ts@04 {
+-		compatible = "eeti,egalax_ts";
+-		reg = <0x04>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_i2c2_egalax_int>;
+-		interrupt-parent = <&gpio6>;
+-		interrupts = <8 2>;
+-		wakeup-gpios = <&gpio6 8 0>;
+-	};
+-
+-	max11801@48 {
+-		compatible = "maxim,max11801";
+-		reg = <0x48>;
+-		interrupt-parent = <&gpio3>;
+-		interrupts = <26 2>;
+-		work-mode = <1>;/*DCM mode*/
+-	};
+-
+ 	pmic: pfuze100@08 {
+ 		compatible = "fsl,pfuze100";
+ 		reg = <0x08>;
+@@ -714,35 +643,6 @@
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+ 	status = "okay";
+ 
+-	egalax_ts@04 {
+-		compatible = "eeti,egalax_ts";
+-		reg = <0x04>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_i2c3_egalax_int>;
+-		interrupt-parent = <&gpio6>;
+-		interrupts = <7 2>;
+-		wakeup-gpios = <&gpio6 7 0>;
+-	};
+-
+-	isl29023@44 {
+-		compatible = "fsl,isl29023";
+-		reg = <0x44>;
+-		rext = <499>;
+-		vdd-supply = <&reg_sensor>;
+-		interrupt-parent = <&gpio3>;
+-		interrupts = <9 2>;
+-	};
+-
+-	mag3110@0e {
+-		compatible = "fsl,mag3110";
+-		reg = <0x0e>;
+-		position = <2>;
+-		vdd-supply = <&reg_sensor>;
+-		vddio-supply = <&reg_sensor>;
+-		interrupt-parent = <&gpio3>;
+-		interrupts = <16 1>;
+-	};
+-
+ 	ltc1760@0a {			/* Battery charger on LEC-Base R1 carrier */
+ 		compatible = "linear,ltc1760"; /* guessing, no driver found */
+ 		reg = <0x0a>;
+@@ -802,17 +702,6 @@
+ 		};
+ #endif
+ 
+-		pinctrl_i2c2_egalax_int: egalax_i2c2_intgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_NANDF_ALE__GPIO6_IO08 0x80000000
+-			>;
+-		};
+-
+-		pinctrl_i2c3_egalax_int: egalax_i2c3_intgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_NANDF_CLE__GPIO6_IO07 0x80000000
+-			>;
+-		};
+ 
+ 		pinctrl_enet: enetgrp {
+ 			fsl,pins = <
+-- 
+2.7.4
+

@@ -1,0 +1,72 @@
+From 94acce50d7d2a78ce7bc264857fdffb81d8fb072 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Thu, 4 Apr 2019 15:00:55 +0530
+Subject: [PATCH 05/47] pci-imx6.c: add config option to force GEN1 speed
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ drivers/pci/dwc/Kconfig    |  4 ++++
+ drivers/pci/dwc/pci-imx6.c | 11 ++++++++++-
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pci/dwc/Kconfig b/drivers/pci/dwc/Kconfig
+index 86220a1..4c89dc6 100644
+--- a/drivers/pci/dwc/Kconfig
++++ b/drivers/pci/dwc/Kconfig
+@@ -87,6 +87,10 @@ config PCI_IMX6_COMPLIANCE_TEST
+ 	  on FSL iMX SoCs. The pcie clks wouldn't be turned off, and the link
+ 	  speed wouldn't be limited to gen1 when the Y is set here.
+ 
++config PCI_FORCE_GEN1
++	bool "Force GEN1 speed on the PCIe controller (e.g. don't allow GEN2)"
++	depends on PCI_IMX6
++
+ config EP_MODE_IN_EP_RC_SYS
+ 	bool "PCI Express EP mode in the IMX6 RC/EP interconnection system"
+ 	depends on PCI_IMX6
+diff --git a/drivers/pci/dwc/pci-imx6.c b/drivers/pci/dwc/pci-imx6.c
+index 54459b5..6a1da65 100644
+--- a/drivers/pci/dwc/pci-imx6.c
++++ b/drivers/pci/dwc/pci-imx6.c
+@@ -447,7 +447,8 @@ static void imx_pcie_reset_phy(struct imx_pcie *imx_pcie)
+ 			PHY_RX_OVRD_IN_LO_RX_PLL_EN);
+ 		pcie_phy_write(imx_pcie, PHY_RX_OVRD_IN_LO, tmp);
+ 
+-		usleep_range(2000, 3000);
++ 	        /* BUG: scheduling while atomic: swapper/0/1/0x00000002, use udelay instead of usleep_range*/
++	        udelay(2000);
+ 
+ 		pcie_phy_read(imx_pcie, PHY_RX_OVRD_IN_LO, &tmp);
+ 		tmp &= ~(PHY_RX_OVRD_IN_LO_RX_DATA_EN |
+@@ -1568,6 +1569,8 @@ static int imx_pcie_establish_link(struct imx_pcie *imx_pcie)
+ 		goto err_reset_phy;
+ 
+ 	if (imx_pcie->link_gen >= 2) {
++
++#ifndef CONFIG_PCI_FORCE_GEN1
+ 		/* Allow Gen2 mode after the link is up. */
+ 		tmp = dw_pcie_readl_dbi(pci, PCIE_RC_LCR);
+ 		tmp &= ~PCIE_RC_LCR_MAX_LINK_SPEEDS_MASK;
+@@ -1600,6 +1603,10 @@ static int imx_pcie_establish_link(struct imx_pcie *imx_pcie)
+ 
+ 		/* Make sure link training is finished as well! */
+ 		ret = imx_pcie_wait_for_link(imx_pcie);
++#else
++	       dev_info(dev, "Configuration forces GEN1\n");
++#endif /* CONFIG_PCI_FORCE_GEN1 */
++
+ 		if (ret) {
+ 			dev_err(dev, "Failed to bring link up!\n");
+ 			goto err_reset_phy;
+@@ -1648,6 +1655,8 @@ static int imx_pcie_host_init(struct pcie_port *pp)
+ 
+ 	if (!IS_ENABLED(CONFIG_EP_MODE_IN_EP_RC_SYS)) {
+ 		dw_pcie_setup_rc(pp);
++	        usleep_range(1000, 2000);
++
+ 		ret = imx_pcie_establish_link(imx_pcie);
+ 		if (ret < 0)
+ 			return ret;
+-- 
+2.7.4
+

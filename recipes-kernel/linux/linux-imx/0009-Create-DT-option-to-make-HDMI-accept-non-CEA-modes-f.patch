@@ -1,0 +1,278 @@
+From 6a02f66ccd687fc7d9d32ca509820904ef89315f Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Thu, 4 Apr 2019 15:35:16 +0530
+Subject: [PATCH 09/47] Create DT option to make HDMI accept non-CEA modes from
+ EDID.
+
+Freescale's i.MX6 HDMI driver reads a monitor's supported modes from its
+EDID data, but then drops all entries which are not also found in
+mxc_edid.c: mxc_cea_mode[], which contains a limited list of known CEA
+modes. From the remaining intersection the default video mode is chosen.
+
+If a monitor's native resolution is not in the driver's list it is rejected
+and you'll get only a similar mode with a blurry interpolated image. This
+patch implements a new Decice Tree option allowing to skip the 'mode known'
+check, sometimes allowing a crisp native resolution output. However
+unfortunately during our tests (on a 3.10 kernel) parallel RGB, which shared
+the same IPU with HDMI, then failed to work properly and we also experienced
+HDMI audio sounding badly distorted.
+
+Does this mean an i.MX6 hardware limitation is the reason why the driver
+chooses only a few known-good modes? Or is this just yet another bug in
+Freescale's driver? We'll default to disable the option in the DT so
+parallel RGB works. If someone needs only HDMI they can try to enable it
+for a better picture.
+
+In any case this option is only about the list of predefined modes chosen
+per default, you can always set any timing you'd like manually e.g. with
+fbset.
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ .../devicetree/bindings/video/mxc_hdmi_video.txt   | 31 ++++++++++
+ arch/arm/boot/dts/lec-imx6.dtsi                    | 15 +++++
+ drivers/video/fbdev/mxc/mxc_edid.c                 |  2 +
+ drivers/video/fbdev/mxc/mxc_hdmi.c                 | 71 ++++++++++++++++------
+ 4 files changed, 99 insertions(+), 20 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/video/mxc_hdmi_video.txt
+
+diff --git a/Documentation/devicetree/bindings/video/mxc_hdmi_video.txt b/Documentation/devicetree/bindings/video/mxc_hdmi_video.txt
+new file mode 100644
+index 0000000..b48456e
+--- /dev/null
++++ b/Documentation/devicetree/bindings/video/mxc_hdmi_video.txt
+@@ -0,0 +1,31 @@
++Device-Tree bindings for hdmi video driver
++
++Required properties:
++ compatible: value should be "fsl,imx6q-hdmi-video".
++ fsl,phy_reg_vlev: hdmi phy register,Voltage Level Control Register offset 0x0e,
++  adjust hdmi phy signal voltage level.
++ fsl,phy_reg_cksymtx: hdmi phy register, clock symbol and transmitter control
++  register offset 0x09, adjust hdmi signal pre-emphasis.
++
++Optional properties:
++ fsl,hdcp: define the property in dts, hdmi driver will initalize for hdcp,
++  otherwise hdcp function will not supported.
++
++ fsl,allow-all-modes: do not only offer a limited set of video modes
++  (mxc_edid.c: mxc_cea_mode[]), but any non-interlaced mode found in a monitor's
++  EDID data. This option may be needed to accept the monitor's native resolution
++  and get a clear, uninterpolated image, but (at least on 3.10 kernels) we've
++  seen side effects of distorted HDMI audio and a parallel RGB interface sharing
++  an IPU with HDMI not working properly any more. We don't know if this is an
++  i.MX6 hardware limitation or a bug in Freescale's driver. This option is only
++  about the list of predefined modes chosen per default, you can always set any
++  timing manually e.g. with fbset.
++
++Example:
++
++	hdmi_video {
++		compatible = "fsl,imx6q-hdmi-video";
++		fsl,hdcp;
++		fsl,phy_reg_vlev = <0x0294>;
++		fsl,phy_reg_cksymtx = <0x800d>;
++	};
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index fc18e54..8ef0ab8 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -379,6 +379,21 @@
+ &hdmi_video {
+ 	fsl,phy_reg_vlev = <0x0294>;
+ 	fsl,phy_reg_cksymtx = <0x800d>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hdmi_hdcp>;
++	fsl,hdcp; /* also means we use the dedicated DDC function */
++	fsl,phy_reg_vlev = <0x03f4>;
++	fsl,phy_reg_cksymtx = <0x800f>;
++	/* In the list of predefined video modes include any provided by the
++	 * monitor's EDID data instead of only a few found in mxc_edid.c:
++	 * mxc_cea_mode[].
++	 * With this enabled we got an HDMI TV's native resolution instead of a
++	 * blurry interpolated image. On the downside HDMI audio sounded
++	 * distorted and parallel RGB, which shared the same i.MX6 IPU, then
++	 * failed to work properly. We don't know if this is an i.MX6 hardware
++	 * limitation or a bug in Freescale's driver. Regardless of this option
++	 * fbset can set any timing manually. */
++	//fsl,allow-all-modes;
+ 	HDMI-supply = <&reg_hdmi>;
+ 	status = "okay";
+ };
+diff --git a/drivers/video/fbdev/mxc/mxc_edid.c b/drivers/video/fbdev/mxc/mxc_edid.c
+index 02563d8..c646865 100644
+--- a/drivers/video/fbdev/mxc/mxc_edid.c
++++ b/drivers/video/fbdev/mxc/mxc_edid.c
+@@ -280,6 +280,8 @@ int mxc_edid_parse_ext_blk(unsigned char *edid,
+ 		return 0;
+ 	revision = edid[index++];
+ 	DPRINTK("cea extent revision %d\n", revision);
++	if (edid[index /*2*/] >= EDID_LENGTH)
++		return -1; /* detail_timing_desc_offset would overflow */
+ 	mode = kzalloc(50 * sizeof(struct fb_videomode), GFP_KERNEL);
+ 	if (mode == NULL)
+ 		return -1;
+diff --git a/drivers/video/fbdev/mxc/mxc_hdmi.c b/drivers/video/fbdev/mxc/mxc_hdmi.c
+index c8aeadd..475b0875 100644
+--- a/drivers/video/fbdev/mxc/mxc_hdmi.c
++++ b/drivers/video/fbdev/mxc/mxc_hdmi.c
+@@ -91,6 +91,19 @@ static const struct fb_videomode vga_mode = {
+ 	FB_VMODE_NONINTERLACED | FB_VMODE_ASPECT_4_3, FB_MODE_IS_VESA,
+ };
+ 
++static const struct fb_videomode xga_mode = {
++	/* 13 1024x768-60 VESA */
++	NULL, 60, 1024, 768, 15384, 160, 24, 29, 3, 136, 6,
++	0, FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA
++};
++
++static const struct fb_videomode sxga_mode = {
++	/* 20 1280x1024-60 VESA */
++	NULL, 60, 1280, 1024, 9259, 248, 48, 38, 1, 112, 3,
++	FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
++	FB_VMODE_NONINTERLACED, FB_MODE_IS_VESA
++};
++
+ enum hdmi_datamap {
+ 	RGB444_8B = 0x01,
+ 	RGB444_10B = 0x03,
+@@ -169,6 +182,7 @@ struct mxc_hdmi {
+ 	struct fb_videomode default_mode;
+ 	struct fb_videomode previous_non_vga_mode;
+ 	bool requesting_vga_for_initialization;
++	bool allow_all_modes; /* allow modes not listed in mxc_cea_mode[] */
+ 
+ 	int *gpr_base;
+ 	int *gpr_hdmi_base;
+@@ -905,21 +919,19 @@ static int hdmi_phy_i2c_write_verify(struct mxc_hdmi *hdmi, unsigned short data,
+ }
+ #endif
+ 
+-static bool  hdmi_edid_wait_i2c_done(struct mxc_hdmi *hdmi, int msec)
++static bool hdmi_edid_wait_i2c_done(struct mxc_hdmi *hdmi, int msec)
+ {
+-    unsigned char val = 0;
+-    val = hdmi_readb(HDMI_IH_I2CM_STAT0) & 0x2;
+-    while (val == 0) {
+-
+-		udelay(1000);
++	u8 stat;
++	msec *= 8;
++	while (!((stat = hdmi_readb(HDMI_IH_I2CM_STAT0)) & 0x03)) {
+ 		if (msec-- == 0) {
+ 			dev_dbg(&hdmi->pdev->dev,
+ 					"HDMI EDID i2c operation time out!!\n");
+ 			return false;
+ 		}
+-		val = hdmi_readb(HDMI_IH_I2CM_STAT0) & 0x2;
++		usleep_range(1000/8, 2000/8);
+ 	}
+-	return true;
++	return !(stat & 0x01);
+ }
+ 
+ static u8 hdmi_edid_i2c_read(struct mxc_hdmi *hdmi,
+@@ -927,7 +939,7 @@ static u8 hdmi_edid_i2c_read(struct mxc_hdmi *hdmi,
+ {
+ 	u8 spointer = blockno / 2;
+ 	u8 edidaddress = ((blockno % 2) * 0x80) + addr;
+-	u8 data;
++	u8 data = 0xFF;
+ 
+ 	hdmi_writeb(0xFF, HDMI_IH_I2CM_STAT0);
+ 	hdmi_writeb(edidaddress, HDMI_I2CM_ADDRESS);
+@@ -939,8 +951,8 @@ static u8 hdmi_edid_i2c_read(struct mxc_hdmi *hdmi,
+ 		hdmi_writeb(HDMI_I2CM_OPERATION_READ_EXT,
+ 			HDMI_I2CM_OPERATION);
+ 
+-	hdmi_edid_wait_i2c_done(hdmi, 30);
+-	data = hdmi_readb(HDMI_I2CM_DATAI);
++	if (hdmi_edid_wait_i2c_done(hdmi, 3))
++		data = hdmi_readb(HDMI_I2CM_DATAI);
+ 	hdmi_writeb(0xFF, HDMI_IH_I2CM_STAT0);
+ 	return data;
+ }
+@@ -1555,16 +1567,14 @@ static int mxc_edid_read_internal(struct mxc_hdmi *hdmi, unsigned char *edid,
+ 	memset(edid, 0, EDID_LENGTH*4);
+ 	memset(cfg, 0, sizeof(struct mxc_edid_cfg));
+ 
+-	/* Check first three byte of EDID head */
+-	if (!(hdmi_edid_i2c_read(hdmi, 0, 0) == 0x00) ||
+-		!(hdmi_edid_i2c_read(hdmi, 1, 0) == 0xFF) ||
+-		!(hdmi_edid_i2c_read(hdmi, 2, 0) == 0xFF)) {
+-		dev_info(&hdmi->pdev->dev, "EDID head check failed!");
+-		return -ENOENT;
+-	}
+-
+ 	for (i = 0; i < 128; i++) {
++		static const unsigned char edid_v1_header[] =
++				{ 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+ 		*ediddata = hdmi_edid_i2c_read(hdmi, i, 0);
++		if (i < ARRAY_SIZE(edid_v1_header) && *ediddata != edid_v1_header[i]) {
++			dev_info(&hdmi->pdev->dev, "EDID head check failed!");
++			return -ENOENT;
++		}
+ 		ediddata++;
+ 	}
+ 
+@@ -1811,7 +1821,7 @@ static void mxc_hdmi_edid_rebuild_modelist(struct mxc_hdmi *hdmi)
+ 		mode = &hdmi->fbi->monspecs.modedb[i];
+ 
+ 		if (!(mode->vmode & FB_VMODE_INTERLACED) &&
+-				(mxc_edid_mode_to_vic(mode) != 0)) {
++		    (hdmi->allow_all_modes || mxc_edid_mode_to_vic(mode))) {
+ 
+ 			dev_dbg(&hdmi->pdev->dev, "Added mode %d:", i);
+ 			dev_dbg(&hdmi->pdev->dev,
+@@ -1937,6 +1947,17 @@ static void mxc_hdmi_cable_connected(struct mxc_hdmi *hdmi)
+ 
+ 	hdmi->cable_plugin = true;
+ 
++	/* Cable may not be fully inserted yet, allow things to settle. */
++	/* FIXME: Also a race condition (at least on 3.10 kernels) caused a hang
++	 * at "fb_new_modelist(hdmi->fbi);" in mxc_hdmi_edid_rebuild_modelist()
++	 * (AFAICT so far) when certain HDMI monitors are detected at boot. The
++	 * same monitors work fine if attached later or debugging is enabled or
++	 * booting with "nosmp" or a udelay(100) is inserted immediatley before
++	 * the fb_new_modelist() call. The correct solution would be proper
++	 * locking, however my superiors asked me not to spend any further time
++	 * investigating. :-( This sleep also 'fixes' the problem. */
++	msleep(400);
++
+ 	/* HDMI Initialization Step C */
+ 	edid_status = mxc_hdmi_read_edid(hdmi);
+ 
+@@ -2472,6 +2493,7 @@ static void hdmi_get_of_property(struct mxc_hdmi *hdmi)
+ 	hdmi->phy_config.reg_cksymtx = phy_reg_cksymtx;
+ 	hdmi->phy_config.reg_vlev = phy_reg_vlev;
+ 
++	hdmi->allow_all_modes = of_property_read_bool(np, "fsl,allow-all-modes");
+ }
+ 
+ /* HDMI Initialization Step A */
+@@ -2599,6 +2621,11 @@ static int mxc_hdmi_disp_init(struct mxc_dispdrv_handle *disp,
+ 
+ 	fb_destroy_modelist(&hdmi->fbi->modelist);
+ 
++	/*Add XGA and SXGA to default modelist */
++	fb_add_videomode(&vga_mode, &hdmi->fbi->modelist);
++	fb_add_videomode(&xga_mode, &hdmi->fbi->modelist);
++	fb_add_videomode(&sxga_mode, &hdmi->fbi->modelist);
++
+ 	/*Add all no interlaced CEA mode to default modelist */
+ 	for (i = 0; i < ARRAY_SIZE(mxc_cea_mode); i++) {
+ 		mode = &mxc_cea_mode[i];
+@@ -2606,6 +2633,10 @@ static int mxc_hdmi_disp_init(struct mxc_dispdrv_handle *disp,
+ 			fb_add_videomode(mode, &hdmi->fbi->modelist);
+ 	}
+ 
++	/*Add XGA and SXGA to default modelist */
++	fb_add_videomode(&xga_mode, &hdmi->fbi->modelist);
++	fb_add_videomode(&sxga_mode, &hdmi->fbi->modelist);
++
+ 	console_unlock();
+ 
+ 	/* Find a nearest mode in default modelist */
+-- 
+2.7.4
+

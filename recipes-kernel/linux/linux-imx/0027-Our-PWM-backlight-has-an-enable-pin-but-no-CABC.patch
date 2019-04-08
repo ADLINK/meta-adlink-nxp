@@ -1,0 +1,75 @@
+From 1b994b7b126635c4aba235625b2e0459e59e229b Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Fri, 5 Apr 2019 17:41:47 +0530
+Subject: [PATCH 27/47] Our PWM backlight has an enable pin but no CABC.
+
+The SMARC 1.1 spec isn't really clear how LCD_BKLT_EN and LCD_BKLT_PWM are
+related, they might be independent (as I had assumed in our previous Linux
+3.10 BSP), but now I interpret _EN as enable signal and _PWM as brightness
+control for one and the same backlight.
+
+This patch adds LCD_BKLT_EN as enable GPIO to the existing backlight node.
+Our LCD_BKLT_PWM is also muxed differently than SabreSD's. Default
+brightness is set to 50%, that way the panel will be lit regardless of PWM
+polarity.
+
+We don't feature CABC (Content Adaptive Backlight Control), remove it.
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 18 +++++-------------
+ 1 file changed, 5 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 2262d52..d8afcb8 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -52,16 +52,6 @@
+ 		mxcfb2 = &mxcfb3;
+ 	};
+ 
+-	hannstar_cabc {
+-		compatible = "hannstar,cabc";
+-		lvds0 {
+-			gpios = <&gpio6 15 GPIO_ACTIVE_HIGH>;
+-		};
+-		lvds1 {
+-			gpios = <&gpio6 16 GPIO_ACTIVE_HIGH>;
+-		};
+-	};
+-
+ 	chosen {
+ 		stdout-path = &uart1;
+ 	};
+@@ -290,7 +280,8 @@
+ 		compatible = "pwm-backlight";
+ 		pwms = <&pwm1 0 5000000>;
+ 		brightness-levels = <0 4 8 16 32 64 128 255>;
+-		default-brightness-level = <7>;
++		default-brightness-level = <6>;
++		enable-gpios = <&gpio6 10 GPIO_ACTIVE_HIGH>; /* SMARC LCD_BKLT_EN */
+ 		status = "okay";
+ 	};
+ 
+@@ -981,7 +972,8 @@
+ 
+ 		pinctrl_pwm1: pwm1grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_SD1_DAT3__PWM1_OUT		0x1b0b1
++				MX6QDL_PAD_NANDF_RB0__GPIO6_IO10     0x80000000 /* SMARC LCD_BKLT_EN */
++				MX6QDL_PAD_GPIO_9__PWM1_OUT		0x1b0b1 /* SMARC LCD_BKLT_PWM */
+ 			>;
+ 		};
+ 
+@@ -1128,7 +1120,7 @@
+ 	status = "okay";
+ };
+ 
+-&pwm1 {
++&pwm1 {		/* SMARC LCD_BKLT_PWM */
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pwm1>;
+ 	status = "okay";
+-- 
+2.7.4
+

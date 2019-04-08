@@ -1,0 +1,262 @@
+From 6acf055c55af9857b2728d3fa6ad2888da17ea9e Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Fri, 5 Apr 2019 17:24:14 +0530
+Subject: [PATCH 24/47] We have either SPI0 or I2S0, depending on mux.
+
+The on-module multiplexer is controlled by pad GPIO_3. #Define a CONFIG
+variable, which selects the desired device tree nodes. The (Freescale-
+specific) option pinctrl-assert-gpios will then make sure the mux is
+steered appropriately.
+
+Maybe some day we will come up with something better that doesn't require
+rebuilding the DTB to switch between SPI0 and I2S0. The hardware would
+be able to use both, just not simultaneously.
+
+In anticipation of more than one codec implement CONFIG var such that != 0
+in general enables I2S and the specific value selects a certain codec. Use
+'2' for the LEC-Base R2 codec.
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 139 +++++++++++++++++++++++++++++-----------
+ 1 file changed, 101 insertions(+), 38 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index fd72b96b..8a5c17e 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -12,6 +12,10 @@
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ 
++/* On-module multiplexer: 0 enables SMARC SPI0, !=0 enables I2S0 instead:
++ * 1=TI TLV320AIC23 on LEC-Base R1 carrier, 2=Freescale SGTL5000 on LEC-Base R2 */
++#define CONFIG_I2S_AUDIO	1
++
+ /* The LEC-Base carrier doesn't include cameras, but allows connecting some. */
+ #define CONFIG_SER_CAMERA	3c /* I2C addr of serial camera, hex without "0x" */
+ //#define CONFIG_PAR_CAMERA	3c /* I2C addr of parallel camera */
+@@ -116,6 +120,30 @@
+ 			enable-active-high;
+ 		};
+ 
++#if CONFIG_I2S_AUDIO == 2
++		/* Power supplies on the LEC-Base R2 carrier. They cannot be
++		 * controlled, but the SGTL5000 driver won't work without
++		 * regulator definitions. */
++		reg_base_1v8: regulator@18 {
++			compatible = "regulator-fixed";
++			reg = <18>;
++			regulator-name = "base_1v8";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			regulator-boot-on;
++			regulator-always-on;
++		};
++
++		reg_base_3v3: regulator@33 {
++			compatible = "regulator-fixed";
++			reg = <33>;
++			regulator-name = "base_3v3";
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			regulator-boot-on;
++			regulator-always-on;
++		};
++#endif
+ 		reg_hdmi: regulator@5 {
+ 			compatible = "regulator-fixed";
+ 			reg = <5>;
+@@ -161,32 +189,32 @@
+ 		};
+ 	};
+ 
+-	sound {
+-		compatible = "fsl,imx6q-sabresd-wm8962",
+-			   "fsl,imx-audio-wm8962";
+-		model = "wm8962-audio";
+-		cpu-dai = <&ssi2>;
++#if CONFIG_I2S_AUDIO == 1
++	sound-i2s {	/* Audio codec on LEC-Base R1 carrier */
++		compatible = "fsl,imx-audio-tlv320aic23";
++		model = "imx-tlv320aic23";
++		ssi-controller = <&ssi2>;
++		mux-int-port = <2>;
++		mux-ext-port = <3>;
+ 		audio-codec = <&codec>;
+-		asrc-controller = <&asrc>;
+-		audio-routing =
+-			"Headphone Jack", "HPOUTL",
+-			"Headphone Jack", "HPOUTR",
+-			"Ext Spk", "SPKOUTL",
+-			"Ext Spk", "SPKOUTR",
+-			"AMIC", "MICBIAS",
+-			"IN3R", "AMIC",
+-			"DMIC", "MICBIAS",
+-			"DMICDAT", "DMIC",
+-			"CPU-Playback", "ASRC-Playback",
+-			"Playback", "CPU-Playback",
+-			"ASRC-Capture", "CPU-Capture",
+-			"CPU-Capture", "Capture";
++	};
++#elif CONFIG_I2S_AUDIO == 2
++	sound-i2s {	/* Audio codec on LEC-Base R2 carrier */
++		compatible = "fsl,imx-audio-sgtl5000";
++		model = "imx-sgtl5000";
++		ssi-controller = <&ssi2>;
+ 		mux-int-port = <2>;
+ 		mux-ext-port = <3>;
+-		codec-master;
+-		hp-det-gpios = <&gpio7 8 1>;
+-		mic-det-gpios = <&gpio1 9 1>;
++		audio-codec = <&codec>;
++		asrc-controller = <&asrc>;
++		audio-routing =
++			"MIC_IN", "Mic Jack",
++			"Mic Jack", "Mic Bias",
++			"LINE_IN", "Line In Jack",
++		//	"Headphone Jack", "HP_OUT",
++			"Line Out Jack", "LINE_OUT";
+ 	};
++#endif
+ 
+ 	sound-hdmi {
+ 		compatible = "fsl,imx6q-audio-hdmi",
+@@ -306,11 +334,16 @@
+ 	status = "okay";
+ };
+ 
+-&audmux {
++
++#if CONFIG_I2S_AUDIO
++&audmux {	/* SMARC I2S0 (instead of SPI0) */
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_audmux>;
++	pinctrl-assert-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>; /* AEN# */
+ 	status = "okay";
+ };
++#endif
++
+ 
+ &clks {
+ 	assigned-clocks = <&clks IMX6QDL_CLK_LDB_DI0_SEL>,  /*LVDS*/
+@@ -319,20 +352,18 @@
+ 				 <&clks IMX6QDL_CLK_PLL2_PFD0_352M>;
+ };
+ 
+-&ecspi1 {
+-	cs-gpios = <&gpio4 9 0>;
++#if !CONFIG_I2S_AUDIO
++&ecspi1 {	/* SMARC SPI0 (instead of I2S0) */
++	fsl,spi-num-chipselects = <2>;
++	cs-gpios = <&gpio5 25 GPIO_ACTIVE_LOW>, /* SMARC CS0 */
++	           <&gpio3 24 GPIO_ACTIVE_LOW>; /* SMARC CS1 */
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_ecspi1>;
++	pinctrl-assert-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>; /* AEN# */
+ 	status = "okay";
+ 
+-	flash: m25p80@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		compatible = "st,m25p32", "jedec,spi-nor";
+-		spi-max-frequency = <20000000>;
+-		reg = <0>;
+-	};
+ };
++#endif
+ 
+ &fec {
+ 	pinctrl-names = "default";
+@@ -441,6 +472,19 @@
+ 		interrupt-route = <1>;
+ 	};
+ 
++#if CONFIG_I2S_AUDIO == 2
++	codec: sgtl5000@0a {		/* Audio codec on LEC-Base R2 carrier */
++		compatible = "fsl,sgtl5000";
++		reg = <0x0a>;
++		clocks = <&clks IMX6QDL_CLK_CKO>; /* SMARC AUDIO_MCK, actually unused on carrier */
++		VDDA-supply = <&reg_base_3v3>;
++		VDDIO-supply = <&reg_base_1v8>;
++		VDDD-supply = <&reg_base_1v8>;
++		micbias-resistor-k-ohms = <4>;
++		micbias-voltage-m-volts = <1250>;
++	};
++#endif
++
+ #ifdef CONFIG_PAR_CAMERA
+ 	ov564x@CONFIG_PAR_CAMERA {		/* Parallel camera connected to carrier */
+ 		compatible = "ovti,ov564x";
+@@ -604,6 +648,14 @@
+ 		compatible = "fsl,imx6-hdmi-i2c";
+ 		reg = <0x50>;
+ 	};
++#if CONFIG_I2S_AUDIO == 1
++	codec: tlv320aic23@1a {		/* Audio codec on LEC-Base R1 carrier */
++		compatible = "ti,tlv320aic23";
++		reg = <0x1a>;
++		clocks = <&clks IMX6QDL_CLK_CKO>; /* SMARC AUDIO_MCK, actually unused on carrier */
++		status = "okay";
++	};
++#endif
+ };
+ 
+ &i2c3 {
+@@ -683,6 +735,12 @@
+ 		pinctrl_regulators: regulatorsgrp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_ENET_TXD0__GPIO1_IO30     0x80000000 /* SMARC LCD_VDD_EN */
++			>;
++		};
++
++#if CONFIG_I2S_AUDIO
++		pinctrl_audmux: audmuxgrp {
++			fsl,pins = <	/* SMARC I2S0 (instead of SPI0) */
+ 				MX6QDL_PAD_CSI0_DAT7__AUD3_RXD		0x130b0
+ 				MX6QDL_PAD_CSI0_DAT4__AUD3_TXC		0x130b0
+ 				MX6QDL_PAD_CSI0_DAT5__AUD3_TXD		0x110b0
+@@ -690,14 +748,17 @@
+ 			>;
+ 		};
+ 
++#else
+ 		pinctrl_ecspi1: ecspi1grp {
+-			fsl,pins = <
+-				MX6QDL_PAD_KEY_COL1__ECSPI1_MISO	0x100b1
+-				MX6QDL_PAD_KEY_ROW0__ECSPI1_MOSI	0x100b1
+-				MX6QDL_PAD_KEY_COL0__ECSPI1_SCLK	0x100b1
+-				MX6QDL_PAD_KEY_ROW1__GPIO4_IO09		0x1b0b0
++			fsl,pins = <	/* SMARC SPI0 (instead of I2S0) */
++				MX6QDL_PAD_CSI0_DAT6__ECSPI1_MISO	0x100b1
++				MX6QDL_PAD_CSI0_DAT5__ECSPI1_MOSI	0x100b1
++				MX6QDL_PAD_CSI0_DAT4__ECSPI1_SCLK	0x100b1
++				MX6QDL_PAD_CSI0_DAT7__GPIO5_IO25	0x1b0b0 /* SMARC CS0 */
++				MX6QDL_PAD_EIM_D24__GPIO3_IO24		0x1b0b0 /* SMARC CS1 */
+ 			>;
+ 		};
++#endif
+ 
+ 		pinctrl_i2c2_egalax_int: egalax_i2c2_intgrp {
+ 			fsl,pins = <
+@@ -1053,7 +1114,8 @@
+ 	status = "okay";
+ };
+ 
+-&ssi2 {
++#if CONFIG_I2S_AUDIO
++&ssi2 {		/* SMARC I2S0 (instead of SPI0) */
+ 	assigned-clocks = <&clks IMX6QDL_CLK_PLL4>,
+ 			  <&clks IMX6QDL_PLL4_BYPASS>,
+ 			  <&clks IMX6QDL_CLK_SSI2_SEL>;
+@@ -1063,6 +1125,7 @@
+ 	assigned-clock-rates = <737280000>, <0>, <0>;
+ 	status = "okay";
+ };
++#endif
+ 
+ &uart1 {
+ 	pinctrl-names = "default";
+-- 
+2.7.4
+

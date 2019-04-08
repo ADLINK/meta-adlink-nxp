@@ -1,0 +1,88 @@
+From 5d6b7daf16a78084f5d598a6ca91394033e4c1a9 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Fri, 5 Apr 2019 14:20:30 +0530
+Subject: [PATCH 20/47] Different battery charger on the LEC-Base R1 carrier.
+
+Current baseboards use a Linear Technology LTC1760 I2C battery charger
+instead of the eval-board's Maxim MAX8903, but no driver exists so we can't
+add a full device tree entry for it.
+
+Also we don't have a charger LED; remove it.
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 26 +++++---------------------
+ arch/arm/boot/dts/lec-imx6q.dts |  6 ------
+ 2 files changed, 5 insertions(+), 27 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 2bda7f8..809ccbf 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -29,19 +29,6 @@
+ 		mxcfb3 = &mxcfb4;
+ 	};
+ 
+-	battery: max8903@0 {
+-		compatible = "fsl,max8903-charger";
+-		pinctrl-names = "default";
+-		dok_input = <&gpio2 24 1>;
+-		uok_input = <&gpio1 27 1>;
+-		chg_input = <&gpio3 23 1>;
+-		flt_input = <&gpio5 2 1>;
+-		fsl,dcm_always_high;
+-		fsl,dc_valid;
+-		fsl,usb_valid;
+-		status = "okay";
+-	};
+-
+ 	hannstar_cabc {
+ 		compatible = "hannstar,cabc";
+ 		lvds0 {
+@@ -651,6 +638,11 @@
+ 		interrupt-parent = <&gpio3>;
+ 		interrupts = <16 1>;
+ 	};
++
++	ltc1760@0a {			/* Battery charger on LEC-Base R1 carrier */
++		compatible = "linear,ltc1760"; /* guessing, no driver found */
++		reg = <0x0a>;
++	};
+ };
+ 
+ &iomuxc {
+@@ -975,14 +967,6 @@
+ 			>;
+ 		};
+ 	};
+-
+-	gpio_leds {
+-		pinctrl_gpio_leds: gpioledsgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_GPIO_2__GPIO1_IO02 0x1b0b0
+-			>;
+-		};
+-	};
+ };
+ 
+ &ldb {
+diff --git a/arch/arm/boot/dts/lec-imx6q.dts b/arch/arm/boot/dts/lec-imx6q.dts
+index 15db54c..95d76ba 100644
+--- a/arch/arm/boot/dts/lec-imx6q.dts
++++ b/arch/arm/boot/dts/lec-imx6q.dts
+@@ -20,12 +20,6 @@
+ 	compatible = "fsl,imx6q-sabresd", "fsl,imx6q";
+ };
+ 
+-&battery {
+-	offset-charger = <1900>;
+-	offset-discharger = <1694>;
+-	offset-usb-charger = <1685>;
+-};
+-
+ &ldb {
+ 	lvds-channel@0 {
+ 		crtc = "ipu2-di0";
+-- 
+2.7.4
+

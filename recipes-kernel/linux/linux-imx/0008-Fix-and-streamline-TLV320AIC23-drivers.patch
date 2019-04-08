@@ -1,0 +1,163 @@
+From 9ae511a1c895b297fbd3c8d00d5f69ac10c22b2b Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Thu, 4 Apr 2019 15:27:33 +0530
+Subject: [PATCH 08/47] Fix and streamline TLV320AIC23 drivers.
+
+The iMX-TLV320AIC23 driver isn't from Freescale, but from a company named
+Eukrea Electromatique, originally for their own boards. From the code I get
+the impression it is a bit older, its DT options use a differing naming
+scheme, and it's not-so-well tested. Patch it up a bit:
+
+- Fix a bug in the codec driver's routing table causing 9 error messages.
+- Remove Eukrea naming, i.MX is from Freescale, TLV320AIC23 is from TI,
+  driver was written by Eukrea, but it's DT capable, so it's not exclusive:
+  - Kconfig option title
+  - 'model' option
+  - driver 'compatible' string
+- Other options just have changed over time, this driver remaining (one of)
+  the last with the old semantics:
+  - 'audio-codec' option (also moved from ssi node)
+  - 'mux-int/ext-port' options
+- All options stay backwards compatible, the DT binding documents new and
+  old names.
+
+Files and CONFIG variable have not been renamed, though.
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ .../devicetree/bindings/sound/eukrea-tlv320.txt    | 23 +++++++++------
+ sound/soc/fsl/Kconfig                              |  2 +-
+ sound/soc/fsl/eukrea-tlv320.c                      | 33 +++++++++++++++-------
+ 3 files changed, 39 insertions(+), 19 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt b/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt
+index 6dfa88c..8f6dd5e 100644
+--- a/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt
++++ b/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt
+@@ -2,15 +2,21 @@ Audio complex for Eukrea boards with tlv320aic23 codec.
+ 
+ Required properties:
+ 
+-  - compatible		: "eukrea,asoc-tlv320"
++  - compatible		: "fsl,imx-audio-tlv320aic23" or
++			  "eukrea,asoc-tlv320" (deprecated)
+ 
+-  - eukrea,model	: The user-visible name of this sound complex.
++  - model		: The user-visible name of this sound complex.
++  - eukrea,model	: Dito, deprecated.
+ 
+   - ssi-controller	: The phandle of the SSI controller.
+ 
+-  - fsl,mux-int-port	: The internal port of the i.MX audio muxer (AUDMUX).
++  - mux-int-port	: The internal port of the i.MX audio muxer (AUDMUX).
++  - fsl,mux-int-port	: Dito, deprecated.
+ 
+-  - fsl,mux-ext-port	: The external port of the i.MX audio muxer.
++  - mux-ext-port	: The external port of the i.MX audio muxer.
++  - fsl,mux-ext-port	: Dito, deprecated.
++
++  - audio-codec		: The phandle of the audio codec.
+ 
+ Note: The AUDMUX port numbering should start at 1, which is consistent with
+ hardware manual.
+@@ -18,9 +24,10 @@ hardware manual.
+ Example:
+ 
+ 	sound {
+-		compatible = "eukrea,asoc-tlv320";
+-		eukrea,model = "imx51-eukrea-tlv320aic23";
++		compatible = "fsl,imx-audio-tlv320aic23";
++		model = "imx51-eukrea-tlv320aic23";
+ 		ssi-controller = <&ssi2>;
+-		fsl,mux-int-port = <2>;
+-		fsl,mux-ext-port = <3>;
++		mux-int-port = <2>;
++		mux-ext-port = <3>;
++		audio-codec = <&codec>;
+ 	};
+diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
+index 1dfad91..67a6239 100644
+--- a/sound/soc/fsl/Kconfig
++++ b/sound/soc/fsl/Kconfig
+@@ -277,7 +277,7 @@ config SND_SOC_PHYCORE_AC97
+ 	  and phyCARD boards in AC97 mode
+ 
+ config SND_SOC_EUKREA_TLV320
+-	tristate "Eukrea TLV320"
++	tristate "SoC Audio support for i.MX boards with TLV320AIC23"
+ 	depends on ARCH_MXC && I2C
+ 	select SND_SOC_TLV320AIC23_I2C
+ 	select SND_SOC_IMX_AUDMUX
+diff --git a/sound/soc/fsl/eukrea-tlv320.c b/sound/soc/fsl/eukrea-tlv320.c
+index 84ef638..8bea6bd 100644
+--- a/sound/soc/fsl/eukrea-tlv320.c
++++ b/sound/soc/fsl/eukrea-tlv320.c
+@@ -92,11 +92,13 @@ static int eukrea_tlv320_probe(struct platform_device *pdev)
+ 
+ 	eukrea_tlv320.dev = &pdev->dev;
+ 	if (np) {
+-		ret = snd_soc_of_parse_card_name(&eukrea_tlv320,
+-						 "eukrea,model");
++		ret = snd_soc_of_parse_card_name(&eukrea_tlv320, "model");
++		if (ret) /* backwards compatible */
++			ret = snd_soc_of_parse_card_name(&eukrea_tlv320,
++			                                 "eukrea,model");
+ 		if (ret) {
+ 			dev_err(&pdev->dev,
+-				"eukrea,model node missing or invalid.\n");
++			        "model node missing or invalid.\n");
+ 			goto err;
+ 		}
+ 
+@@ -109,22 +111,32 @@ static int eukrea_tlv320_probe(struct platform_device *pdev)
+ 			goto err;
+ 		}
+ 
+-		codec_np = of_parse_phandle(ssi_np, "codec-handle", 0);
++		codec_np = of_parse_phandle(pdev->dev.of_node, "audio-codec", 0);
++		if (!codec_np) /* backwards compatible */
++			codec_np = of_parse_phandle(ssi_np, "codec-handle", 0);
++
+ 		if (codec_np)
+ 			eukrea_tlv320_dai.codec_of_node = codec_np;
+ 		else
+-			dev_err(&pdev->dev, "codec-handle node missing or invalid.\n");
++			dev_err(&pdev->dev, "audio-codec node missing or invalid.\n");
++
++		ret = of_property_read_u32(np, "mux-int-port", &int_port);
++		if (ret) /* backwards compatible */
++			ret = of_property_read_u32(np, "fsl,mux-int-port", &int_port);
+ 
+-		ret = of_property_read_u32(np, "fsl,mux-int-port", &int_port);
+ 		if (ret) {
+ 			dev_err(&pdev->dev,
+-				"fsl,mux-int-port node missing or invalid.\n");
++				"mux-int-port node missing or invalid.\n");
+ 			return ret;
+ 		}
+-		ret = of_property_read_u32(np, "fsl,mux-ext-port", &ext_port);
++
++		ret = of_property_read_u32(np, "mux-ext-port", &ext_port);
++		if (ret) /* backwards compatible */
++			ret = of_property_read_u32(np, "fsl,mux-ext-port", &ext_port);
++
+ 		if (ret) {
+ 			dev_err(&pdev->dev,
+-				"fsl,mux-ext-port node missing or invalid.\n");
++				"mux-ext-port node missing or invalid.\n");
+ 			return ret;
+ 		}
+ 
+@@ -213,7 +225,8 @@ static int eukrea_tlv320_remove(struct platform_device *pdev)
+ }
+ 
+ static const struct of_device_id imx_tlv320_dt_ids[] = {
+-	{ .compatible = "eukrea,asoc-tlv320"},
++	{ .compatible = "eukrea,asoc-tlv320"}, /* backwards compatible */
++	{ .compatible = "fsl,imx-audio-tlv320aic23"},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, imx_tlv320_dt_ids);
+-- 
+2.7.4
+

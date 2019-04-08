@@ -1,0 +1,51 @@
+From ed238ee2ca14dba9f816363ba5cee61653aa0716 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar <santhanakumar.a@ltts.com>
+Date: Thu, 4 Apr 2019 16:49:08 +0530
+Subject: [PATCH 17/47] Add SST 26VF064B SPI flash support.
+
+SST's 26VF* series is largely compatible to the 25VF* chips so simply add a
+table entry with name, ID and parameters.
+
+The 26VFs feature a new quad bit mode; set the appropriate feature flag even
+though the i.MX6 doesn't even support the older dual mode yet (for which we
+also set the flag for the 25VF064C while we're at it).
+
+Unfortunately the 26VFs also use a completely new, incompatible block
+protection scheme, which Linux's spi-nor driver doesn't know yet. But for
+now we rely on U-Boot having unlocked everything before booting, so writing
+works fine. The production version LEC-iMX6 will switch back to the SST
+25VF064C, anyway.
+
+Signed-off-by: Santhana Kumar <santhanakumar.a@ltts.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 86b29ff..b7af26a 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1091,9 +1091,9 @@ static const struct flash_info spi_nor_ids[] = {
+ 	{ "s25sl032a",  INFO(0x010215,      0,  64 * 1024,  64, 0) },
+ 	{ "s25sl064a",  INFO(0x010216,      0,  64 * 1024, 128, 0) },
+ 	{ "s25fl004k",  INFO(0xef4013,      0,  64 * 1024,   8, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+-	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	//{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },/* ID collides with Winbond */
+ 	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+-	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
++	//{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },/* ID collides with Winbond */
+ 	{ "s25fl116k",  INFO(0x014015,      0,  64 * 1024,  32, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+ 	{ "s25fl132k",  INFO(0x014016,      0,  64 * 1024,  64, SECT_4K) },
+ 	{ "s25fl164k",  INFO(0x014017,      0,  64 * 1024, 128, SECT_4K) },
+@@ -1106,7 +1106,7 @@ static const struct flash_info spi_nor_ids[] = {
+ 	{ "sst25vf080b", INFO(0xbf258e, 0, 64 * 1024, 16, SECT_4K | SST_WRITE) },
+ 	{ "sst25vf016b", INFO(0xbf2541, 0, 64 * 1024, 32, SECT_4K | SST_WRITE) },
+ 	{ "sst25vf032b", INFO(0xbf254a, 0, 64 * 1024, 64, SECT_4K | SST_WRITE) },
+-	{ "sst25vf064c", INFO(0xbf254b, 0, 64 * 1024, 128, SECT_4K) },
++	{ "sst25vf064c", INFO(0xbf254b, 0, 64 * 1024,128, SECT_4K | SPI_NOR_DUAL_READ) },
+ 	{ "sst25wf512",  INFO(0xbf2501, 0, 64 * 1024,  1, SECT_4K | SST_WRITE) },
+ 	{ "sst25wf010",  INFO(0xbf2502, 0, 64 * 1024,  2, SECT_4K | SST_WRITE) },
+ 	{ "sst25wf020",  INFO(0xbf2503, 0, 64 * 1024,  4, SECT_4K | SST_WRITE) },
+-- 
+2.7.4
+
