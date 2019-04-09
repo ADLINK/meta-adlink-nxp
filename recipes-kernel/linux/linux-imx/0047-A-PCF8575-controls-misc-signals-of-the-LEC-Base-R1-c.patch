@@ -1,0 +1,46 @@
+From 0ae46ee0845de3e2394443d15ef61a1b70c49f33 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 20:02:00 +0530
+Subject: [PATCH 47/47] A PCF8575 controls misc signals of the LEC-Base R1
+ carrier.
+
+Most important probably are the reset lines of the two USB hubs. Unless
+these are released most USB ports won't work. Fortunately the PCF8575 driver
+implements a special "lines-initial-states" option which can be used to set
+working boot-up defaults.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 82b48b0..c09e53f 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -553,6 +553,22 @@
+ 	};
+ #endif
+ 
++	carrier_misc_control: pcf8575@20 {	/* GPIO expander on LEC-Base R1 carrier */
++		compatible = "nxp,pcf8575";
++		reg = <0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		/* 0: HUB1_RESET	 8: 3G1_DISABLE#
++		 * 1: CAN1_STB (NC)	 9: 3G1_DOWN#
++		 * 2: CAN2_STB (NC)	10: 3G2_DISABLE#
++		 * 3: LCD_RESET# (NC)	11: 3G2_DOWN#
++		 * 4: SUP_RESET# (NC)	12: HDMI_RESET#
++		 * 5: LVDS_VDD_EN	13: 3G_PW_EN
++		 * 6: CAM_PW_EN (NC)	14: PCAM_LE#
++		 * 7: GPS_VDD_EN	15: HUB2_RESET */
++		lines-initial-states = <0xc001>; /* bitmask: 0=high(!)/input, 1=pulled low */
++	};
++
+ #ifdef CONFIG_PAR_CAMERA
+ 	ov564x@CONFIG_PAR_CAMERA {		/* Parallel camera connected to carrier */
+ 		compatible = "ovti,ov564x";
+-- 
+2.7.4
+

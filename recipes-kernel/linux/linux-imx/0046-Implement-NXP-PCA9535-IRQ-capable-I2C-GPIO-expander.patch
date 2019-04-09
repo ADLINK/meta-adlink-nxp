@@ -1,0 +1,45 @@
+From 340e4f54e2af2a59b007be64b1958aac24029d21 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 20:00:35 +0530
+Subject: [PATCH 46/47] Implement NXP PCA9535 IRQ capable I2C GPIO expander.
+
+It controls most GPIOx signals on the LEC-iMX6's SMARC connector. Set it up
+as interrupt controller, some baseboard devices use SMARC GPIOs as IRQ
+lines.
+
+I could've split off the GPIO_INT_B pinmux into its own group, but IMHO
+it's clearer to keep GPIO related pads together.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index ffce7da..82b48b0 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -749,6 +749,20 @@
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+ 	status = "okay";
+ 
++	smarc_gpio: pca9535@20 {	/* GPIO expander */
++		/* GPIOs 4-6, 8-11 map directly to the SMARC connector's GPIOx.
++		 * GPIOs 0-3, 7 are unused unless a solder jumper is changed, per default
++		 * SMARC GPIO0-3,7 are provided by the i.MX6 (CAM0/1_PWR/RST#,PCAM_FLD). */
++		compatible = "nxp,pca9535";
++		reg = <0x20>;
++		interrupt-parent = <&gpio1>;
++		interrupts = <29 IRQ_TYPE_LEVEL_LOW>; /* GPIO_INT_B */
++		gpio-controller;
++		#gpio-cells = <2>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
++
+ 	sema_bmc@28 {			/* SEMA Board Management Controller */
+ 		compatible = "adlink,sema_bmc"; /* no driver needed */
+ 		reg = <0x28>;
+-- 
+2.7.4
+

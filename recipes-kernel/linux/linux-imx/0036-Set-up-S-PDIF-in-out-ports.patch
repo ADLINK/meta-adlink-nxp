@@ -1,0 +1,66 @@
+From 9873c6986a1feeb42225e153ae479e9bb93409fd Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 19:13:30 +0530
+Subject: [PATCH 36/47] Set up S/PDIF in/out ports.
+
+- SabreSD didn't have S/PDIF at all, copy S/PDIF-in from SabreAuto.
+- Also enable S/PDIF-out.
+- Create different pinmux setting.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index db36015..aa8735a 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -232,6 +232,14 @@
+ 		hdmi-controller = <&hdmi_audio>;
+ 	};
+ 
++	sound-spdif {
++		compatible = "fsl,imx-audio-spdif";
++		model = "imx-spdif";
++		spdif-controller = <&spdif>;
++		spdif-in;
++		spdif-out;
++	};
++
+ 	mxcfb1: fb@0 {	/* IPU1 DI1: /dev/fb0=HDMI, fb1=IPU1's overlay */
+ 		compatible = "fsl,mxc_sdc_fb";
+ 		disp_dev = "hdmi";
+@@ -878,6 +886,13 @@
+ 			>;
+ 		};
+ 
++		pinctrl_spdif: spdifgrp {
++			fsl,pins = <	/* SMARC SPDIF_IN/OUT */
++				MX6QDL_PAD_GPIO_16__SPDIF_IN		0x1b0b0
++				MX6QDL_PAD_GPIO_19__SPDIF_OUT		0x1b0b0
++			>;
++		};
++
+ 		pinctrl_uart1: uart1grp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_CSI0_DAT10__UART1_TX_DATA	0x1b0b1
+@@ -1036,6 +1051,15 @@
+ 	status = "okay";
+ };
+ 
++&spdif {	/* SMARC SPDIF_IN/OUT */
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_spdif>;
++	assigned-clocks = <&clks IMX6QDL_CLK_SPDIF_SEL>, <&clks IMX6QDL_CLK_SPDIF_PODF>;
++	assigned-clock-parents = <&clks IMX6QDL_CLK_PLL3_PFD3_454M>;
++	assigned-clock-rates = <0>, <227368421>;
++	status = "okay";
++};
++
+ #if CONFIG_I2S_AUDIO
+ &ssi2 {		/* SMARC I2S0 (instead of SPI0) */
+ 	assigned-clocks = <&clks IMX6QDL_CLK_PLL4>,
+-- 
+2.7.4
+

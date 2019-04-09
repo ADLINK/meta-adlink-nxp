@@ -1,0 +1,70 @@
+From aa313e590b0e06156312f85fb6b0628a12488ebd Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 19:19:52 +0530
+Subject: [PATCH 39/47] Enable CAN interfaces.
+
+- Copy device tree nodes from SabreAuto.
+- Different GPIOs for error and standby signals, but they won't work
+  anyway.
+- Pinmux again all different.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index cc5e286..082423e 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -450,6 +450,26 @@
+ 	status = "okay";
+ };
+ 
++&can1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_flexcan1>;
++	/* The next 2 options are documented, but not implemented by Freescale's
++	 * driver. Their recent DTs replace trx-stby-gpio and trx-en-gpio (also
++	 * missing) with 'xceiver-supply' regulators (is this really the same?),
++	 * however we won't bother, the GPIOs don't connect anyway. */
++	//trx-nerr-gpio = <&smarc_gpio 8 GPIO_ACTIVE_LOW>; /* SMARC GPIO8/CAN0_ERR#, unused on LEC-Base carrier */
++	//trx-stby-gpio = <&carrier_misc_control 1 GPIO_ACTIVE_HIGH>; /* CAN1_STB, solder jumper not populated */
++	status = "okay";
++};
++
++&can2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_flexcan2>;
++	//trx-nerr-gpio = <&smarc_gpio 9 GPIO_ACTIVE_LOW>; /* SMARC GPIO9/CAN1_ERR#, unused on LEC-Base carrier */
++	//trx-stby-gpio = <&carrier_misc_control 2 GPIO_ACTIVE_HIGH>; /* CAN2_STB, solder jumper not populated */
++	status = "okay";
++};
++
+ &gpc {
+ 	fsl,ldo-bypass = <LDO_BYPASS>; /* U-Boot will check it and configure */
+ };
+@@ -824,6 +844,20 @@
+ 			>;
+ 		};
+ 
++		pinctrl_flexcan1: flexcan1grp {
++			fsl,pins = <	/* SMARC CAN0 */
++				MX6QDL_PAD_SD3_CMD__FLEXCAN1_TX		0x17059
++				MX6QDL_PAD_SD3_CLK__FLEXCAN1_RX		0x17059
++			>;
++		};
++
++		pinctrl_flexcan2: flexcan2grp {
++			fsl,pins = <	/* SMARC CAN1 */
++				MX6QDL_PAD_SD3_DAT0__FLEXCAN2_TX	0x17059
++				MX6QDL_PAD_SD3_DAT1__FLEXCAN2_RX	0x17059
++			>;
++		};
++
+ 		pinctrl_gpio_keys: gpio_keysgrp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_GPIO_7__GPIO1_IO07		0x1b0b0 /* SMARC LID# */
+-- 
+2.7.4
+

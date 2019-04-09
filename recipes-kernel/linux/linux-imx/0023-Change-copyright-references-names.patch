@@ -1,0 +1,65 @@
+From 3de5ed05b828c242b96e6daa7932f80e5fcad003 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 14:49:44 +0530
+Subject: [PATCH 23/47] Change copyright, references, names.
+
+- Add ADLINK copyright lines.
+- Change pinctrl node name.
+- Change #included .dtsi file names.
+- Change board names and 'compatible' statements.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 3 ++-
+ arch/arm/boot/dts/lec-imx6q.dts | 9 +++++----
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 19605cc..fd72b96b 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -1,4 +1,5 @@
+ /*
++* Copyright 2014-2016 LiPPERT ADLINK Technology GmbH
+  * Copyright 2012-2016 Freescale Semiconductor, Inc.
+  * Copyright 2011 Linaro Ltd.
+  * Copyright 2017 NXP.
+@@ -650,7 +651,7 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_hog>;
+ 
+-	imx6qdl-sabresd {
++	lec-imx6 {
+ 		pinctrl_hog: hoggrp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_NANDF_D0__GPIO2_IO00 0x80000000
+diff --git a/arch/arm/boot/dts/lec-imx6q.dts b/arch/arm/boot/dts/lec-imx6q.dts
+index 74f3660..26b89fe 100644
+--- a/arch/arm/boot/dts/lec-imx6q.dts
++++ b/arch/arm/boot/dts/lec-imx6q.dts
+@@ -1,5 +1,6 @@
+ /*
+- * Copyright 2012=2015 Freescale Semiconductor, Inc.
++ * Copyright 2014-2016 LiPPERT ADLINK Technology GmbH
++ * Copyright 2012-2015 Freescale Semiconductor, Inc.
+  * Copyright 2011 Linaro Ltd.
+  *
+  * The code contained herein is licensed under the GNU General Public
+@@ -13,11 +14,11 @@
+ /dts-v1/;
+ 
+ #include "imx6q.dtsi"
+-#include "imx6qdl-sabresd.dtsi"
++#include "lec-imx6.dtsi"
+ 
+ / {
+-	model = "Freescale i.MX6 Quad SABRE Smart Device Board";
+-	compatible = "fsl,imx6q-sabresd", "fsl,imx6q";
++	model = "ADLINK LEC-iMX6 (Quad/Dual) SMARC module";
++	compatible = "adlink,lec-imx6", "fsl,imx6q";
+ };
+ 
+ &ldb {		/* LVDS (see fb in lec-imx6.dtsi) */
+-- 
+2.7.4
+

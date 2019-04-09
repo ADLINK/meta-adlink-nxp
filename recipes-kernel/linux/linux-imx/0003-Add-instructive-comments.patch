@@ -1,0 +1,82 @@
+From 56f0ccf80a3f69eea66059ac7f83cc8a21ee4b01 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Thu, 4 Apr 2019 13:43:42 +0530
+Subject: [PATCH 03/47] Add instructive comments.
+
+Help people like me, who didn't know a thing about Device Trees when we
+started this project.
+
+- We don't have LEDs, but at least show how it's done. For this purpose the
+  "gpio-leds" driver gets compiled in by our defconfig. (Also an upcoming
+  LEC-iMX6 variant will likely get a LED.)
+- U-Boot overwrites the dummy size in the DDR3 memory node with the actual
+  value, don't bother editing it.
+- Comment that wdog1 needs to be explicitly disabled and that watchdog uses
+  WDOG2_B output: Wdog2 was meant as TrustZone watchdog and doesn't connect
+  to the System Reset Controller (SRC), but we need an external reset path
+  via -->BMC-->POR to reset module and carrier devices anyway, and
+  pin-muxing only left WDOG2_B unoccupied. And so far we're not interested
+  in TrustZone.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index a9ba531..fc18e54 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -51,7 +51,7 @@
+ 	};
+ 
+ 	memory: memory {
+-		reg = <0x10000000 0x40000000>;
++		reg = <0x10000000 0x40000000>;	/* dummy size, overwritten by U-Boot */
+ 	};
+ 
+ 	regulators {
+@@ -252,17 +252,15 @@
+ 		status = "okay";
+ 	};
+ 
+-	leds {
+-		compatible = "gpio-leds";
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_gpio_leds>;
+-
+-		charger-led {
+-			gpios = <&gpio1 2 0>;
+-			linux,default-trigger = "max8903-charger-charging";
+-			retain-state-suspended;
+-		};
+-	};
++	/* The LEC-Base carriers don't have any LEDs, just show how it's done. */
++	//leds {
++	//	compatible = "gpio-leds";
++	//
++	//	example-led {
++	//		gpios = <&smarc_gpio 5 GPIO_ACTIVE_LOW>; /* SMARC GPIO5/PWM_OUT */
++	//		linux,default-trigger = "mmc1"; /* more triggers in menuconfig */
++	//	};
++	//};
+ 
+ 	v4l2_cap_0 {
+ 		compatible = "fsl,imx6q-v4l2-capture";
+@@ -1132,10 +1130,13 @@
+ };
+ 
+ &wdog1 {
++	/* Contrary to other nodes Freescale's dtsi doesn't default to "disabled" here. */
+ 	status = "disabled";
+ };
+ 
+ &wdog2 {
++	/* This is the TrustZone watchdog, however pin mux leaves no other choice.
++	 * We don't need an SoC reset (wdog_rst_b), but WDOG2_B --> system wide POR. */
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_wdog>;
+ 	fsl,ext-reset-output;
+-- 
+2.7.4
+

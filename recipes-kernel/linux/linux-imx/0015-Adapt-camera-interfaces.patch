@@ -1,0 +1,232 @@
+From 369bfc9769298bfd9b80ba690485164e14949ee7 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Thu, 4 Apr 2019 16:43:33 +0530
+Subject: [PATCH 15/47] Adapt camera interfaces.
+
+- Add CONFIG vars to ease connecting OV564x cameras.
+- Use I2C_CAM aka i2c1.
+- We can't control the power supplies.
+- Different power-down and reset GPIOs. (Don't know what to do with
+  PCAM_FLD.)
+- Different pinmux for parallel interface: 10 bits instead of 8, but no
+  DATA_EN. We share the generic SMARC GPIOs, so these are already mapped.
+- Set up CSI2IPU muxes in board file to allow connecting both serial and
+  parallel cameras. See chapter "MIPI CSI to IPU gasket" in i.MX6 Reference
+  Manual.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 73 +++++++++++++++++++++++------------------
+ arch/arm/mach-imx/mach-imx6q.c  | 33 ++++++++++++-------
+ 2 files changed, 62 insertions(+), 44 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index c7c9a99..277cc79 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -11,10 +11,16 @@
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ 
++/* The LEC-Base carrier doesn't include cameras, but allows connecting some. */
++#define CONFIG_SER_CAMERA	3c /* I2C addr of serial camera, hex without "0x" */
++//#define CONFIG_PAR_CAMERA	3c /* I2C addr of parallel camera */
+ #include <dt-bindings/clock/imx6qdl-clock.h>
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
+ 
++#define __0x(X) 0x##X	/* prefix hex digits with "0x" */
++#define _0x(X) __0x(X)
++
+ / {
+ 	aliases {
+ 		mxcfb0 = &mxcfb1;
+@@ -262,6 +268,7 @@
+ 	//	};
+ 	//};
+ 
++#ifdef CONFIG_PAR_CAMERA
+ 	v4l2_cap_0 {
+ 		compatible = "fsl,imx6q-v4l2-capture";
+ 		ipu_id = <0>;
+@@ -269,7 +276,9 @@
+ 		mclk_source = <0>;
+ 		status = "okay";
+ 	};
++#endif
+ 
++#ifdef CONFIG_SER_CAMERA
+ 	v4l2_cap_1 {
+ 		compatible = "fsl,imx6q-v4l2-capture";
+ 		ipu_id = <0>;
+@@ -277,6 +286,7 @@
+ 		mclk_source = <0>;
+ 		status = "okay";
+ 	};
++#endif
+ 
+ 	v4l2_out {
+ 		compatible = "fsl,mxc_v4l2_output";
+@@ -442,23 +452,35 @@
+ 		interrupt-route = <1>;
+ 	};
+ 
+-	ov564x: ov564x@3c {
++#ifdef CONFIG_PAR_CAMERA
++	ov564x@CONFIG_PAR_CAMERA {		/* Parallel camera connected to carrier */
+ 		compatible = "ovti,ov564x";
+-		reg = <0x3c>;
++		reg = <_0x(CONFIG_PAR_CAMERA)>;
+ 		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_ipu1_2>;
++		pinctrl-0 = <&pinctrl_ipu1_pcam>;
+ 		clocks = <&clks IMX6QDL_CLK_CKO>;
+ 		clock-names = "csi_mclk";
+-		DOVDD-supply = <&vgen4_reg>; /* 1.8v */
+-		AVDD-supply = <&vgen3_reg>;  /* 2.8v, on rev C board is VGEN3,
+-						on rev B board is VGEN5 */
+-		DVDD-supply = <&vgen2_reg>;  /* 1.5v*/
+-		pwn-gpios = <&gpio1 16 1>;   /* active low: SD1_DAT0 */
+-		rst-gpios = <&gpio1 17 0>;   /* active high: SD1_DAT1 */
+-		csi_id = <0>;
++		pwn-gpios = <&gpio6 14 GPIO_ACTIVE_HIGH>; /* SMARC GPIO1/CAM1_PWR# */
++		rst-gpios = <&gpio6 16 GPIO_ACTIVE_LOW>;  /* SMARC GPIO3/CAM1_RST# */
++		csi_id = <0>; /* but on SMARC CSI1_...! */
++		mclk = <24000000>;
++		mclk_source = <0>;
++	};
++#endif
++
++#ifdef CONFIG_SER_CAMERA
++	ov564x_mipi@CONFIG_SER_CAMERA {		/* Serial camera connected to carrier */
++		compatible = "ovti,ov564x_mipi";
++		reg = <_0x(CONFIG_SER_CAMERA)>;
++		clocks = <&clks IMX6QDL_CLK_CKO>;
++		clock-names = "csi_mclk";
++		pwn-gpios = <&gpio6 11 GPIO_ACTIVE_HIGH>; /* SMARC GPIO0/CAM0_PWR# */
++		rst-gpios = <&gpio6 15 GPIO_ACTIVE_LOW>;  /* SMARC GPIO2/CAM0_RST# */
++		csi_id = <1>; /* but on SMARC CSI0_...! */
+ 		mclk = <24000000>;
+ 		mclk_source = <0>;
+ 	};
++#endif
+ };
+ 
+ &i2c2 {
+@@ -593,22 +615,6 @@
+ 		compatible = "fsl,imx6-hdmi-i2c";
+ 		reg = <0x50>;
+ 	};
+-
+-	ov564x_mipi: ov564x_mipi@3c { /* i2c2 driver */
+-		compatible = "ovti,ov564x_mipi";
+-		reg = <0x3c>;
+-		clocks = <&clks 201>;
+-		clock-names = "csi_mclk";
+-		DOVDD-supply = <&vgen4_reg>; /* 1.8v */
+-		AVDD-supply = <&vgen3_reg>;  /* 2.8v, rev C board is VGEN3
+-						rev B board is VGEN5 */
+-		DVDD-supply = <&vgen2_reg>;  /* 1.5v*/
+-		pwn-gpios = <&gpio1 19 1>;   /* active low: SD1_CLK */
+-		rst-gpios = <&gpio1 20 0>;   /* active high: SD1_DAT2 */
+-		csi_id = <1>;
+-		mclk = <24000000>;
+-		mclk_source = <0>;
+-	};
+ };
+ 
+ &i2c3 {
+@@ -819,8 +825,11 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_ipu1_2: ipu1grp-2 { /* parallel camera */
+-			fsl,pins = <
++#ifdef CONFIG_PAR_CAMERA
++		pinctrl_ipu1_pcam: ipu1_pcamgrp {
++			fsl,pins = <	/* SMARC PCAM */
++				MX6QDL_PAD_CSI0_DAT10__IPU1_CSI0_DATA10    0x80000000
++				MX6QDL_PAD_CSI0_DAT11__IPU1_CSI0_DATA11    0x80000000
+ 				MX6QDL_PAD_CSI0_DAT12__IPU1_CSI0_DATA12    0x80000000
+ 				MX6QDL_PAD_CSI0_DAT13__IPU1_CSI0_DATA13    0x80000000
+ 				MX6QDL_PAD_CSI0_DAT14__IPU1_CSI0_DATA14    0x80000000
+@@ -829,14 +838,12 @@
+ 				MX6QDL_PAD_CSI0_DAT17__IPU1_CSI0_DATA17    0x80000000
+ 				MX6QDL_PAD_CSI0_DAT18__IPU1_CSI0_DATA18    0x80000000
+ 				MX6QDL_PAD_CSI0_DAT19__IPU1_CSI0_DATA19    0x80000000
+-				MX6QDL_PAD_CSI0_DATA_EN__IPU1_CSI0_DATA_EN 0x80000000
+ 				MX6QDL_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK   0x80000000
+ 				MX6QDL_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC      0x80000000
+ 				MX6QDL_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC     0x80000000
+-				MX6QDL_PAD_SD1_DAT1__GPIO1_IO17            0x80000000
+-				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16            0x80000000
+ 			>;
+ 		};
++#endif
+ 
+ 		pinctrl_ipu1_csi0: ipu1csi0grp {
+ 			fsl,pins = <
+@@ -1025,13 +1032,15 @@
+ 	};
+ };
+ 
++#ifdef CONFIG_SER_CAMERA
+ &mipi_csi {
+-	status = "okay";
+ 	ipu_id = <0>;
+ 	csi_id = <1>;
+ 	v_channel = <0>;
+ 	lanes = <2>;
++	status = "okay";
+ };
++#endif
+ 
+ &mipi_dsi {
+ 	dev_id = <0>;
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index 113f40e..30b3d63 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -255,18 +255,27 @@ static void __init imx6q_csi_mux_init(void)
+ 	struct regmap *gpr;
+ 
+ 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
+-	if (!IS_ERR(gpr)) {
+-		if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
+-			of_machine_is_compatible("fsl,imx6q-sabreauto") ||
+-			of_machine_is_compatible("fsl,imx6qp-sabresd") ||
+-			of_machine_is_compatible("fsl,imx6qp-sabreauto"))
+-			regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 1 << 19);
+-		else if (of_machine_is_compatible("fsl,imx6dl-sabresd") ||
+-			 of_machine_is_compatible("fsl,imx6dl-sabreauto"))
+-			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x0C);
+-	} else {
+-		pr_err("%s(): failed to find fsl,imx6q-iomux-gpr regmap\n",
+-		       __func__);
++	if (IS_ERR(gpr)) {
++		pr_err("failed to find fsl,imx6q-iomux-gpr regmap\n");
++		return;
++	}
++
++	if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
++	    of_machine_is_compatible("fsl,imx6q-sabreauto"))
++		regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 1 << 19);
++	else if (of_machine_is_compatible("fsl,imx6dl-sabresd") ||
++	         of_machine_is_compatible("fsl,imx6dl-sabreauto"))
++		regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x0C);
++
++	if (of_machine_is_compatible("adlink,lec-imx6")) {
++		if (of_machine_is_compatible("fsl,imx6q"))
++			regmap_update_bits(gpr, IOMUXC_GPR1, 0x3 << 19,
++			                   (0 << 20) | /* IPU2 CSI1: 0=MIPI (virt.ch.=3), 1=parallel */
++			                   (1 << 19)); /* IPU1 CSI0: 0=MIPI (virt.ch.=0), 1=parallel */
++		else                      /* "fsl,imx6dl" */
++			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F << 0,
++			                   (1 << 3) | /* IPU CSI1: 0-3=MIPI virt.ch. nr., 4=parallel */
++			                   (4 << 0)); /* IPU CSI0: 0-3=MIPI virt.ch. nr., 4=parallel */
+ 	}
+ }
+ 
+-- 
+2.7.4
+

@@ -1,0 +1,81 @@
+From 2476d7d91b68e8341a84c700bcdcf9f7a08b5ffe Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 19:15:16 +0530
+Subject: [PATCH 37/47] Add misc I2C and SPI devices specific to the LEC-Base
+ R1 carrier.
+
+SPI:
+- Texas Instruments TSC2046 touch screen controller
+
+I2C:
+- Silicon Image SiI9022 HDMI transmitter (driver depends on MXS FB)
+- Freescale MMA7660 accelerometer (no driver)
+- Atmel AT24C08 1KB EEPROM
+- Maxim DS1337 real time clock (driver disabled in defconfig)
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index aa8735a..4f716f2 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -397,6 +397,16 @@
+ 	pinctrl-assert-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>; /* AEN# */
+ 	status = "okay";
+ 
++	tsc2046@0 {		/* Touch screen controller on LEC-Base R1 carrier */
++		compatible = "ti,tsc2046";
++		reg = <0>;
++		vcc-supply = <&reg_smarc_lcd_vdd>;
++		spi-max-frequency = <2500000>;
++		interrupt-parent = <&smarc_gpio>;
++		interrupts = <10 IRQ_TYPE_EDGE_FALLING>; /* SMARC GPIO10 */
++		pendown-gpio = <&smarc_gpio 10 GPIO_ACTIVE_LOW>;
++		ti,vref-mv = /bits/ 16 <3300>;
++	};
+ };
+ #endif
+ 
+@@ -644,6 +654,36 @@
+ 		status = "okay";
+ 	};
+ #endif
++
++	/* Current driver depends on MXS framebuffer not present on i.MX6Q/D/DL/S.
++	 * Also assuming LEC-Base R1 JP3=1-2, JP15=2-3. */
++	sii902x@39 {			/* HDMI transmitter on LEC-Base R1 carrier */
++		compatible = "SiI,sii902x";
++		reg = <0x39>;
++		interrupt-parent = <&smarc_gpio>;
++		interrupts = <4 IRQ_TYPE_EDGE_FALLING>; /* SMARC GPIO4/HDA_RST# */
++		mode_str = "1280x720M@60";
++		bits-per-pixel = <32>;
++	};
++
++	mma7660@4c {			/* Accelerometer on LEC-Base R1 carrier */
++		compatible = "fsl,mma7660"; /* guessing, no driver mainlined */
++		reg = <0x4c>;
++		interrupt-parent = <&smarc_gpio>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>; /* SMARC GPIO11 */
++	};
++
++	at24c08@54 {			/* 1KB EEPROM on LEC-Base R1 carrier */
++		compatible = "atmel,24c08";
++		reg = <0x54>;
++		pagesize = <16>;
++	};
++
++	/* Driver disabled in defconfig, we have an on-module RTC already. */
++	ds1337@68 {			/* RTC on LEC-Base R1 carrier */
++		compatible = "maxim,ds1337";
++		reg = <0x68>;
++	};
+ };
+ 
+ &i2c3 {
+-- 
+2.7.4
+
