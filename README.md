@@ -61,12 +61,12 @@ This Layer depends on following layers:
 <tr style="height: 27px; background: #f0f0f0; border: 1px solid #cccccc;">
 <td style="height: 27px; width: 289px; border: 1px solid #cccccc;">fsl-community-bsp-base</td>
 <td style="height: 27px; width: 364.6px;">Origin/sumo</td>
-<td style="height: 27px; width: 378.4px;">&nbsp;70535e13dd2aabbad53243518f4cc5064d284592</td>
+<td style="height: 27px; width: 378.4px;">70535e13dd2aabbad53243518f4cc5064d284592</td>
 </tr>
 <tr style="height: 23px; border: 1px solid #cccccc;">
 <td style="height: 23px; width: 289px; border: 1px solid #cccccc;">meta-freescale-3rdparty</td>
 <td style="height: 23px; width: 364.6px;">Origin/sumo</td>
-<td style="height: 23px; width: 378.4px;">&nbsp;88a29631809d1af0df618245430db29f2a7012b5</td>
+<td style="height: 23px; width: 378.4px;">88a29631809d1af0df618245430db29f2a7012b5</td>
 </tr>
 <tr style="height: 27px; background: #f0f0f0; border: 1px solid #cccccc;">
 <td style="height: 23px; width: 289px; border: 1px solid #cccccc;">meta-freescale-distro</td>
@@ -91,7 +91,7 @@ This Layer depends on following layers:
 <tr style="height: 26px; background: #f0f0f0; border: 1px solid #cccccc;">
 <td style="height: 26px; width: 289px; border: 1px solid #cccccc;">meta-adlink-nxp</td>
 <td style="height: 26px; width: 364.6px;">Origin/sumo</td>
-<td style="height: 26px; width: 378.4px;">&nbsp;</td>
+<td style="height: 26px; width: 378.4px;"></td>
 </tr>
 </tbody>
 </table>
