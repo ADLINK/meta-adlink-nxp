@@ -98,7 +98,8 @@ This Layer depends on following layers:
 
 <br> 
 
-
+Guideline to [ADLINK Yocto BSP building](https://github.com/ADLINK/meta-adlink-nxp/wiki)
+----
 
 
 Please feel free to send us (email: ryanzj.huang@adlinktech.com) patches for this layer or report any bugs found in this layer. 
