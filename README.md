@@ -14,13 +14,13 @@ Supports the following SMARC products:
 <tr style="height: 26px; border: 1px solid #cccccc;">
 <td style="height: 26px; width: 273.4px; border: 1px solid #cccccc;">LEC-iMX6 (<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en" target="_blank">details</a>)</td>
 <td style="height: 26px; width: 380.6px;">
-<p><img src="https://material.adlinktech.com/products/images/1344/LEC-iMX6_ProductImage_en_20171201_v1.png" width="200" align="left" /></p>
+<p><img src="https://material.adlinktech.com/products/images/1344/LEC-iMX6_ProductImage_en_20171201_v1.png" width="150" align="left" /></p>
 </td>
 </tr>
 <tr style="height: 26px; border: 1px solid #cccccc;">
 <td style="height: 26px; width: 273.4px; border: 1px solid #cccccc;">LEC-iMX8M (<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8M?lang=en" target="_blank">details</a>)</td>
 <td style="height: 26px; width: 380.6px;">
-<p><img src="https://material.adlinktech.com/products/images/1752/LEC-IMX8M-F1.png" width="200" align="left" /></p>
+<p><img src="https://material.adlinktech.com/products/images/1752/LEC-IMX8M-F1.png" width="150" align="left" /></p>
 </td>
 </tr>
 </tbody>
