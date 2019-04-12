@@ -97,8 +97,9 @@ This Layer depends on following layers:
 &nbsp;&nbsp;**Note:** Refer to <a href="https://www.yoctoproject.org/docs/" target="_blank">Yocto Project Docs</a> for details.
 
 <br> 
+<br>
 
-Guideline to [ADLINK Yocto BSP building](https://github.com/ADLINK/meta-adlink-nxp/wiki)
+Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) to ADLINK Yocto BSP building
 ----
 
 
