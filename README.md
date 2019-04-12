@@ -13,8 +13,8 @@ Supports the following SMARC products:
 <tr style="height: 26px; border: 1px solid #cccccc;">
 <td style="height: 26px; width: 163.6px; border: 1px solid #cccccc;"><br /><img src="https://material.adlinktech.com/products/images/1344/LEC-iMX6_ProductImage_en_20171201_v1.png" width="150" align="left" /></td>
 <td style="height: 26px; width: 488.4px;">
-<p><strong>LEC-iMX6</strong>&nbsp;</p>
-<p>&nbsp; &nbsp;&nbsp;SMARC Short Size Module with Freescale i.MX6 Solo, DualLite, Dual or Quad Core Processor</p>
+<p><strong>LEC-iMX6</strong></p>
+<p>SMARC Short Size Module with Freescale i.MX6 Solo, DualLite, Dual or Quad Core Processor</p>
 <p>(<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en" target="_blank" rel="noopener">more details</a>)</p>
 </td>
 </tr>
@@ -22,7 +22,7 @@ Supports the following SMARC products:
 <td style="height: 26px; width: 163.6px; border: 1px solid #cccccc;"><img src="https://material.adlinktech.com/products/images/1752/LEC-IMX8M-F1.png" width="150" align="left" /></td>
 <td style="height: 26px; width: 488.4px;">
 <p><strong>LEC-iMX8M</strong></p>
-<p>&nbsp; &nbsp; &nbsp;SMARC Short Size Module with NXP i.MX 8M Dual, QuadLite and Quad Processors</p>
+<p>SMARC Short Size Module with NXP i.MX 8M Dual, QuadLite and Quad Processors</p>
 <p>(<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8M?lang=en" target="_blank" rel="noopener">more details</a>)</p>
 </td>
 </tr>
