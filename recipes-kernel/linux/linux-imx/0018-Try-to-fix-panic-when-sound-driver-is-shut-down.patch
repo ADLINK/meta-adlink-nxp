@@ -1,0 +1,120 @@
+From 57f30279eef3e0afa93e7e8e73562a9766f536e8 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Thu, 4 Apr 2019 16:50:33 +0530
+Subject: [PATCH 18/47] Try to fix panic when sound driver is shut down.
+
+Freescale's patch "ENGR00307835-3 ASoC: fsl: implements the ESAI xrun
+handler." implemented a new function imx_pcm_dma_complete() in
+imx-pcm-dma.c. The file seems to be common to SPDIF, I2S and HDMI audio.
+During overnight continuous reboot testing with Yocto we saw the following
+panic twice:
+
+INIT: Sending processes the TERM signal
+Unable to handle kernel NULL pointer dereference at virtual address 000000cc
+pgd = 6c004000
+[000000cc] *pgd=00000000
+Internal error: Oops: 17 [#1] SMP ARM
+Modules linked in: ipv6 mousedev cdc_acm mxc_v4l2_capture ipu_bg_overlay_sdc
+ipu_still ipu_prp_enc ipu_csi_enc ipu_fg_overlay_s
+CPU: 0 PID: 6 Comm: kworker/u8:0 Not tainted 3.10.31-1.1.0_beta2+g94a7e47 #1
+Workqueue: kmmcd mmc_rescan
+task: e80a1180 ti: e80be000 task.ti: e80be000
+PC is at imx_pcm_dma_complete+0x10/0x98
+LR is at sdma_tasklet+0x90/0x134
+pc : [<6c37d7fc>]    lr : [<6c202f38>]    psr: 200f0113
+sp : e80bfdd0  ip : 00000000  fp : 00000100
+r10: ffff92ca  r9 : 0420c060  r8 : 00000000
+r7 : 00000003  r6 : 00000001  r5 : e803f010  r4 : e86afc00
+r3 : 00000000  r2 : 00000000  r1 : 00000002  r0 : e86afc00
+Flags: nzCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment kernel
+Control: 10c53c7d  Table: 8c80004a  DAC: 00000015
+Process kworker/u8:0 (pid: 6, stack limit = 0xe80be238)
+Stack: (0xe80bfdd0 to 0xe80c0000)
+fdc0:                                     00000000 e82740f4 0000000c 6c202f38
+fde0: 6c202ea8 e82741c8 e82741cc 6c5cf5c4 00000000 6c029fb4 00000001 6c5d409c
+fe00: e80be000 0000000a 93a2bf7c 6c02972c 6c6041ac 6c065194 e80079c0 00000018
+fe20: 00000006 00000000 00000000 600f0193 6c5cfe44 00000000 e80bfeb4 6c454cb0
+fe40: 00000000 e80be000 00000000 6c0298ac e80be018 6c029af4 00000022 6c00e0a8
+fe60: f4a00100 e80bfe80 6c5da840 6c0084ac 6c420d30 400f0013 ffffffff 6c00d400
+fe80: e83a541c 600f0013 00001e28 00001128 e83a5000 e83a5238 00000000 00061a80
+fea0: 6c454cb0 00000000 e80be000 00000000 00000000 e80bfec8 6c2facec 6c420d30
+fec0: 400f0013 ffffffff 6c2faccc e83a5000 e83a5238 6c2e7d4c 0000bcd3 e83a5270
+fee0: e83a5000 6c2e8abc e808bf80 e83a5270 e8004400 e80be038 e81d4a00 6c039388
+ff00: 00000001 e808bf80 e808bf98 e8004400 e80be038 e808bf80 e8004400 e8004400
+ff20: e80be038 e808bf98 e80be000 e8004414 00000000 6c03a100 e808bf80 e80bff6c
+ff40: 00000000 e80a5e00 00000000 e808bf80 6c039ec4 00000000 00000000 00000000
+ff60: 00000000 6c03eab0 bff7bffd 00000000 bff6da75 e808bf80 00000000 00000000
+ff80: e80bff80 e80bff80 00000000 00000000 e80bff90 e80bff90 e80bffac e80a5e00
+ffa0: 6c03ea10 00000000 00000000 6c00d858 00000000 00000000 00000000 00000000
+ffc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+ffe0: 00000000 00000000 00000000 00000000 00000013 00000000 b53f76ff ebbf669f
+[<6c37d7fc>] (imx_pcm_dma_complete+0x10/0x98) from [<6c202f38>] (sdma_tasklet+0x90/0x134)
+[<6c202f38>] (sdma_tasklet+0x90/0x134) from [<6c029fb4>] (tasklet_action+0x8c/0xec)
+[<6c029fb4>] (tasklet_action+0x8c/0xec) from [<6c02972c>] (__do_softirq+0xec/0x1d4)
+[<6c02972c>] (__do_softirq+0xec/0x1d4) from [<6c0298ac>] (do_softirq+0x48/0x54)
+[<6c0298ac>] (do_softirq+0x48/0x54) from [<6c029af4>] (irq_exit+0x74/0xc0)
+[<6c029af4>] (irq_exit+0x74/0xc0) from [<6c00e0a8>] (handle_IRQ+0x6c/0x90)
+[<6c00e0a8>] (handle_IRQ+0x6c/0x90) from [<6c0084ac>] (gic_handle_irq+0x3c/0x60)
+[<6c0084ac>] (gic_handle_irq+0x3c/0x60) from [<6c00d400>] (__irq_svc+0x40/0x50)
+Exception stack(0xe80bfe80 to 0xe80bfec8)
+fe80: e83a541c 600f0013 00001e28 00001128 e83a5000 e83a5238 00000000 00061a80
+fea0: 6c454cb0 00000000 e80be000 00000000 00000000 e80bfec8 6c2facec 6c420d30
+fec0: 400f0013 ffffffff
+[<6c00d400>] (__irq_svc+0x40/0x50) from [<6c420d30>] (_raw_spin_unlock_irqrestore+0x1c/0x20)
+[<6c420d30>] (_raw_spin_unlock_irqrestore+0x1c/0x20) from [<6c2facec>] (sdhci_set_ios+0x20/0x2c)
+[<6c2facec>] (sdhci_set_ios+0x20/0x2c) from [<6c2e7d4c>] (mmc_power_up+0xdc/0xf0)
+[<6c2e7d4c>] (mmc_power_up+0xdc/0xf0) from [<6c2e8abc>] (mmc_rescan+0x1ec/0x2cc)
+[<6c2e8abc>] (mmc_rescan+0x1ec/0x2cc) from [<6c039388>] (process_one_work+0x22c/0x348)
+[<6c039388>] (process_one_work+0x22c/0x348) from [<6c03a100>] (worker_thread+0x23c/0x384)
+[<6c03a100>] (worker_thread+0x23c/0x384) from [<6c03eab0>] (kthread+0xa0/0xac)
+[<6c03eab0>] (kthread+0xa0/0xac) from [<6c00d858>] (ret_from_fork+0x14/0x3c)
+Code: e92d4038 e1a04000 e59020a8 e5905008 (e59230cc)
+---[ end trace d1e91030839effdb ]---
+
+The invalid pointer 0x000000cc matches the offset of private_data within
+struct snd_pcm_runtime. This leads to the conclusion imx_pcm_dma_complete()
+was called with substream->runtime == NULL, which was not anticipated.
+
+This patch makes the function bail out to avoid the panic, however, having
+no deeper knowledge of the code, I'm not sure if this is the correct
+approach. Maybe "if (check_xrun()) device_reset()" in the last paragraph
+should still get executed? Or imx_pcm_dma_complete() must never have been
+called in the first place and the real bug is somewhere else?
+
+I tried for 48 hours, but was unable to trigger the bug a third time, so I
+can't debug further or test my change, and I'm completely running out of
+time. :-( Therefore this is my best effort shot at a fix.
+
+PS: All this happened with a 3.10 kernel; whatever the root cause was might
+be gone now, however I can't be sure, so it's safest to keep this patch.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ sound/soc/fsl/imx-pcm-dma.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/fsl/imx-pcm-dma.c b/sound/soc/fsl/imx-pcm-dma.c
+index 995896d..038f851 100644
+--- a/sound/soc/fsl/imx-pcm-dma.c
++++ b/sound/soc/fsl/imx-pcm-dma.c
+@@ -37,9 +37,16 @@ static void imx_pcm_dma_complete(void *arg)
+ {
+ 	struct snd_pcm_substream *substream = arg;
+ 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct dmaengine_pcm_runtime_data *prtd = substream->runtime->private_data;
++	struct dmaengine_pcm_runtime_data *prtd;
+ 	struct snd_dmaengine_dai_dma_data *dma_data;
+ 
++	/* FIXME: Not sure if returning is the correct thing to do. Maybe we
++	 * should rather make sure this isn't called with runtime==NULL in the
++	 * first place, however I don't know yet how it comes to pass. */
++	if (!substream->runtime)
++		return;
++
++	prtd = substream->runtime->private_data;
+ 	prtd->pos += snd_pcm_lib_period_bytes(substream);
+ 	if (prtd->pos >= snd_pcm_lib_buffer_bytes(substream))
+ 		prtd->pos = 0;
+-- 
+2.7.4
+

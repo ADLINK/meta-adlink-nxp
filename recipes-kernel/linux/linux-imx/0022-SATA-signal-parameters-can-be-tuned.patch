@@ -1,0 +1,33 @@
+From 76316e98a7abbdf171b258231c73b88bd7719a0d Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 14:45:56 +0530
+Subject: [PATCH 22/47] SATA signal parameters can be tuned.
+
+For now we just keep Freescale's default values, but add Device Tree
+properties to show how it's done. A list of permitted values can be found
+in drivers/ata/ahci_imx.c, lines 400+ or in the i.MX6 Reference Manual.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6q.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6q.dts b/arch/arm/boot/dts/lec-imx6q.dts
+index c035ec1..74f3660 100644
+--- a/arch/arm/boot/dts/lec-imx6q.dts
++++ b/arch/arm/boot/dts/lec-imx6q.dts
+@@ -27,6 +27,11 @@
+ };
+ 
+ &sata {
++	/* Freescale's defaults */
++	fsl,transmit-level-mV = <1025>;
++	fsl,transmit-boost-mdB = <3330>;
++	fsl,transmit-atten-16ths = <9>;
++	fsl,receive-eq-mdB = <3000>;
+ 	status = "okay";
+ };
+ 
+-- 
+2.7.4
+

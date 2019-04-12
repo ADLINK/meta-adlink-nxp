@@ -1,0 +1,24 @@
+From 0bbc231c3bc4af3a057f8be374d26a1e1033ee8a Mon Sep 17 00:00:00 2001
+From: "v.hariharan" <v.hariharan@adlinktech.com>
+Date: Thu, 17 Aug 2017 14:27:18 +0530
+Subject: [PATCH 2/2] Added Shutdown option
+
+---
+ data/xfce/xfce-applications.menu | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/data/xfce/xfce-applications.menu b/data/xfce/xfce-applications.menu
+index 3dc9b84..fc733b6 100644
+--- a/data/xfce/xfce-applications.menu
++++ b/data/xfce/xfce-applications.menu
+@@ -26,6 +26,7 @@
+         <Separator/>
+         <Filename>xfce4-about.desktop</Filename>
+         <Filename>xfce4-session-logout.desktop</Filename>
++	<Filename>shutdown.desktop</Filename>
+     </Layout>
+ 
+     <Menu>
+-- 
+2.10.0
+

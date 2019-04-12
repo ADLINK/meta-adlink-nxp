@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Name=Shutdown
+Comment=Close down the machine safely
+Exec=/sbin/poweroff
+Icon=system-shutdown
+Terminal=false
+Categories=Utility;
+StartupNotify=XFCE;
+Categories=X-XFCE;X-Xfce-Toplevel;
+
+

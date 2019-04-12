@@ -1,0 +1,75 @@
+From e877a7e0a6d75bbc5ce56b9d972b25ea6b36147e Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Thu, 4 Apr 2019 15:40:26 +0530
+Subject: [PATCH 10/47] Fix suspend to RAM issues.
+
+Our U-Boot boots with the CPU debug clock off, but Freescale's new Linux 4.1
+clock driver no longer enables it. Amend that, otherwise the resume code,
+assuming the clock to be available, would panic in reset_ctrl_regs()
+(illegal instruction accessing the CPU debug registers).
+
+And Freescale's commit a8e453c0bc "MLK-10036 Freescale CAAM: Add support for
+DSM with Mega/Fast mix on" allows the CAAM Job Ring driver to be declared a
+wakeup source to make sure it remains powered. But its IRQ's irq_set_wake
+operation isn't implemented, leading to enable_irq_wake() failing and a
+kernel warning "Unbalanced IRQ wake disable" upon resume. To fix it without
+breaking the 'retain state' function we remember if enable_irq_wake()
+succeeded and only then attempt to re-disable it.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ drivers/clk/imx/clk-imx6q.c  | 2 ++
+ drivers/crypto/caam/intern.h | 1 +
+ drivers/crypto/caam/jr.c     | 4 ++--
+ 3 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/clk/imx/clk-imx6q.c b/drivers/clk/imx/clk-imx6q.c
+index 03d8fd3..2d6904d 100644
+--- a/drivers/clk/imx/clk-imx6q.c
++++ b/drivers/clk/imx/clk-imx6q.c
+@@ -627,6 +627,8 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+ 	base = of_iomap(np, 0);
+ 	ccm_base = base;
+ 	WARN_ON(!base);
++	/* PM code assumes CPU debug clock enabled: set CCM_CCGR0.CG11 = 0b11 */
++	writel_relaxed(readl_relaxed(base + 0x68) | (3<<22), base + 0x68);
+ 
+ 	/*                                              name                reg       shift width parent_names     num_parents */
+ 	clk[IMX6QDL_CLK_STEP]             = imx_clk_mux("step",	            base + 0xc,  8,  1, step_sels,	   ARRAY_SIZE(step_sels));
+diff --git a/drivers/crypto/caam/intern.h b/drivers/crypto/caam/intern.h
+index 5763536..a96a5e4 100644
+--- a/drivers/crypto/caam/intern.h
++++ b/drivers/crypto/caam/intern.h
+@@ -49,6 +49,7 @@ struct caam_drv_private_jr {
+ 	struct caam_job_ring __iomem *rregs;	/* JobR's register space */
+ 	struct tasklet_struct irqtask;
+ 	int irq;			/* One per queue */
++	bool irq_wake_enabled;		/* Successful enable_irq_wake() */
+ 
+ 	/* Number of scatterlist crypt transforms active on the JobR */
+ 	atomic_t tfm_count ____cacheline_aligned;
+diff --git a/drivers/crypto/caam/jr.c b/drivers/crypto/caam/jr.c
+index 616a427..a0167c8 100644
+--- a/drivers/crypto/caam/jr.c
++++ b/drivers/crypto/caam/jr.c
+@@ -612,7 +612,7 @@ static int caam_jr_suspend(struct device *dev)
+ 	struct caam_drv_private_jr *jrpriv = platform_get_drvdata(pdev);
+ 
+ 	if (device_may_wakeup(&pdev->dev))
+-		enable_irq_wake(jrpriv->irq);
++		jrpriv->irq_wake_enabled = !enable_irq_wake(jrpriv->irq); 
+ 
+ 	return 0;
+ }
+@@ -622,7 +622,7 @@ static int caam_jr_resume(struct device *dev)
+ 	struct platform_device *pdev = to_platform_device(dev);
+ 	struct caam_drv_private_jr *jrpriv = platform_get_drvdata(pdev);
+ 
+-	if (device_may_wakeup(&pdev->dev))
++	if (device_may_wakeup(&pdev->dev) && jrpriv->irq_wake_enabled)
+ 		disable_irq_wake(jrpriv->irq);
+ 
+ 	return 0;
+-- 
+2.7.4
+

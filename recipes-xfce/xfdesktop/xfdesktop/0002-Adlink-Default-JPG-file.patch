@@ -1,0 +1,25 @@
+From d73d83643063b5136c998de8baaa6bc6a4925f00 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Tue, 22 Jan 2019 18:33:52 +0530
+Subject: [PATCH 2/2] Adlink Default JPG file
+
+---
+ common/xfdesktop-common.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/xfdesktop-common.h b/common/xfdesktop-common.h
+index 9e76e788..daff0da6 100644
+--- a/common/xfdesktop-common.h
++++ b/common/xfdesktop-common.h
+@@ -35,7 +35,7 @@
+ #include <stdarg.h>
+ 
+ #define XFDESKTOP_CHANNEL        "xfce4-desktop"
+-#define DEFAULT_BACKDROP         DATADIR "/backgrounds/xfce/xfce-teal.jpg"
++#define DEFAULT_BACKDROP         DATADIR "/backgrounds/xfce/adlink.jpg"
+ #define DEFAULT_ICON_FONT_SIZE   12
+ #define DEFAULT_ICON_SIZE        48
+ #define ITHEME_FLAGS             (GTK_ICON_LOOKUP_USE_BUILTIN \
+-- 
+2.18.0
+

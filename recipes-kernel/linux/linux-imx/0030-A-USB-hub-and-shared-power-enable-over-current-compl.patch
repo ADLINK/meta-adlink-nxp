@@ -1,0 +1,125 @@
+From c626eac9240fe9afdc825f643c3ef782c1686bbe Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Fri, 5 Apr 2019 18:33:36 +0530
+Subject: [PATCH 30/47] A USB hub and shared power-enable/over-current
+ complicate things.
+
+- We now have 3 power-enables instead of 2.
+- Use different GPIO lines, which also must be configured for open-drain.
+- The 3rd port is created by splitting usbh1 with a hub, so one USB host
+  of the i.MX6 has to enable 2 power regulators. We have to chain them
+  to make it work.
+- Disable over-current detection; the way SMARC's shared _EN_OC# lines are
+  connected to the i.MX6 I don't think this would work properly.
+- Document how to set the OTG controller to fixed role.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 52 ++++++++++++++++++++++++++++++-----------
+ 1 file changed, 38 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 6c50efb..15e96ca 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -78,28 +78,45 @@
+ 			regulator-state-mem { regulator-off-in-suspend; }; /* no effect? */
+ 		};
+ 
+-		reg_usb_otg_vbus: regulator@0 {
++		reg_smarc_usb0: regulator@127 {
+ 			compatible = "regulator-fixed";
+-			reg = <0>;
+-			regulator-name = "usb_otg_vbus";
++			reg = <127>;
++			regulator-name = "smarc_usb0";
+ 			regulator-min-microvolt = <5000000>;
+ 			regulator-max-microvolt = <5000000>;
+-			gpio = <&gpio3 22 0>;
++			gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>; /* SMARC USB0_EN_OC# */
+ 			enable-active-high;
+-			vin-supply = <&swbst_reg>;
+ 		};
+ 
+-		reg_usb_h1_vbus: regulator@1 {
++		reg_smarc_usb1: regulator@329 {
+ 			compatible = "regulator-fixed";
+-			reg = <1>;
+-			regulator-name = "usb_h1_vbus";
++			reg = <329>;
++			regulator-name = "smarc_usb1";
+ 			regulator-min-microvolt = <5000000>;
+ 			regulator-max-microvolt = <5000000>;
+-			gpio = <&gpio1 29 0>;
++			gpio = <&gpio3 29 GPIO_ACTIVE_HIGH>; /* SMARC USB1_EN_OC# */
+ 			enable-active-high;
++			/* Before enabling Vbus on the carrier power up the host phy's Vbus. */
+ 			vin-supply = <&swbst_reg>;
+ 		};
+ 
++		reg_smarc_usb2: regulator@330 {
++			compatible = "regulator-fixed";
++			reg = <330>;
++			regulator-name = "smarc_usb2";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			gpio = <&gpio3 30 GPIO_ACTIVE_HIGH>; /* SMARC USB2_EN_OC# */
++			enable-active-high;
++			/* An on-module hub splits the i.MX6's usbh1 port into SMARC USB1 and 2.
++			 * Devices on both are powered independently, via reg_smarc_usb1 and 2.
++			 * But I've seen no way to model the hub in the device tree and usbh1
++			 * takes only 1 "vbus-supply" line. So by declaring one as vin-supply
++			 * for the other we trick usbh1 into enabling both. If someone needed to
++			 * enable them separately they'd have to do it manually in user mode. */
++			vin-supply = <&reg_smarc_usb1>;
++		};
++
+ 		reg_audio: regulator@2 {
+ 			compatible = "regulator-fixed";
+ 			reg = <2>;
+@@ -752,6 +769,11 @@
+ 		pinctrl_regulators: regulatorsgrp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_ENET_TXD0__GPIO1_IO30     0x80000000 /* SMARC LCD_VDD_EN */
++				MX6QDL_PAD_ENET_RXD0__GPIO1_IO27	0x1a8b0 /* SMARC USB0_EN_OC# (open-drain) */
++				MX6QDL_PAD_EIM_D29__GPIO3_IO29		0x1a8b0 /* SMARC USB1_EN_OC# (open-drain) */
++				MX6QDL_PAD_EIM_D30__GPIO3_IO30		0x1a8b0 /* SMARC USB2_EN_OC# (open-drain) */
++				MX6QDL_PAD_KEY_ROW2__GPIO4_IO11      0x80000000 /* SMARC SDIO_PWR_EN */
++				//MX6QDL_PAD_GPIO_18__GPIO7_IO13     0x80000000 /* PMIC_INT_B */
+ 			>;
+ 		};
+ 
+@@ -993,7 +1015,7 @@
+ 		};
+ 
+ 		pinctrl_usbotg: usbotggrp {
+-			fsl,pins = <
++			fsl,pins = <	/* SMARC USB0 */
+ 				MX6QDL_PAD_ENET_RX_ER__USB_OTG_ID	0x17059
+ 			>;
+ 		};
+@@ -1151,15 +1173,17 @@
+ 	status = "okay";
+ };
+ 
+-&usbh1 {
+-	vbus-supply = <&reg_usb_h1_vbus>;
++&usbh1 {	/* SMARC USB1,2 */
++	vbus-supply = <&reg_smarc_usb2>; /* chained with usb1, see above */
++	disable-over-current; /* connects to SMARC USB2_EN_OC# but not USB1_ */
+ 	status = "okay";
+ };
+ 
+-&usbotg {
+-	vbus-supply = <&reg_usb_otg_vbus>;
++&usbotg {	/* SMARC USB0 */
++	vbus-supply = <&reg_smarc_usb0>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usbotg>;
++	//dr_mode = "peripheral"; /* default is "otg", override with "host" or "peripheral" to set fixed role */
+ 	disable-over-current;
+ 	srp-disable;
+ 	hnp-disable;
+-- 
+2.7.4
+

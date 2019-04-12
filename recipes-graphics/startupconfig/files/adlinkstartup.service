@@ -1,0 +1,11 @@
+[Unit]
+Description=Adlink startup script during bootup
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c 'sleep 5 ; /usr/sbin/adlinkstartup'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

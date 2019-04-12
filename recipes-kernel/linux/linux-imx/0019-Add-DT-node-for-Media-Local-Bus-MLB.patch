@@ -1,0 +1,51 @@
+From 84542d9ca4968dab2a4e36103d1365a81f1c1b56 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Thu, 4 Apr 2019 17:16:01 +0530
+Subject: [PATCH 19/47] Add DT node for Media Local Bus (MLB).
+
+No pinmux is needed.
+
+Freescale's driver seems incomplete, I don't see any code supporting
+differential (6-pin) mode, which SMARC asks for. Therefore I leave MLB
+disabled to save power.
+
+Also fix driver file mode and a useless 'error' message.
+
+Signed-off-by: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 5 +++++
+ drivers/mxc/mlb/mxc_mlb.c       | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 277cc79..2bda7f8 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -1042,6 +1042,11 @@
+ };
+ #endif
+ 
++&mlb {		/* SMARC AFB_DIFF1-3 */
++	/* Driver doesn't seem to support differential (6-pin) mode. */
++	//status = "okay";
++};
++
+ &mipi_dsi {
+ 	dev_id = <0>;
+ 	disp_id = <1>;
+diff --git a/drivers/mxc/mlb/mxc_mlb.c b/drivers/mxc/mlb/mxc_mlb.c
+index cab46b9..a02e9d9 100755
+--- a/drivers/mxc/mlb/mxc_mlb.c
++++ b/drivers/mxc/mlb/mxc_mlb.c
+@@ -2665,7 +2665,7 @@ static int mxc_mlb150_probe(struct platform_device *pdev)
+ 	drvdata->nvcc = devm_regulator_get(&pdev->dev, "reg_nvcc");
+ 	if (!IS_ERR(drvdata->nvcc)) {
+ 		regulator_set_voltage(drvdata->nvcc, 2500000, 2500000);
+-		dev_err(&pdev->dev, "enalbe regulator\n");
++		dev_info(&pdev->dev, "enabling regulator\n");
+ 		ret = regulator_enable(drvdata->nvcc);
+ 		if (ret) {
+ 			dev_err(&pdev->dev, "vdd set voltage error\n");
+-- 
+2.7.4
+
