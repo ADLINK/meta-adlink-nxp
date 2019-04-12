@@ -99,7 +99,7 @@ This Layer depends on following layers:
 <br> 
 <br>
 
-Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
+Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki/Welcome-to-the-ADLINK-NXP-Yocto-wiki!) for Yocto BSP building
 ----
 
 <br>
