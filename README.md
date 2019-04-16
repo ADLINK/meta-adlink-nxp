@@ -1,9 +1,10 @@
 <img src="https://www.linaro.org/assets/images/projects/yocto-project.png" width="200" align="right">
 <br>
 
+<br>
+### Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
 
-Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
-----
+<br>
 
 Supports the following SMARC products:
 ----
