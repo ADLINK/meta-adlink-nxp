@@ -1,6 +1,10 @@
 <img src="https://www.linaro.org/assets/images/projects/yocto-project.png" width="200" align="right">
 <br>
 
+
+Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
+----
+
 Supports the following SMARC products:
 ----
 <table style="width: 652px; border: 1px solid #cccccc;" align="center">
@@ -98,8 +102,7 @@ This Layer depends on following layers:
 <br> 
 
 
-Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
-----
+
 
 <br>
 <br>
