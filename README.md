@@ -37,8 +37,10 @@ Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for 
 ---
 <br>
 <br>
+
 This Layer depends on following layers:
 ---
+
 <table style="width: 656px; border: 1px #cccccc solid;">
 <thead>
 <tr style="height: 22px;"
