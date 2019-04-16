@@ -1,8 +1,8 @@
 <img src="https://www.linaro.org/assets/images/projects/yocto-project.png" width="200" align="right">
 <br>
-<br>
 
-### Supports the following SMARC products:
+Supports the following SMARC products:
+---
 
 <table style="width: 652px; border: 1px solid #cccccc;" align="center">
 <thead>
@@ -31,13 +31,14 @@
 &nbsp;&nbsp;**Note:** This BSP provides hardware specific settings, libraries and applications
 <br>
 <br>
-
-### Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
-
 <br>
- 
-### This Layer depends on following layers:
 
+Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
+---
+<br>
+<br>
+This Layer depends on following layers:
+---
 <table style="width: 656px; border: 1px #cccccc solid;">
 <thead>
 <tr style="height: 22px;"
