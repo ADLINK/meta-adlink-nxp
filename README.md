@@ -2,7 +2,7 @@
 <br>
 <br>
 
-### Supports the following SMARC products:
+- ### Supports the following SMARC products:
 
 <table style="width: 652px; border: 1px solid #cccccc;" align="center">
 <thead>
@@ -32,15 +32,15 @@
 <br>
 <br>
 
-### Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
+- ### Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
 
 <br>
  
-### This Layer depends on following layers:
+- ### This Layer depends on following layers:
 
 <table style="width: 656px; border: 1px #cccccc solid;">
 <thead>
-<tr style="height: 22px;">
+<tr style="height: 22px;"
 <th style="height: 22px; width: 289px; text-align: center; background: black; color: white; border: 1px solid #cccccc;"><span style="color: #000000;"><span style="font-weight: 400;">meta name</span></span></th>
 <th style="height: 22px; width: 364.6px; text-align: center; background: black; color: white; border: 1px solid #cccccc;"><span style="color: #000000;"><span style="font-weight: 400;">&nbsp;branch version</span></span></th>
 <th style="height: 22px; width: 378.4px; text-align: center; background: black; color: white; border: 1px solid #cccccc;"><span style="color: #000000;"><span style="font-weight: 400;">commit version</span></span></th>
