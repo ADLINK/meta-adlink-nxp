@@ -2,7 +2,8 @@
 <br>
 
 <br>
-### Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
+
+#### Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
 
 <br>
 
