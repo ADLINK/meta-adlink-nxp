@@ -38,16 +38,7 @@ Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for 
 <br>
 <br>
 
-This Layer depends on following layers:
----
 
-
-<br> 
-
-
-
-
-<br>
 <br>
 Please feel free to send us (email: ryanzj.huang@adlinktech.com) patches for this layer or report any bugs found in this layer. 
 <br>For hardware support, please contact your local representative.
