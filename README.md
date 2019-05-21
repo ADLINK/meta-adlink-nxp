@@ -30,6 +30,16 @@ Following products are supported:
 &nbsp;&nbsp;**Note:** This BSP provides hardware specific settings, libraries and applications
 <br>
 <br>
+
+
+Dowload a Live OS image for quick evaluation:
+---
+<ul>
+<li>
+Image with "xfce desktop" &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://cdn3.iconfinder.com/data/icons/wireless/512/4-512.png" width="25">
+ </li>
+</ul>
+<br>
 <br>
 
 Please refer to [User Guide](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
