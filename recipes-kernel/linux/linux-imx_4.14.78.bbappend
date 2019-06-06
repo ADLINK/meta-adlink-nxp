@@ -34,7 +34,6 @@ SRC_URI += " \
     file://0023-Change-copyright-references-names.patch \
     file://0024-We-have-either-SPI0-or-I2S0-depending-on-mux.patch \
     file://0025-Add-option-to-activate-alternative-coda-VPU-driver.patch \
-    file://0026-Provide-a-way-to-configure-LDO-bypass.patch \
     file://0027-Our-PWM-backlight-has-an-enable-pin-but-no-CABC.patch \
     file://0028-We-don-t-need-stdout-path-in-chosen-node.patch \
     file://0029-Most-GPIOs-differ-clear-hog-misc.-pinmux-device.patch \
@@ -56,5 +55,10 @@ SRC_URI += " \
     file://0045-Our-I2C-buses-are-connected-differently.patch \
     file://0046-Implement-NXP-PCA9535-IRQ-capable-I2C-GPIO-expander.patch \
     file://0047-A-PCF8575-controls-misc-signals-of-the-LEC-Base-R1-c.patch \
+    file://0048-Change-copyright-references-names-lec-imx6s.patch \
+    file://0049-Drop-EPDC-incl.-pinmux-and-regulator-from-Solo.patch \
+    file://0050-lec-imx6s-battery-lvds-hdmi-changes.patch \
+    file://0051-S3-Wakeup-abnormal-screen-issue-fix.patch \
+    file://0052-Create-spidev-node-for-external-spi1.patch \
     file://lec-imx6_defconfig \
 "

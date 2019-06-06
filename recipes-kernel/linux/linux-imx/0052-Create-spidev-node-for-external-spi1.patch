@@ -1,0 +1,30 @@
+From ea937278911cd8573e12ef7819589273716eba47 Mon Sep 17 00:00:00 2001
+From: Antony <antonyabee.prakashxv@adlinktech.com>
+Date: Tue, 4 Jun 2019 14:44:01 +0530
+Subject: [PATCH 2/2] Create-spidev-node-for-external-spi1
+
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 8cc3e24..e175daf 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -397,6 +397,13 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_ecspi2>;
+ 	status = "okay";
++
++        spidev:spidev@1 {
++                status = "okay";
++                compatible = "linux,spidev";
++                spi-max-frequency = <2500000>;
++                reg = <0>;
++        };
+ };
+ 
+ &ecspi4 {	/* on-module U-Boot SPI */
+-- 
+2.7.4
+

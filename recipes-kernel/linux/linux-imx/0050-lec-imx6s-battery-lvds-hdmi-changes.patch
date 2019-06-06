@@ -1,0 +1,81 @@
+From 403eb07fa08d1c4b687e56a7929bf7b151c10e42 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Thu, 9 May 2019 17:31:52 +0530
+Subject: [PATCH 4/4] lec-imx6s-battery-lvds-hdmi-changes
+
+battery- Current baseboards use a Linear Technology LTC1760 I2C battery charger
+         instead of the eval-board's Maxim MAX8903, but no driver exists so we can't
+         add a full device tree entry for it.
+
+lvds- Solo/DualLite must disable either LVDS or parallel RGB devices, so
+      create a specific option in the .dts.
+
+hdmi- The fb device is equally enabled for Quad and Solo, move 'status' to
+      common DTSI.
+---
+ arch/arm/boot/dts/lec-imx6s.dts | 35 ++++++++++++++++++++---------------
+ 1 file changed, 20 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6s.dts b/arch/arm/boot/dts/lec-imx6s.dts
+index 1b55d2d..de33ba3 100644
+--- a/arch/arm/boot/dts/lec-imx6s.dts
++++ b/arch/arm/boot/dts/lec-imx6s.dts
+@@ -7,6 +7,13 @@
+  * published by the Free Software Foundation.
+  */
+ 
++/* The i.MX6 Solo/DualLite only has 1 IPU i.e. can only operate 2 of the 3
++ * display options at the same time. lec-imx6.dtsi assigns the IPU's 2 DIs such
++ * that HDMI always works, whereas parallel RGB and LVDS compete for the same
++ * DI. The following option leaves only one of them enabled. (The Quad/Dual DTS
++ * maps LVDS to the 2nd IPU, enabling all displays simultaneously.) */
++#define CONFIG_SOLO_LVDS	0
++
+ /dts-v1/;
+ 
+ #include "imx6dl.dtsi"
+@@ -17,28 +24,26 @@
+ 	compatible = "adlink,lec-imx6", "fsl,imx6dl";
+ };
+ 
+-&battery {
+-	offset-charger = <1485>;
+-	offset-discharger = <1464>;
+-	offset-usb-charger = <1285>;
+-};
+-
+-&ldb {
++&ldb {		/* LVDS (see fb in lec-imx6.dtsi) */
+ 	lvds-channel@0 {
+ 		crtc = "ipu1-di0";
+ 	};
+-
+-	lvds-channel@1 {
+-		crtc = "ipu1-di1";
+-	};
+ };
+ 
+-&mxcfb1 {
+-	status = "okay";
++#if CONFIG_SOLO_LVDS
++&mxcfb2 {	/* parallel RGB */
++#else
++&mxcfb3 {	/* LVDS */
++#endif
++	status = "disabled";
+ };
+ 
+-&mxcfb2 {
+-	status = "okay";
++#if CONFIG_SOLO_LVDS
++&rgb {		/* parallel RGB */
++#else
++&ldb {		/* LVDS */
++#endif
++	status = "disabled";
+ };
+ 
+ &pxp {
+-- 
+1.9.1
+

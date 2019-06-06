@@ -168,7 +168,7 @@ index 809ccbf..19605cc 100644
  	lvds-channel@0 {
 -		fsl,data-mapping = "spwg";
 -		fsl,data-width = <18>;
-+		fsl,data-mapping = "jeida"; /* spwg or jeida (see chapter "Bit Mapping" in i.MX6 Reference Manual) */
++		fsl,data-mapping = "spwg"; /* spwg or jeida (see chapter "Bit Mapping" in i.MX6 Reference Manual) */
 +		fsl,data-width = <24>;
 +		primary;
  		status = "okay";

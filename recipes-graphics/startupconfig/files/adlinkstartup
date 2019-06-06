@@ -18,8 +18,13 @@ NAME=adlinkstartup
 DESC="System daemon implementing the Adlink startup script"
 USER="root"
 
+#Changing Permission of SEMA
+chmod a+x /usr/local/SEMA/bin/*
+ 
 if [ -x /usr/bin/startxfce4 ]; then
+   chmod 777 /home/root/Desktop/semagui.desktop
+
    #removing unwanted applications
    rm /usr/share/applications/exo-mail-reader.desktop
    rm /usr/share/applications/xinput_calibrator.desktop
-fi 
+fi
