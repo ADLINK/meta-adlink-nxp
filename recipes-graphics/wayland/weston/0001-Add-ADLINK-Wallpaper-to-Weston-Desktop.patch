@@ -1,0 +1,25 @@
+From eb25eacd4b026ea04d5c609cdc3a59140c6687a7 Mon Sep 17 00:00:00 2001
+From: Antony <antonyabee.prakashxv@adlinktech.com>
+Date: Sat, 15 Jun 2019 10:30:22 +0530
+Subject: [PATCH] Add-ADLINK-Wallpaper-to-Weston-Desktop
+
+---
+ weston.ini.in | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/weston.ini.in b/weston.ini.in
+index 7e9f62d..26fa230 100644
+--- a/weston.ini.in
++++ b/weston.ini.in
+@@ -14,6 +14,8 @@ touchscreen_calibrator=true
+ 
+ [shell]
+ size=1920x1080
++background-image=/usr/share/icons/hicolor/48x48/apps/adlink.jpg
++background-type=scale
+ 
+ #[output]
+ #name=HDMI-A-2
+-- 
+2.7.4
+

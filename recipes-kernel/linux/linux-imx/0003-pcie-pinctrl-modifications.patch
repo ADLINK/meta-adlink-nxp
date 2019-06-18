@@ -1,0 +1,138 @@
+From 2c5ffd2dccc7696732efed520b94334ad79c3f3c Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Tue, 7 May 2019 20:06:50 +0530
+Subject: [PATCH 3/7] pcie-pinctrl-modifications
+
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts | 82 +------------------------
+ 1 file changed, 2 insertions(+), 80 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+index f68df52..8465cfa 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+@@ -213,17 +213,12 @@
+ 
+ 		pinctrl_pcie0: pcie0grp {
+ 			fsl,pins = <
+-				MX8MQ_IOMUXC_I2C4_SCL_PCIE1_CLKREQ_B	0x76 /* open drain, pull up */
+-				MX8MQ_IOMUXC_UART4_TXD_GPIO5_IO29	0x16
+-				MX8MQ_IOMUXC_UART4_RXD_GPIO5_IO28	0x16
+ 			>;
+ 		};
+ 
+ 		pinctrl_pcie1: pcie1grp {
+ 			fsl,pins = <
+-				MX8MQ_IOMUXC_I2C4_SDA_PCIE2_CLKREQ_B	0x76 /* open drain, pull up */
+-				MX8MQ_IOMUXC_ECSPI2_SCLK_GPIO5_IO10	0x16
+-				MX8MQ_IOMUXC_ECSPI2_MISO_GPIO5_IO12	0x16
++				MX8MQ_IOMUXC_SAI1_TXC_GPIO4_IO11	0x16
+ 			>;
+ 		};
+ 
+@@ -369,57 +364,6 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_sai1_pcm: sai1grp_pcm {
+-			fsl,pins = <
+-				MX8MQ_IOMUXC_SAI1_MCLK_SAI1_MCLK		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC		0xd6
+-				MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_SYNC		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7		0xd6
+-			>;
+-		};
+-
+-		pinctrl_sai1_pcm_b2m: sai1grp_pcm_b2m {
+-			fsl,pins = <
+-				MX8MQ_IOMUXC_SAI1_MCLK_SAI1_TX_BCLK		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC		0xd6
+-				MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_SYNC		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7		0xd6
+-			>;
+-		};
+-
+-		pinctrl_sai1_dsd: sai1grp_dsd {
+-			fsl,pins = <
+-				MX8MQ_IOMUXC_SAI1_MCLK_SAI1_MCLK		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC		0xd6
+-				MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_DATA4		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		0xd6
+-				MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7		0xd6
+-			>;
+-		};
+-
+ 		pinctrl_sai2: sai2grp {
+ 			fsl,pins = <
+ 				MX8MQ_IOMUXC_SAI2_TXFS_SAI2_TX_SYNC	0xd6
+@@ -706,8 +650,6 @@
+ &pcie0{
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcie0>;
+-	disable-gpio = <&gpio5 29 GPIO_ACTIVE_LOW>;
+-	reset-gpio = <&gpio5 28 GPIO_ACTIVE_LOW>;
+ 	ext_osc = <1>;
+ 	hard-wired = <1>;
+ 	status = "okay";
+@@ -716,8 +658,7 @@
+ &pcie1{
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcie1>;
+-	disable-gpio = <&gpio5 10 GPIO_ACTIVE_LOW>;
+-	reset-gpio = <&gpio5 12 GPIO_ACTIVE_LOW>;
++	reset-gpio = <&gpio4 11 GPIO_ACTIVE_LOW>;
+ 	ext_osc = <1>;
+ 	status = "okay";
+ };
+@@ -813,25 +754,6 @@
+ 	dr_mode = "host";
+ };
+ 
+-&sai1 {
+-	pinctrl-names = "default", "pcm_b2m", "dsd";
+-	pinctrl-0 = <&pinctrl_sai1_pcm>;
+-	pinctrl-1 = <&pinctrl_sai1_pcm_b2m>;
+-	pinctrl-2 = <&pinctrl_sai1_dsd>;
+-	assigned-clocks = <&clk IMX8MQ_CLK_SAI1>;
+-	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
+-	assigned-clock-rates = <49152000>;
+-	clocks = <&clk IMX8MQ_CLK_SAI1_IPG>, <&clk IMX8MQ_CLK_DUMMY>,
+-		<&clk IMX8MQ_CLK_SAI1_ROOT>, <&clk IMX8MQ_CLK_DUMMY>,
+-		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_AUDIO_PLL1_OUT>,
+-		<&clk IMX8MQ_AUDIO_PLL2_OUT>;
+-	clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
+-	fsl,sai-multi-lane;
+-	fsl,dataline,dsd = <0 0xff 0xff 2 0xff 0x11>;
+-	dmas = <&sdma2 8 26 0>, <&sdma2 9 26 0>;
+-	status = "okay";
+-};
+-
+ &sai2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_sai2>;
+-- 
+1.9.1
+

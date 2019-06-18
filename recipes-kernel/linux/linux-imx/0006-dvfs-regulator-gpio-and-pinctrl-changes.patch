@@ -1,0 +1,35 @@
+From 9e0d88432abebfa01adfbbe6d0b87183e72e2170 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@adlinktech.com>
+Date: Wed, 8 May 2019 10:54:09 +0530
+Subject: [PATCH 6/7] dvfs-regulator-gpio-and-pinctrl-changes This patch
+ changes the gpio pin for reg_gpio_dvfs and pinctrl for dvfs
+
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+index bd7be2a..adf4f0c 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+@@ -57,7 +57,7 @@
+ 			regulator-max-microvolt = <1000000>;
+ 			regulator-name = "gpio_dvfs";
+ 			regulator-type = "voltage";
+-			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
++			gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
+ 			states = <900000 0x1 1000000 0x0>;
+ 		};
+ 	};
+@@ -240,7 +240,7 @@
+ 
+ 		pinctrl_dvfs: dvfsgrp {
+ 			fsl,pins = <
+-				MX8MQ_IOMUXC_GPIO1_IO13_GPIO1_IO13	0x16
++				MX8MQ_IOMUXC_SPDIF_RX_GPIO5_IO4		0x16
+ 			>;
+ 		};
+ 
+-- 
+1.9.1
+
