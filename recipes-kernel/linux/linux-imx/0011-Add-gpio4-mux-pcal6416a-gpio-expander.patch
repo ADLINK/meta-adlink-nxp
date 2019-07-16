@@ -1,0 +1,185 @@
+From 9c6067346727b3b9999ba33b12ddbb1b16a179f3 Mon Sep 17 00:00:00 2001
+From: Antony <antonyabee.prakashxv@adlinktech.com>
+Date: Mon, 8 Jul 2019 10:51:24 +0530
+Subject: [PATCH 2/2] Add-gpio4-mux-pcal6416a-gpio-expander
+
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts | 58 ++++++++++---------------
+ drivers/gpio/Kconfig                            |  4 +-
+ drivers/gpio/Makefile                           |  1 +
+ drivers/gpio/gpio-pca953x.c                     | 23 +++++++++-
+ 4 files changed, 47 insertions(+), 39 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+index c70dcb3..6063edf 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+@@ -158,11 +158,17 @@
+ 
+ 		pinctrl_i2c3: i2c3grp {
+ 			fsl,pins = <
+-				MX8MQ_IOMUXC_I2C3_SCL_I2C3_SCL			0x4000007f
+-				MX8MQ_IOMUXC_I2C3_SDA_I2C3_SDA			0x4000007f
++				MX8MQ_IOMUXC_I2C3_SCL_I2C3_SCL			0x40000067
++				MX8MQ_IOMUXC_I2C3_SDA_I2C3_SDA			0x40000067
+ 			>;
+ 		};
+ 
++                pinctrl_gpio4: gpio4grp {
++                        fsl,pins = <
++                                MX8MQ_IOMUXC_SAI1_MCLK_GPIO4_IO20       0x16
++                        >;
++                };
++
+ 		pinctrl_i2c4: i2c4grp {
+ 			fsl,pins = <
+ 				MX8MQ_IOMUXC_I2C4_SCL_I2C4_SCL			0x4000007f
+@@ -533,34 +539,21 @@
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+ 	status = "okay";
+ 
+-	synaptics_dsx_ts: synaptics_dsx_ts@20 {
+-		compatible = "synaptics_dsx";
+-		reg = <0x20>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_i2c1_dsi_ts_int>;
+-		interrupt-parent = <&gpio5>;
+-		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
+-		synaptics,diagonal-rotation;
+-		status = "disabled";
+-	};
+-
+-	adv_bridge: adv7535@3d {
+-		compatible = "adi,adv7533";
+-		reg = <0x3d>;
+-		adi,addr-cec = <0x3b>;
+-		adi,dsi-lanes = <4>;
+-		pinctrl-0 = <&pinctrl_i2c1_dsi_ts_int>;
+-		interrupt-parent = <&gpio5>;
+-		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
+-
+-		status = "disabled";
++        pcal6416a: pcal6416a@20 {
++                compatible = "nxp,pca9535";
++                reg = <0x20>;
++                pinctrl-names = "default";
++                pinctrl-0 = <&pinctrl_gpio4>;
++                interrupt-parent = <&gpio4>;
++                interrupts = <20 0>;
++                gpio-controller;
++                #gpio-cells = <2>;
++                interrupt-controller;
++                #interrupt-cells = <2>;
++                direction_port0_init = <0xc0>;
++                direction_port1_init = <0x0f>;
++        };
+ 
+-		port {
+-			adv7535_in: endpoint {
+-				remote-endpoint = <&mipi_dsi_bridge_adv>;
+-			};
+-		};
+-	};
+ };
+ 
+ &pcie0{
+@@ -806,10 +799,3 @@
+ 	};
+ };
+ 
+-&mipi_dsi_bridge {
+-	port@1 {
+-		mipi_dsi_bridge_adv: endpoint {
+-			remote-endpoint = <&adv7535_in>;
+-		};
+-	};
+-};
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index 8af7fd7..a8d94d3 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -780,7 +780,7 @@ config GPIO_MC9S08DZ60
+ 	  Select this to enable the MC9S08DZ60 GPIO driver
+ 
+ config GPIO_PCA953X
+-	tristate "PCA95[357]x, PCA9698, TCA64xx, and MAX7310 I/O ports"
++	tristate "PCA95[357]x, PCA9698, TCA64xx, MAX7310 , and PCAL6416A[HF] I/O ports"
+ 	help
+ 	  Say yes here to provide access to several register-oriented
+ 	  SMBus I/O expanders, made mostly by NXP or TI.  Compatible
+@@ -792,7 +792,7 @@ config GPIO_PCA953X
+ 			pca9556, pca9557, pca9574, tca6408, tca9554, xra1202
+ 
+ 	  16 bits:	max7312, max7313, pca9535, pca9539, pca9555, pca9575,
+-			tca6416
++			tca6416, pcal6416a
+ 
+ 	  24 bits:	tca6424
+ 
+diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
+index df63045..3ad5928 100644
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -152,3 +152,4 @@ obj-$(CONFIG_GPIO_ZEVIO)	+= gpio-zevio.o
+ obj-$(CONFIG_GPIO_ZYNQ)		+= gpio-zynq.o
+ obj-$(CONFIG_GPIO_ZX)		+= gpio-zx.o
+ obj-$(CONFIG_GPIO_LOONGSON1)	+= gpio-loongson1.o
++obj-$(CONFIG_GPIO_PCAL6416A)	+= gpio-pcal6416a.o
+diff --git a/drivers/gpio/gpio-pca953x.c b/drivers/gpio/gpio-pca953x.c
+index efa721d..84ffef4 100644
+--- a/drivers/gpio/gpio-pca953x.c
++++ b/drivers/gpio/gpio-pca953x.c
+@@ -72,7 +72,10 @@ static const struct i2c_device_id pca953x_id[] = {
+ 	{ "pca9698", 40 | PCA953X_TYPE, },
+ 
+ 	{ "pcal9555a", 16 | PCA953X_TYPE | PCA_INT | PCA_PCAL, },
+-
++#ifdef CONFIG_ARCH_LEC_IMX8M
++	{ "pcal6416a", 16 | PCA953X_TYPE | PCA_INT | PCA_PCAL, },
++	{ "pcal6416ahf", 16  | PCA953X_TYPE | PCA_INT | PCA_PCAL, },
++#endif
+ 	{ "max7310", 8  | PCA953X_TYPE, },
+ 	{ "max7312", 16 | PCA953X_TYPE | PCA_INT, },
+ 	{ "max7313", 16 | PCA953X_TYPE | PCA_INT, },
+@@ -690,6 +693,10 @@ static int device_pca953x_init(struct pca953x_chip *chip, u32 invert)
+ {
+ 	int ret;
+ 	u8 val[MAX_BANK];
++#ifdef CONFIG_ARCH_LEC_IMX8M
++	u32 tmp;
++	struct device_node *node = chip->client->dev.of_node;
++#endif
+ 
+ 	chip->regs = &pca953x_regs;
+ 
+@@ -709,6 +716,16 @@ static int device_pca953x_init(struct pca953x_chip *chip, u32 invert)
+ 		memset(val, 0, NBANK(chip));
+ 
+ 	ret = pca953x_write_regs(chip, PCA953X_INVERT, val);
++#ifdef CONFIG_ARCH_LEC_IMX8M
++	/* set initial gpio direction for Adlink LEC-IMX8M */	
++	if (!of_property_read_u32(node, "direction_port0_init", &tmp)) {
++		val[0] = (u8)tmp;
++	}
++	if (!of_property_read_u32(node, "direction_port1_init", &tmp)) {
++		val[1] = (u8)tmp;
++	}
++	ret = pca953x_write_regs(chip, PCA953X_DIRECTION, val);
++#endif	
+ out:
+ 	return ret;
+ }
+@@ -939,6 +956,10 @@ static const struct of_device_id pca953x_dt_ids[] = {
+ 	{ .compatible = "nxp,pca9574", .data = OF_957X( 8, PCA_INT), },
+ 	{ .compatible = "nxp,pca9575", .data = OF_957X(16, PCA_INT), },
+ 	{ .compatible = "nxp,pca9698", .data = OF_953X(40, 0), },
++#ifdef CONFIG_ARCH_LEC_IMX8M
++	{ .compatible = "nxp,pcal6416a", .data = OF_953X( 16, PCA_INT), },
++	{ .compatible = "nxp,pcal6416ahf", .data = OF_953X(16, PCA_INT), },
++#endif
+ 
+ 	{ .compatible = "maxim,max7310", .data = OF_953X( 8, 0), },
+ 	{ .compatible = "maxim,max7312", .data = OF_953X(16, PCA_INT), },
+-- 
+2.7.4
+

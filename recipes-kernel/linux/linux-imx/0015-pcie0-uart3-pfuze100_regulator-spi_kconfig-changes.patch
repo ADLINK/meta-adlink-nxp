@@ -1,0 +1,64 @@
+From bf0c47280bf2645d3ee520e90490c73ed00afa65 Mon Sep 17 00:00:00 2001
+From: Antony <antonyabee.prakashxv@adlinktech.com>
+Date: Wed, 10 Jul 2019 11:07:48 +0530
+Subject: [PATCH 2/2] pcie0-uart3-pfuze100_regulator-spi_kconfig-changes
+
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts | 6 ++++--
+ drivers/spi/Kconfig                             | 1 -
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+index 2e24fc1..2f2921d 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+@@ -177,6 +177,7 @@
+ 
+ 		pinctrl_pcie0: pcie0grp {
+ 			fsl,pins = <
++                                MX8MQ_IOMUXC_NAND_ALE_GPIO3_IO0 0x16            
+ 			>;
+ 		};
+ 
+@@ -422,6 +423,7 @@
+ 			swbst_reg: swbst {
+ 				regulator-min-microvolt = <5000000>;
+ 				regulator-max-microvolt = <5150000>;
++				regulator-always-on;
+ 			};
+ 
+ 			snvs_reg: vsnvs {
+@@ -547,8 +549,8 @@
+ &pcie0{
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcie0>;
++	reset-gpio = <&gpio3 0 GPIO_ACTIVE_LOW>;
+ 	ext_osc = <1>;
+-	hard-wired = <1>;
+ 	status = "okay";
+ };
+ 
+@@ -581,7 +583,7 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_uart3>;
+ 	assigned-clocks = <&clk IMX8MQ_CLK_UART3>;
+-	assigned-clock-parents = <&clk IMX8MQ_CLK_25M>;
++	assigned-clock-parents = <&clk IMX8MQ_SYS1_PLL_80M>;
+ 	status = "okay";
+ };
+ 
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index eb0c392..30f1fb2 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -394,7 +394,6 @@ config SPI_FSL_ESPI
+ config SPI_MESON_SPICC
+ 	tristate "Amlogic Meson SPICC controller"
+ 	depends on ARCH_MESON || COMPILE_TEST
+-	select SPI_BITBANG
+ 	help
+ 	  This enables master mode support for the SPICC (SPI communication
+ 	  controller) available in Amlogic Meson SoCs.
+-- 
+2.7.4
+

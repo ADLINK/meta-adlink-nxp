@@ -1,0 +1,56 @@
+From ae43567d011ef05c862855321d7b00e6d13b1691 Mon Sep 17 00:00:00 2001
+From: Antony <antonyabee.prakashxv@adlinktech.com>
+Date: Mon, 15 Jul 2019 11:34:45 +0530
+Subject: [PATCH 2/2] Add-usb-otg-host-mode
+
+---
+ arch/arm64/boot/dts/adlink/Makefile                |  3 ++-
+ .../dts/adlink/adlink-lec-imx8m-usb-otg-master.dts | 22 ++++++++++++++++++++++
+ 2 files changed, 24 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/adlink/adlink-lec-imx8m-usb-otg-master.dts
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index f50f560..4153157 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -2,7 +2,8 @@ dtb-$(CONFIG_ARCH_LEC_IMX8M) += adlink-lec-imx8m.dtb \
+                                 adlink-2gb-canfd.dtb \
+                                 adlink-2gb-canfd-40M.dtb \
+                                 adlink-4gb-canfd.dtb \
+-                                adlink-4gb-canfd-40M.dtb
++                                adlink-4gb-canfd-40M.dtb \
++				adlink-lec-imx8m-usb-otg-master.dtb
+ 
+ always		:= $(dtb-y)
+ subdir-y	:= $(dts-dirs)
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-usb-otg-master.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-usb-otg-master.dts
+new file mode 100644
+index 0000000..ff1dcd28
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-usb-otg-master.dts
+@@ -0,0 +1,22 @@
++/*
++ * Copyright 2017 NXP
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include "adlink-lec-imx8m.dts"
++
++&usb_dwc3_0 {
++        status = "okay";
++        dr_mode = "host";
++        //dr_mode = "peripheral";
++};
++
+-- 
+2.7.4
+

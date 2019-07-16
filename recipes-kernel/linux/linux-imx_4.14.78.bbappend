@@ -84,5 +84,18 @@ SRC_URI_append_lec-imx8m += " \
 			    file://0005-Add-can-interface-in-ecspi2.patch \
 			    file://0006-dvfs-regulator-gpio-and-pinctrl-changes.patch \
 			    file://0007-i2c-pinctrl-changes-and-add-i2c4grp-pinctrl.patch \
+			    file://0008-CAN-changes-and-CAN-support-to-2G-4G-modules.patch \
+			    file://0009-Add-sgtl5000-audio-codec-support.patch \
+			    file://0010-Ethernet-dp83867-pinctrl-changes-and-add-tx-rx-internal.patch \
+			    file://0011-Add-gpio4-mux-pcal6416a-gpio-expander.patch \
+			    file://0012-usdhc-sdslow-changes.patch \
+			    file://0013-Add-OV5640-mipi_csi-camera-node-and-pinctrl.patch \
+			    file://0014-Add-external-thermal-sensor-support.patch \
+			    file://0015-pcie0-uart3-pfuze100_regulator-spi_kconfig-changes.patch \
+			    file://0016-Add-usb-otg-host-mode.patch \
+			    file://0017-Add-DSI-to-LVDS-panel-support.patch \
+			    file://0018-Add-dual-display-support.patch \
+			    file://0019-Add-imx8m-1gb-2gb-module-support.patch \
+			    file://0020-Add-cpuinfo-for-i.MX8M-variants.patch \
 			    file://lec-imx8m_defconfig \
 "
