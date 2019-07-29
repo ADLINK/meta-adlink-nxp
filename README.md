@@ -13,7 +13,7 @@ Following products are supported:
 <tr style="height: 46.8182px; border: 1px solid #cccccc;">
 <td style="height: 46.8182px; width: 178.182px; border: 1px solid #cccccc; text-align: center;"><img src="https://i.imgur.com/2eg1F1n.png" width="120" height="74" /></td>
 <td style="height: 46.8182px; width: 472.818px;">
-<p><strong>LEC-iMX6</strong> (<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en" target="_blank" rel="noopener">More Details</a>) (under testing)</p>
+<p><strong>LEC-iMX6</strong> (<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en" target="_blank" rel="noopener">More Details</a>)</p>
 <p>SMARC Short Size Module with Freescale i.MX6 Solo, DualLite, Dual or Quad Core Processor</p>
 </td>
 </tr>
