@@ -20,7 +20,7 @@ Following products are supported:
 <tr style="height: 26px; border: 1px solid #cccccc;">
 <td style="height: 26px; width: 178.182px; border: 1px solid #cccccc; text-align: center;"><img src="https://i.imgur.com/mVvIcxW.png" width="120" height="74" /></td>
 <td style="height: 26px; width: 472.818px;">
-<p><strong>LEC-iMX8M</strong> (<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8M?lang=en" target="_blank" rel="noopener">More Details</a>)&nbsp;(under testing)</p>
+<p><strong>LEC-iMX8M</strong> (<a href="https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8M?lang=en" target="_blank" rel="noopener">More Details</a>)&nbsp;</p>
 <p>SMARC Short Size Module with NXP i.MX 8M Dual, QuadLite and Quad Processors</p>
 </td>
 </tr>
