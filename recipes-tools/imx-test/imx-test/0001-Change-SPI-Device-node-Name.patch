@@ -1,0 +1,29 @@
+From d4c8fc94958a52d81821842391dace9a2e238f9c Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@ltts.com>
+Date: Thu, 28 Nov 2019 15:05:36 +0530
+Subject: [PATCH] Change SPI Device node Name
+
+---
+ test/mxc_spi_test/mxc_spi_test1.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/test/mxc_spi_test/mxc_spi_test1.c b/test/mxc_spi_test/mxc_spi_test1.c
+index b1dd1da..6e9db36 100644
+--- a/test/mxc_spi_test/mxc_spi_test1.c
++++ b/test/mxc_spi_test/mxc_spi_test1.c
+@@ -25,9 +25,9 @@
+ #include "../../include/test_utils.h"
+ 
+ #define BUF_MAX_SIZE	0x1000
+-#define DEV_SPI1	"/dev/spidev1.4"
+-#define DEV_SPI2   	"/dev/spidev2.4"
+-#define DEV_SPI3   	"/dev/spidev3.4"
++#define DEV_SPI1	"/dev/spidev1.0"
++#define DEV_SPI2   	"/dev/spidev2.0"
++#define DEV_SPI3   	"/dev/spidev3.0"
+ static unsigned char mode;
+ static unsigned char bits_per_word = 8;
+ static unsigned int speed = 100000;
+-- 
+1.9.1
+

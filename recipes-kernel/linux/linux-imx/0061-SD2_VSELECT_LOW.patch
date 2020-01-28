@@ -1,0 +1,26 @@
+From 0e2404c4256d1c9cb949be920cf3716c7a1b0679 Mon Sep 17 00:00:00 2001
+From: Antony <antonyabee.prakashxv@adlinktech.com>
+Date: Wed, 18 Sep 2019 14:23:13 +0530
+Subject: [PATCH] SD2_VSELECT_LOW
+
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 3b44cb7..310c0c1 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -112,8 +112,7 @@
+ 			regulator-name = "smarc_sdio_pwr";
+ 			regulator-min-microvolt = <3300000>;
+ 			regulator-max-microvolt = <3300000>;
+-			gpio = <&gpio4 11 GPIO_ACTIVE_HIGH>; /* SMARC SDIO_PWR_EN */
+-			enable-active-high;
++			gpio = <&gpio4 11 GPIO_ACTIVE_LOW>; /* SMARC SDIO_PWR_EN */
+ 			regulator-boot-on;
+ 		};
+ 
+-- 
+2.7.4
+

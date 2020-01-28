@@ -1,0 +1,136 @@
+From 561dbdd5d8d09cec2e389ac9f103bf94d0bfaa0b Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dineshkumar.varadarajan@ltts.com>
+Date: Wed, 27 Nov 2019 16:07:36 +0530
+Subject: [PATCH] Add-G133HAN01-Dual-Channel-LVDS-Support
+
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 47 +++++++++++++++++++++++++++++++----------
+ arch/arm/boot/dts/lec-imx6q.dts |  3 +++
+ arch/arm/boot/dts/lec-imx6s.dts |  6 ++++++
+ 3 files changed, 45 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 4bf2f17..5f49c7b 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -277,7 +277,7 @@
+ 		pwms = <&pwm1 0 5000000>;
+ 		brightness-levels = <0 4 8 16 32 64 128 255>;
+ 		default-brightness-level = <6>;
+-		enable-gpios = <&gpio6 10 GPIO_ACTIVE_HIGH>; /* SMARC LCD_BKLT_EN */
++		enable-gpios = <&gpio3 31 GPIO_ACTIVE_HIGH>; /* SMARC LCD_BKLT_EN */
+ 		status = "okay";
+ 	};
+ 
+@@ -1031,6 +1031,7 @@
+ 			fsl,pins = <
+ 				MX6QDL_PAD_NANDF_RB0__GPIO6_IO10     0x80000000 /* SMARC LCD_BKLT_EN */
+ 				MX6QDL_PAD_GPIO_9__PWM1_OUT		0x1b0b1 /* SMARC LCD_BKLT_PWM */
++				MX6QDL_PAD_EIM_D31__GPIO3_IO31	     0x80000000
+ 			>;
+ 		};
+ 
+@@ -1134,6 +1135,7 @@
+ 
+ &ldb {		/* LVDS (see fb above) */
+ 	disp-power-on-supply = <&reg_smarc_lcd_vdd>; /* unsupported by driver */
++	split-mode;
+ 	status = "okay";
+ 
+ 	lvds-channel@0 {
+@@ -1144,19 +1146,42 @@
+ 
+ 		display-timings {
+ 			native-mode = <&timing0>;
+-			timing0: hsd100pxn1 {
+-				clock-frequency = <65000000>;
+-				hactive = <1024>;
+-				vactive = <600>;
+-				hback-porch = <220>;
+-				hfront-porch = <40>;
+-				vback-porch = <21>;
+-				vfront-porch = <7>;
+-				hsync-len = <60>;
+-				vsync-len = <10>;
++			timing0: g133han01 {
++				clock-frequency = <141200000>;
++				hactive = <1920>;
++				vactive = <1080>;
++				hback-porch = <88>;
++				hfront-porch = <58>;
++				vback-porch = <14>;
++				vfront-porch = <8>;
++				hsync-len = <42>;
++				vsync-len = <14>;
+ 			};
+ 		};
+ 	};
++
++        lvds-channel@1 {
++                fsl,data-mapping = "jeida"; /* spwg or jeida (see chapter "Bit Mapping" in i.MX6 Reference Manual) */
++                fsl,data-width = <24>;
++                primary;
++                status = "okay";
++
++                display-timings {
++                        native-mode = <&timing1>;
++                        timing1: g133han01 {
++                                clock-frequency = <141200000>;
++                                hactive = <1920>;
++                                vactive = <1080>;
++                                hback-porch = <88>;
++                                hfront-porch = <58>;
++                                vback-porch = <14>;
++                                vfront-porch = <8>;
++                                hsync-len = <42>;
++                                vsync-len = <14>;
++                        };
++                };
++        };
++
+ };
+ 
+ #ifdef CONFIG_SER_CAMERA
+diff --git a/arch/arm/boot/dts/lec-imx6q.dts b/arch/arm/boot/dts/lec-imx6q.dts
+index 26b89fe..1d3352e 100644
+--- a/arch/arm/boot/dts/lec-imx6q.dts
++++ b/arch/arm/boot/dts/lec-imx6q.dts
+@@ -25,6 +25,9 @@
+ 	lvds-channel@0 {
+ 		crtc = "ipu2-di0";
+ 	};
++	lvds-channel@1 {
++		crtc = "ipu2-di1";
++	};
+ };
+ 
+ &sata {
+diff --git a/arch/arm/boot/dts/lec-imx6s.dts b/arch/arm/boot/dts/lec-imx6s.dts
+index de33ba3..4ee7bda 100644
+--- a/arch/arm/boot/dts/lec-imx6s.dts
++++ b/arch/arm/boot/dts/lec-imx6s.dts
+@@ -28,8 +28,13 @@
+ 	lvds-channel@0 {
+ 		crtc = "ipu1-di0";
+ 	};
++
++        lvds-channel@1 {
++                crtc = "ipu2-di1";
++        };
+ };
+ 
++#if 0
+ #if CONFIG_SOLO_LVDS
+ &mxcfb2 {	/* parallel RGB */
+ #else
+@@ -45,6 +50,7 @@
+ #endif
+ 	status = "disabled";
+ };
++#endif
+ 
+ &pxp {
+ 	status = "okay";
+-- 
+1.9.1
+
