@@ -161,5 +161,6 @@ SRC_URI_append_lec-imx8m += " \
 			    file://0018-Add-dual-display-support.patch \
 			    file://0019-Add-imx8m-1gb-2gb-module-support.patch \
 			    file://0020-Add-cpuinfo-for-i.MX8M-variants.patch \
+			    file://0021-Add-Support-for-G133HAN01-Dual-Channel-LVDS-Panel.patch \
 			    file://lec-imx8m_defconfig \
 "

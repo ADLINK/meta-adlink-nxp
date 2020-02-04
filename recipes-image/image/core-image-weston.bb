@@ -41,3 +41,17 @@ QT5_IMAGE_INSTALL_remove = " packagegroup-qt5-webengine"
 IMAGE_INSTALL += " \
 ${QT5_IMAGE_INSTALL} \
 "
+
+# Add Chromium
+
+IMAGE_INSTALL_append = \
+    "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', ' chromium-ozone-wayland libexif', \
+        bb.utils.contains('DISTRO_FEATURES',     'x11', ' chromium-x11 libexif', \
+                                                        '', d), d)}"
+LICENSE_FLAGS_WHITELIST = \
+    "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'commercial', \
+        bb.utils.contains('DISTRO_FEATURES',     'x11', 'commercial', \
+                                                        '', d), d)}"
+
+PNBLACKLIST[chromium] = ""
+
