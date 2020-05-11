@@ -131,12 +131,13 @@ SRC_URI_append_lec-imx6-2 += " \
 			    file://0053-disable-mmc1-imx6r2.patch \
 			    file://0054-ldb-jeida_format.patch \
 			    file://0060-SGTL5000_IMX6R2.patch \
-			    file://0061-SD2_VSELECT_LOW.patch \	
+			    file://0061-SD2_VSELECT_LOW.patch \
 			    file://0062-Add-G133HAN01-Dual-Channel-LVDS-Support.patch \
 			    file://0063-IMX6R2-Added-support-for-OV13850-camera-sensor.patch \
 			    file://0064-Critical-and-passive-temperature-is-103-c.patch \
-			    file://0065-SPI-Device-Node-Entry-corrected.patch \	
+			    file://0065-SPI-Device-Node-Entry-corrected.patch \
 			    file://0066-IMX6R2-Add-device-tree-file-for-imx6qp-module.patch \
+			    file://0067-IMX6R2-Pad-register-changes-for-IMX6-A2-module.patch \
 			    file://lec-imx6_defconfig \
 "
 
