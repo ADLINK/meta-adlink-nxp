@@ -138,6 +138,7 @@ SRC_URI_append_lec-imx6-2 += " \
 			    file://0065-SPI-Device-Node-Entry-corrected.patch \
 			    file://0066-IMX6R2-Add-device-tree-file-for-imx6qp-module.patch \
 			    file://0067-IMX6R2-Pad-register-changes-for-IMX6-A2-module.patch \
+			    file://0068-IMX6R2-Do-not-disable-RTC-output-clock.patch \
 			    file://lec-imx6_defconfig \
 "
 
