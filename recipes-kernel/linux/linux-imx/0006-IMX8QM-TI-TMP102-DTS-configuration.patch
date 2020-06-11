@@ -1,0 +1,45 @@
+From 66afb8c8819638dfde13308c450712732cee741c Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Tue, 9 Jun 2020 12:55:44 +0530
+Subject: [PATCH 06/11] IMX8QM: TI TMP102 DTS configuration
+
+Add dts configuration for TI, TMP102 temperature sensor
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi | 6 ++++++
+ arch/arm64/configs/adlink_imx8qm_defconfig        | 1 +
+ 2 files changed, 7 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+index 4c7acfb32b87..77ce95d41855 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+@@ -862,6 +862,12 @@
+ 	pinctrl-0 = <&pinctrl_i2c1>;
+ 	status = "okay";
+ 
++	tmp102: tmp102@48 {
++		compatible = "ti,tmp102";
++		reg = <0x48>;
++		#thermal-sensor-cells = <0>;
++	};
++
+ 	wm8960: wm8960@1a {
+ 		compatible = "wlf,wm8960";
+ 		reg = <0x1a>;
+diff --git a/arch/arm64/configs/adlink_imx8qm_defconfig b/arch/arm64/configs/adlink_imx8qm_defconfig
+index d56a1f754a90..0efb9d0cad39 100644
+--- a/arch/arm64/configs/adlink_imx8qm_defconfig
++++ b/arch/arm64/configs/adlink_imx8qm_defconfig
+@@ -398,6 +398,7 @@ CONFIG_BATTERY_BQ27XXX=y
+ CONFIG_SENSORS_ARM_SCPI=y
+ CONFIG_SENSORS_LM90=m
+ CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_TMP102=y
+ # CONFIG_MXC_MMA8451 is not set
+ CONFIG_THERMAL_WRITABLE_TRIPS=y
+ CONFIG_THERMAL_GOV_POWER_ALLOCATOR=y
+-- 
+2.17.1
+

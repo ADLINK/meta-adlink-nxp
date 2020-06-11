@@ -1,0 +1,80 @@
+From 6031b9c7918f2c717c05ab3379653ccb81a906df Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Fri, 8 May 2020 11:04:38 +0530
+Subject: [PATCH 10/11] IMX8QM: Additional Changes for fec2 interface
+
+ * Use separate MDIO configuration for fec2
+ * Set AR8031 address as 0
+ * imx8qm has different MDIO buses,use mii-exclusive property else
+   fec driver uses same bus for both fec1 and fec2
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ .../boot/dts/adlink/adlink-lec-imx8qm.dtsi    | 24 +++++++++++++------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+index c56d250152bf..0f37dd651276 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+@@ -282,11 +282,14 @@
+ 				SC_P_ENET0_RGMII_RXD1_CONN_ENET0_RGMII_RXD1	0x00000061
+ 				SC_P_ENET0_RGMII_RXD2_CONN_ENET0_RGMII_RXD2	0x00000061
+ 				SC_P_ENET0_RGMII_RXD3_CONN_ENET0_RGMII_RXD3	0x00000061
++				SC_P_ENET0_REFCLK_125M_25M_CONN_ENET0_PPS	0x00000061
+ 			>;
+ 		};
+ 
+ 		pinctrl_fec2: fec2grp {
+ 			fsl,pins = <
++				SC_P_ENET1_MDC_CONN_ENET1_MDC			0x06000020
++				SC_P_ENET1_MDIO_CONN_ENET1_MDIO			0x06000020
+ 				SC_P_COMP_CTL_GPIO_1V8_3V3_ENET_ENETA_PAD	0x000014a0
+ 				SC_P_ENET1_RGMII_TX_CTL_CONN_ENET1_RGMII_TX_CTL	0x00000060
+ 				SC_P_ENET1_RGMII_TXC_CONN_ENET1_RGMII_TXC	0x00000060
+@@ -300,6 +303,7 @@
+ 				SC_P_ENET1_RGMII_RXD1_CONN_ENET1_RGMII_RXD1	0x00000060
+ 				SC_P_ENET1_RGMII_RXD2_CONN_ENET1_RGMII_RXD2	0x00000060
+ 				SC_P_ENET1_RGMII_RXD3_CONN_ENET1_RGMII_RXD3	0x00000060
++				SC_P_ENET1_REFCLK_125M_25M_CONN_ENET1_PPS       0x00000061
+ 			>;
+ 		};
+ 
+@@ -764,13 +768,6 @@
+ 			at803x,eee-disabled;
+ 			at803x,vddio-1p8v;
+ 		};
+-
+-		ethphy1: ethernet-phy@1 {
+-			compatible = "ethernet-phy-ieee802.3-c22";
+-			reg = <4>;
+-			at803x,eee-disabled;
+-			at803x,vddio-1p8v;
+-		};
+ 	};
+ };
+ 
+@@ -942,7 +939,20 @@
+ 	/*phy-supply = <&reg_fec2_supply>;*/
+ 	fsl,magic-packet;
+ 	fsl,rgmii_rxc_dly;
++	fsl,mii-exclusive;
+ 	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ethphy1: ethernet-phy@1 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <0>;
++			at803x,eee-disabled;
++			at803x,vddio-1p8v;
++		};
++	};
+ };
+ 
+ &pd_dma_lpuart0 {
+-- 
+2.17.1
+

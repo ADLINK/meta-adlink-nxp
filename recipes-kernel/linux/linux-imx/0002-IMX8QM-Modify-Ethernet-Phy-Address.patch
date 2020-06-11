@@ -1,0 +1,45 @@
+From 03651c3f6c496ae788c7db4d212fe70e9034eada Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Mon, 30 Mar 2020 11:53:30 +0530
+Subject: [PATCH 02/11] IMX8QM: Modify Ethernet Phy Address
+
+Modify Ethernet phy address on fec1 and fec2 to 4.
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+index c427b5779dee..c66d6b7f81bb 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+@@ -761,14 +761,14 @@
+ 
+ 		ethphy0: ethernet-phy@0 {
+ 			compatible = "ethernet-phy-ieee802.3-c22";
+-			reg = <0>;
++			reg = <4>;
+ 			at803x,eee-disabled;
+ 			at803x,vddio-1p8v;
+ 		};
+ 
+ 		ethphy1: ethernet-phy@1 {
+ 			compatible = "ethernet-phy-ieee802.3-c22";
+-			reg = <1>;
++			reg = <4>;
+ 			at803x,eee-disabled;
+ 			at803x,vddio-1p8v;
+ 		};
+@@ -939,7 +939,7 @@
+ 	pinctrl-0 = <&pinctrl_fec2>;
+ 	phy-mode = "rgmii-txid";
+ 	phy-handle = <&ethphy1>;
+-	phy-supply = <&reg_fec2_supply>;
++	/*phy-supply = <&reg_fec2_supply>;*/
+ 	fsl,magic-packet;
+ 	fsl,rgmii_rxc_dly;
+ 	status = "okay";
+-- 
+2.17.1
+

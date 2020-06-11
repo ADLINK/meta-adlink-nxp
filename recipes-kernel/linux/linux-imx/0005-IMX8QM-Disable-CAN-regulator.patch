@@ -1,0 +1,37 @@
+From 8d94fb183aa543efbbeb8399ac418fc1374561bb Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Thu, 2 Apr 2020 17:47:44 +0530
+Subject: [PATCH 05/11] IMX8QM: Disable CAN regulator
+
+flexcan0 and flexcan1 regulator configuration not required
+for imx8qm module
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+index bf69bda7a5aa..4c7acfb32b87 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+@@ -792,14 +792,14 @@
+ &flexcan1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_flexcan1>;
+-	xceiver-supply = <&reg_can01_stby>;
++	/*xceiver-supply = <&reg_can01_stby>;*/
+ 	status = "okay";
+ };
+ 
+ &flexcan2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_flexcan2>;
+-	xceiver-supply = <&reg_can01_stby>;
++	/*xceiver-supply = <&reg_can01_stby>;*/
+ 	status = "okay";
+ };
+ 
+-- 
+2.17.1
+

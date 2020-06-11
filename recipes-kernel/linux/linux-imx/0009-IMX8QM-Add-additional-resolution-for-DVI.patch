@@ -1,0 +1,90 @@
+From 60aac8a25f339cf33164218e64c770e8789f0d54 Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Tue, 21 Apr 2020 19:05:33 +0530
+Subject: [PATCH 09/11] IMX8QM: Add additional resolution for DVI
+
+ *Add addition resolution for DVI monitor in HDMI driver.
+ *Enable force DVI mode.
+ *Disable HDMI audio
+
+Note: Need to create separate dtb to load DVI changes. Currently
+execute using HDMI dtb
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ .../boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts  |  2 ++
+ drivers/gpu/drm/imx/hdp/imx-hdmi.c              |  2 ++
+ drivers/gpu/drm/imx/hdp/imx-hdp.c               | 17 ++++++++++++++++-
+ 3 files changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
+index 40b56a1b884d..d2fc5f0454db 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
+@@ -24,6 +24,7 @@
+ 		audio-cpu = <&sai_hdmi_tx>;
+ 		protocol = <1>;
+ 		hdmi-out;
++		status = "disabled";
+ 	};
+ 
+ 	sound-amix-sai {
+@@ -36,6 +37,7 @@
+ 		spdif-controller = <&spdif1>;
+ 		spdif-in;
+ 		spdif-out;
++		status = "disabled";
+ 	};
+ };
+ 
+diff --git a/drivers/gpu/drm/imx/hdp/imx-hdmi.c b/drivers/gpu/drm/imx/hdp/imx-hdmi.c
+index c0ad453e92f4..1dd02d611fc7 100644
+--- a/drivers/gpu/drm/imx/hdp/imx-hdmi.c
++++ b/drivers/gpu/drm/imx/hdp/imx-hdmi.c
+@@ -223,6 +223,8 @@ static int hdmi_scdc_tmds_config(struct imx_hdp *hdp)
+ 		hdp->hdmi_type = HDMI_TX_MODE_HDMI_1_4;
+ 	 }
+ 
++	hdp->hdmi_type = HDMI_TX_MODE_DVI;
++
+ 	data_in.buff = &buff;
+ 	data_in.len = 1;
+ 	data_in.slave = 0x54;
+diff --git a/drivers/gpu/drm/imx/hdp/imx-hdp.c b/drivers/gpu/drm/imx/hdp/imx-hdp.c
+index e9d7e93f8f1d..fbba47131e09 100644
+--- a/drivers/gpu/drm/imx/hdp/imx-hdp.c
++++ b/drivers/gpu/drm/imx/hdp/imx-hdp.c
+@@ -32,7 +32,7 @@
+ #define B0_SILICON_ID			0x11
+ 
+ struct drm_display_mode *g_mode;
+-uint8_t g_default_mode = 3;
++uint8_t g_default_mode = 6;
+ static struct drm_display_mode edid_cea_modes[] = {
+ 	/* 3 - 720x480@60Hz */
+ 	{ DRM_MODE("720x480", DRM_MODE_TYPE_DRIVER, 27000, 720, 736,
+@@ -61,6 +61,21 @@ static struct drm_display_mode edid_cea_modes[] = {
+ 		   2160, 2168, 2178, 2250, 0,
+ 		   DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
+ 	  .vrefresh = 30, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
++	/* 1280x1024@60Hz */
++	{ DRM_MODE("1280x1024", DRM_MODE_TYPE_DRIVER, 108000, 1280, 1328,
++		   1440, 1688, 0, 1024, 1025, 1028, 1066, 0,
++		   DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
++	  .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
++	/* 1600x900@60Hz*/
++	{ DRM_MODE("1600x900", DRM_MODE_TYPE_DRIVER, 118963, 1600, 1696,
++		   1864, 2128, 0, 900, 901, 904, 932, 0,
++		   DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
++	  .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
++	/* 640x480@60Hz */
++	{ DRM_MODE("640x480", DRM_MODE_TYPE_DRIVER, 25175, 640, 656,
++		   752, 800, 0, 480, 490, 492, 525, 0,
++		   DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
++	  .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
+ };
+ 
+ static inline struct imx_hdp *enc_to_imx_hdp(struct drm_encoder *e)
+-- 
+2.17.1
+

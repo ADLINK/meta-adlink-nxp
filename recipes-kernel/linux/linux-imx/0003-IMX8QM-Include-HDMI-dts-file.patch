@@ -1,0 +1,122 @@
+From 0be6d96593ec0ea2653a144895dc8764c3b59163 Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Mon, 30 Mar 2020 11:54:35 +0530
+Subject: [PATCH 03/11] IMX8QM: Include HDMI dts file
+
+Fork HDMI dts file using fsl imx8qm hdmi dts file.
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/Makefile           |  3 +-
+ .../dts/adlink/adlink-lec-imx8qm-hdmi.dts     | 88 +++++++++++++++++++
+ 2 files changed, 90 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index 11963f4c479b..a418d0fd41e2 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -1,4 +1,5 @@
+-dtb-$(CONFIG_ARCH_LEC_IMX8QM) += adlink-lec-imx8qm.dtb
++dtb-$(CONFIG_ARCH_LEC_IMX8QM) += adlink-lec-imx8qm.dtb \
++				adlink-lec-imx8qm-hdmi.dtb
+ 
+ always         := $(dtb-y)
+ subdir-y       := $(dts-dirs)
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
+new file mode 100644
+index 000000000000..40b56a1b884d
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
+@@ -0,0 +1,88 @@
++/*
++ * Copyright 2017-2018 NXP
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++/*
++ * HDMI only dts, disable ldb display.
++ */
++
++#include "adlink-lec-imx8qm.dts"
++
++/ {
++	sound-hdmi-tx {
++		compatible = "fsl,imx-audio-cdnhdmi";
++		model = "imx-audio-hdmi-tx";
++		audio-cpu = <&sai_hdmi_tx>;
++		protocol = <1>;
++		hdmi-out;
++	};
++
++	sound-amix-sai {
++		status = "disabled";
++	};
++
++	sound-hdmi-arc {
++		compatible = "fsl,imx-audio-spdif";
++		model = "imx-hdmi-arc";
++		spdif-controller = <&spdif1>;
++		spdif-in;
++		spdif-out;
++	};
++};
++
++&ldb1_phy {
++	status = "disabled";
++};
++
++&ldb1 {
++	status = "disabled";
++};
++
++&i2c1_lvds0 {
++	status = "disabled";
++};
++
++&irqsteer_hdmi {
++	status = "okay";
++};
++
++&hdmi {
++	compatible = "fsl,imx8qm-hdmi";
++	assigned-clocks = <&clk IMX8QM_HDMI_PXL_SEL>,
++					<&clk IMX8QM_HDMI_PXL_LINK_SEL>,
++					<&clk IMX8QM_HDMI_PXL_MUX_SEL>;
++	assigned-clock-parents = <&clk IMX8QM_HDMI_AV_PLL_CLK>,
++							<&clk IMX8QM_HDMI_AV_PLL_CLK>,
++							<&clk IMX8QM_HDMI_AV_PLL_CLK>;
++	fsl,cec;
++	status = "okay";
++};
++
++&sai_hdmi_tx {
++	assigned-clocks =<&clk IMX8QM_ACM_HDMI_TX_SAI0_MCLK_SEL>,
++			<&clk IMX8QM_AUD_PLL0_DIV>,
++			<&clk IMX8QM_AUD_ACM_AUD_PLL_CLK0_DIV>,
++			<&clk IMX8QM_AUD_ACM_AUD_REC_CLK0_DIV>,
++			<&clk IMX8QM_AUD_SAI_HDMITX0_MCLK>;
++	assigned-clock-parents = <&clk IMX8QM_AUD_ACM_AUD_PLL_CLK0_CLK>;
++	assigned-clock-rates = <0>, <786432000>, <49152000>, <12288000>, <49152000>;
++	fsl,sai-asynchronous;
++	status = "okay";
++};
++
++&spdif1 {
++	assigned-clocks =<&clk IMX8QM_AUD_PLL0_DIV>,
++			<&clk IMX8QM_AUD_ACM_AUD_PLL_CLK0_DIV>,
++			<&clk IMX8QM_AUD_ACM_AUD_REC_CLK0_DIV>;
++	assigned-clock-rates = <786432000>, <49152000>, <12288000>;
++	status = "okay";
++};
+-- 
+2.17.1
+
