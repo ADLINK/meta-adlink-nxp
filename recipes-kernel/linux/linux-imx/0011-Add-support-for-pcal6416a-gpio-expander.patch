@@ -1,0 +1,183 @@
+From 87d74cb812d3f28a5a385cc071a7306302b00f8c Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Wed, 27 May 2020 22:41:28 +0530
+Subject: [PATCH 11/11] Add-support-for-pcal6416a-gpio-expander
+
+This patch will add support for pcal6416a gpio expander in i2c3 and removes
+synaptics_dsx_ts and adv_bridge nodes from i2c3
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ .../boot/dts/adlink/adlink-lec-imx8m.dts      | 46 ++++++++-----------
+ drivers/gpio/Kconfig                          |  4 +-
+ drivers/gpio/Makefile                         |  1 +
+ drivers/gpio/gpio-pca953x.c                   | 25 ++++++++++
+ 4 files changed, 47 insertions(+), 29 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+index 08f84161cdd3..4061e2a80e29 100755
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+@@ -435,17 +435,6 @@
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+ 	status = "okay";
+ 
+-	synaptics_dsx_ts: synaptics_dsx_ts@20 {
+-		compatible = "synaptics_dsx";
+-		reg = <0x20>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_i2c1_dsi_ts_int>;
+-		interrupt-parent = <&gpio5>;
+-		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
+-		synaptics,diagonal-rotation;
+-		status = "disabled";
+-	};
+-
+ 	ak4458_1: ak4458@10 {
+ 		compatible = "asahi-kasei,ak4458";
+ 		reg = <0x10>;
+@@ -468,17 +457,20 @@
+ 		ak4497,pdn-gpio = <&gpio3 16 GPIO_ACTIVE_HIGH>;
+ 	};
+ 
+-	adv_bridge: adv7535@3d {
+-		compatible = "adi,adv7535";
+-		reg = <0x3d>;
+-		adi,addr-cec = <0x3b>;
+-		adi,dsi-lanes = <4>;
+-		pinctrl-0 = <&pinctrl_i2c1_dsi_ts_int>;
+-		interrupt-parent = <&gpio5>;
+-		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
+-
+-		status = "disabled";
+-	};
++        pcal6416a: pcal6416a@20 {
++                compatible = "nxp,pca9535";
++                reg = <0x20>;
++                pinctrl-names = "default";
++                pinctrl-0 = <&pinctrl_gpio4>;
++                interrupt-parent = <&gpio4>;
++                interrupts = <20 0>;
++                gpio-controller;
++                #gpio-cells = <2>;
++                interrupt-controller;
++                #interrupt-cells = <2>;
++                direction_port0_init = <0xc0>;
++                direction_port1_init = <0x0f>;
++        };
+ };
+ 
+ &i2c2 {
+@@ -702,16 +694,16 @@
+ 		>;
+ 	};
+ 
+-	pinctrl_i2c1_dsi_ts_int: dsi_ts_int {
++	pinctrl_i2c2: i2c2grp {
+ 		fsl,pins = <
+-			MX8MQ_IOMUXC_ECSPI1_MOSI_GPIO5_IO7		0x19
++			MX8MQ_IOMUXC_I2C2_SCL_I2C2_SCL			0x40000067
++			MX8MQ_IOMUXC_I2C2_SDA_I2C2_SDA			0x40000067
+ 		>;
+ 	};
+ 
+-	pinctrl_i2c2: i2c2grp {
++	pinctrl_gpio4: gpio4grp {
+ 		fsl,pins = <
+-			MX8MQ_IOMUXC_I2C2_SCL_I2C2_SCL			0x40000067
+-			MX8MQ_IOMUXC_I2C2_SDA_I2C2_SDA			0x40000067
++			MX8MQ_IOMUXC_SAI1_MCLK_GPIO4_IO20       0x16
+ 		>;
+ 	};
+ 
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index 035262db15c0..b6bec2a94162 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -909,7 +909,7 @@ config GPIO_MC9S08DZ60
+ 	  Select this to enable the MC9S08DZ60 GPIO driver
+ 
+ config GPIO_PCA953X
+-	tristate "PCA95[357]x, PCA9698, TCA64xx, and MAX7310 I/O ports"
++	tristate "PCA95[357]x, PCA9698, TCA64xx, MAX7310, and PCAL6416A[HF] I/O ports"
+ 	select REGMAP_I2C
+ 	help
+ 	  Say yes here to provide access to several register-oriented
+@@ -922,7 +922,7 @@ config GPIO_PCA953X
+ 	                pca9556, pca9557, pca9574, tca6408, tca9554, xra1202
+ 
+ 	  16 bits:      max7312, max7313, pca9535, pca9539, pca9555, pca9575,
+-	                tca6416
++	                tca6416, pcal6416a
+ 
+ 	  24 bits:      tca6424
+ 
+diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
+index 30e93c76995d..b09f1018378c 100644
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -170,3 +170,4 @@ obj-$(CONFIG_GPIO_XTENSA)		+= gpio-xtensa.o
+ obj-$(CONFIG_GPIO_ZEVIO)		+= gpio-zevio.o
+ obj-$(CONFIG_GPIO_ZX)			+= gpio-zx.o
+ obj-$(CONFIG_GPIO_ZYNQ)			+= gpio-zynq.o
++obj-$(CONFIG_GPIO_PCAL6416A)            += gpio-pcal6416a.o
+diff --git a/drivers/gpio/gpio-pca953x.c b/drivers/gpio/gpio-pca953x.c
+index 321b708c387d..10f94c8c146b 100644
+--- a/drivers/gpio/gpio-pca953x.c
++++ b/drivers/gpio/gpio-pca953x.c
+@@ -92,6 +92,11 @@ static const struct i2c_device_id pca953x_id[] = {
+ 	{ "pcal6524", 24 | PCA953X_TYPE | PCA_LATCH_INT, },
+ 	{ "pcal9555a", 16 | PCA953X_TYPE | PCA_LATCH_INT, },
+ 
++#ifdef CONFIG_ARCH_LEC_IMX8M
++        { "pcal6416a", 16 | PCA953X_TYPE | PCA_INT | PCA_PCAL, },
++        { "pcal6416ahf", 16  | PCA953X_TYPE | PCA_INT | PCA_PCAL, },
++#endif 
++
+ 	{ "max7310", 8  | PCA953X_TYPE, },
+ 	{ "max7312", 16 | PCA953X_TYPE | PCA_INT, },
+ 	{ "max7313", 16 | PCA953X_TYPE | PCA_INT, },
+@@ -846,6 +851,10 @@ static int device_pca95xx_init(struct pca953x_chip *chip, u32 invert)
+ 	int ret;
+ 	u8 val[MAX_BANK];
+ 
++#ifdef CONFIG_ARCH_LEC_IMX8M
++        u32 tmp;
++        struct device_node *node = chip->client->dev.of_node;
++#endif 
+ 	ret = regcache_sync_region(chip->regmap, chip->regs->output,
+ 				   chip->regs->output + NBANK(chip));
+ 	if (ret)
+@@ -863,6 +872,17 @@ static int device_pca95xx_init(struct pca953x_chip *chip, u32 invert)
+ 		memset(val, 0, NBANK(chip));
+ 
+ 	ret = pca953x_write_regs(chip, chip->regs->invert, val);
++
++#ifdef CONFIG_ARCH_LEC_IMX8M
++	/* set initial gpio direction for Adlink LEC-IMX8M */   
++	if (!of_property_read_u32(node, "direction_port0_init", &tmp)) {
++		val[0] = (u8)tmp;
++	}
++	if (!of_property_read_u32(node, "direction_port1_init", &tmp)) {
++		val[1] = (u8)tmp;
++	}
++	ret = pca953x_write_regs(chip, PCA953X_DIRECTION, val);
++#endif 
+ out:
+ 	return ret;
+ }
+@@ -1173,6 +1193,11 @@ static const struct of_device_id pca953x_dt_ids[] = {
+ 	{ .compatible = "nxp,pca9575", .data = OF_957X(16, PCA_INT), },
+ 	{ .compatible = "nxp,pca9698", .data = OF_953X(40, 0), },
+ 
++#ifdef CONFIG_ARCH_LEC_IMX8M
++        { .compatible = "nxp,pcal6416a", .data = OF_953X( 16, PCA_INT), },
++        { .compatible = "nxp,pcal6416ahf", .data = OF_953X(16, PCA_INT), },
++#endif       	
++
+ 	{ .compatible = "nxp,pcal6416", .data = OF_953X(16, PCA_LATCH_INT), },
+ 	{ .compatible = "nxp,pcal6524", .data = OF_953X(24, PCA_LATCH_INT), },
+ 	{ .compatible = "nxp,pcal9555a", .data = OF_953X(16, PCA_LATCH_INT), },
+-- 
+2.17.1
+

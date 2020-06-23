@@ -1,0 +1,62 @@
+From 44874073bb5d87d5012dbd14ef3b327f7cb7ecac Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Wed, 27 May 2020 16:24:09 +0530
+Subject: [PATCH 5/5] Add-cpuinfo-for-i.MX8M-variants
+
+This patch will add cpuinfo for i.MX8M variants like Dual, Quad/QuadLite
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm64/kernel/cpuinfo.c | 22 ++++++++++++++++++----
+ 1 file changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm64/kernel/cpuinfo.c b/arch/arm64/kernel/cpuinfo.c
+index 05933c065732..f696d812aa44 100644
+--- a/arch/arm64/kernel/cpuinfo.c
++++ b/arch/arm64/kernel/cpuinfo.c
+@@ -126,7 +126,7 @@ static const char *const compat_hwcap2_str[] = {
+ 
+ static int c_show(struct seq_file *m, void *v)
+ {
+-	int i, j;
++	int i, j, k=0;
+ 	bool compat = personality(current->personality) == PER_LINUX32;
+ 
+ 	for_each_online_cpu(i) {
+@@ -139,9 +139,9 @@ static int c_show(struct seq_file *m, void *v)
+ 		 * "processor".  Give glibc what it expects.
+ 		 */
+ 		seq_printf(m, "processor\t: %d\n", i);
+-		if (compat)
+-			seq_printf(m, "model name\t: ARMv8 Processor rev %d (%s)\n",
+-				   MIDR_REVISION(midr), COMPAT_ELF_PLATFORM);
++
++		seq_printf(m, "model name\t: ARMv8 Processor rev %d (%s)\n",
++			   MIDR_REVISION(midr), COMPAT_ELF_PLATFORM);
+ 
+ 		seq_printf(m, "BogoMIPS\t: %lu.%02lu\n",
+ 			   loops_per_jiffy / (500000UL/HZ),
+@@ -177,6 +177,20 @@ static int c_show(struct seq_file *m, void *v)
+ 		seq_printf(m, "CPU variant\t: 0x%x\n", MIDR_VARIANT(midr));
+ 		seq_printf(m, "CPU part\t: 0x%03x\n", MIDR_PARTNUM(midr));
+ 		seq_printf(m, "CPU revision\t: %d\n\n", MIDR_REVISION(midr));
++		k++;
++	}
++
++	switch( k )
++	{
++	case 2:
++		seq_printf(m, "Hardware\t: NXP i.MX8M Daul\n");
++		break;
++	case 4:
++		seq_printf(m, "Hardware\t: NXP i.MX8M Quad/QuadLite\n");
++		break;
++	default:
++		seq_printf(m, "Hardware\t: NXP i.MX8M \n");
++		break;
+ 	}
+ 
+ 	return 0;
+-- 
+2.17.1
+
