@@ -14,8 +14,8 @@
 **SD Card image for the quick evaluation**
 
 * Support 4G Memory with Wayland Weston Desktop (carrier board: LEC-BASE 2.0): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/core-image-weston-lec-imx8m_4G.zip)
-* Support 2G Memory with supports Wayland Weston Desktop (carrier board: LEC-BASE 2.0): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/core-image-weston-lec-imx8m_2G.zip)
-* Support 1G Memory with supports Wayland Weston Desktop (carrier board: LEC-BASE 2.0): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/core-image-weston-lec-imx8m_1G.zip)
+* Support 2G Memory with Wayland Weston Desktop (carrier board: LEC-BASE 2.0): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/core-image-weston-lec-imx8m_2G.zip)
+* Support 1G Memory with Wayland Weston Desktop (carrier board: LEC-BASE 2.0): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/core-image-weston-lec-imx8m_1G.zip)
 
 <br />
 
