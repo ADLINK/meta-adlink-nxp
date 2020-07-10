@@ -1,0 +1,619 @@
+From 3a7134736669993cd485458065a30b40e25bf2fb Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Wed, 8 Jul 2020 11:28:40 +0530
+Subject: [PATCH 19/19] Add-MIPI-DSI-Panel-support
+
+This patch will add support for B101UAN01.7 MIPI DSI panel.
+        - Implemented devicetree and panel driver
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/Makefile           |   3 +
+ ...ink-lec-imx8m-1gb-ddr3l-dcss-b101uan01.dts |  38 ++
+ ...ink-lec-imx8m-2gb-ddr3l-dcss-b101uan01.dts |  10 +
+ .../adlink-lec-imx8m-dcss-b101uan01.dts       | 122 +++++++
+ arch/arm64/configs/lec_imx8m_defconfig        |   1 +
+ drivers/gpu/drm/panel/Kconfig                 |   9 +
+ drivers/gpu/drm/panel/Makefile                |   1 +
+ drivers/gpu/drm/panel/panel-b101uan01.c       | 327 ++++++++++++++++++
+ 8 files changed, 511 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-dcss-b101uan01.dts
+ create mode 100644 arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-dcss-b101uan01.dts
+ create mode 100644 arch/arm64/boot/dts/adlink/adlink-lec-imx8m-dcss-b101uan01.dts
+ create mode 100644 drivers/gpu/drm/panel/panel-b101uan01.c
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index 7df23b733d31..820b559a6a06 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -8,6 +8,7 @@ dtb-$(CONFIG_ARCH_LEC_IMX8M) += adlink-lec-imx8m.dtb \
+ 				adlink-lec-imx8m-lcdif-hv150ux2.dtb \
+ 				adlink-lec-imx8m-lcdif-lm215wf3.dtb \
+ 				adlink-lec-imx8m-lcdif-n101bge.dtb \
++				adlink-lec-imx8m-dcss-b101uan01.dtb \
+ 				adlink-lec-imx8m-usb-otg-master.dtb \
+ 				adlink-lec-imx8m-2gb-ddr3l.dtb \
+ 				adlink-lec-imx8m-2gb-ddr3l-dual-display.dtb \
+@@ -17,6 +18,7 @@ dtb-$(CONFIG_ARCH_LEC_IMX8M) += adlink-lec-imx8m.dtb \
+ 				adlink-lec-imx8m-2gb-ddr3l-lcdif-hv150ux2.dtb \
+ 				adlink-lec-imx8m-2gb-ddr3l-lcdif-lm215wf3.dtb \
+ 				adlink-lec-imx8m-2gb-ddr3l-lcdif-n101bge.dtb \
++				adlink-lec-imx8m-2gb-ddr3l-dcss-b101uan01.dtb \
+ 				adlink-lec-imx8m-2gb-ddr3l-usb-otg-master.dtb \
+ 				adlink-lec-imx8m-1gb-ddr3l.dtb \
+ 				adlink-lec-imx8m-1gb-ddr3l-dual-display.dtb \
+@@ -26,5 +28,6 @@ dtb-$(CONFIG_ARCH_LEC_IMX8M) += adlink-lec-imx8m.dtb \
+ 				adlink-lec-imx8m-1gb-ddr3l-lcdif-hv150ux2.dtb \
+ 				adlink-lec-imx8m-1gb-ddr3l-lcdif-lm215wf3.dtb \
+ 				adlink-lec-imx8m-1gb-ddr3l-lcdif-n101bge.dtb \
++				adlink-lec-imx8m-1gb-ddr3l-dcss-b101uan01.dtb \
+ 				adlink-lec-imx8m-1gb-ddr3l-usb-otg-master.dtb
+ 
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-dcss-b101uan01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-dcss-b101uan01.dts
+new file mode 100644
+index 000000000000..cbeb30189f94
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-dcss-b101uan01.dts
+@@ -0,0 +1,38 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright 2017 NXP
++ * Copyright (C) 2017-2018 Pengutronix, Lucas Stach <kernel@pengutronix.de>
++ */
++
++#include "adlink-lec-imx8m-dcss-b101uan01.dts"
++
++/ {
++       cpus {
++               /delete-node/ cpu@2;
++               /delete-node/ cpu@3;
++       };
++
++       pmu {
++                interrupt-affinity = <&A53_0>, <&A53_1>;
++        };
++
++        thermal-zones {
++                cpu-thermal {
++
++                        cooling-maps {
++                                map0 {
++                                        cooling-device =
++                                                <&A53_0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++                                                <&A53_1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++	};
++
++       resmem: reserved-memory {
++               /* change cma size to 384MB for 1GB DDR3L SKU */
++               linux,cma {
++                       size = <0 0x18000000>;
++               };
++       };
++};
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-dcss-b101uan01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-dcss-b101uan01.dts
+new file mode 100644
+index 000000000000..ad9c88a55d29
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-dcss-b101uan01.dts
+@@ -0,0 +1,10 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright 2017 NXP
++ * Copyright (C) 2017-2018 Pengutronix, Lucas Stach <kernel@pengutronix.de>
++ */
++
++#include "adlink-lec-imx8m-dcss-b101uan01.dts"
++
++/delete-node/ &pgc_vpu;
++/delete-node/ &vpu;
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-dcss-b101uan01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-dcss-b101uan01.dts
+new file mode 100644
+index 000000000000..0e632c7db1bc
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-dcss-b101uan01.dts
+@@ -0,0 +1,122 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright 2019 NXP.
++ */
++
++#include "adlink-lec-imx8m.dts"
++
++/delete-node/&hdmi;
++
++&irqsteer {
++	status = "okay";
++};
++
++&lcdif {
++	status = "disabled";
++};
++
++&dcss {
++	status = "okay";
++
++	clocks = <&clk IMX8MQ_CLK_DISP_APB_ROOT>,
++		 <&clk IMX8MQ_CLK_DISP_AXI_ROOT>,
++		 <&clk IMX8MQ_CLK_DISP_RTRM_ROOT>,
++		 <&clk IMX8MQ_CLK_DC_PIXEL>,
++		 <&clk IMX8MQ_CLK_DISP_DTRC>;
++	clock-names = "apb", "axi", "rtrm", "pix", "dtrc";
++	assigned-clocks = <&clk IMX8MQ_CLK_DC_PIXEL>,
++					  <&clk IMX8MQ_VIDEO_PLL1_BYPASS>,
++					  <&clk IMX8MQ_VIDEO_PLL1_REF_SEL>,
++					  <&clk IMX8MQ_CLK_DISP_AXI>,
++					  <&clk IMX8MQ_CLK_DISP_RTRM>;
++	assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
++							 <&clk IMX8MQ_VIDEO_PLL1>,
++							 <&clk IMX8MQ_CLK_25M>,
++							 <&clk IMX8MQ_SYS1_PLL_800M>,
++							 <&clk IMX8MQ_SYS1_PLL_800M>;
++	assigned-clock-rates = <600000000>, <0>, <0>,
++						   <800000000>,
++						   <400000000>;
++
++	port@0 {
++		dcss_out: endpoint {
++			remote-endpoint = <&mipi_dsi_in>;
++		};
++	};
++};
++
++&mipi_dsi {
++	status = "okay";
++	fsl,clock-drop-level = <2>;
++
++	panel@0 {
++		compatible = "auo,b101uan01";
++		reg = <0>;
++		pinctrl-0 = <&pinctrl_mipi_dsi_en>;
++		pinctrl-names = "default";
++                power-gpio = <&gpio5 3 GPIO_ACTIVE_HIGH>;
++                bklite-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
++                bkliteen-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
++		dsi-lanes = <4>;
++		video-mode = <0>;
++		width-mm = <293>;
++		height-mm = <165>;
++
++                display-timings {
++                        timing {
++                                clock-frequency = <148000000>;
++                                hactive = <1920>;
++                                vactive = <1200>;
++                                hfront-porch = <77>;
++                                hsync-len = <56>;
++                                hback-porch = <117>;
++                                vfront-porch = <11>;
++                                vsync-len = <19>;
++                                vback-porch = <19>;
++                                hsync-active = <0>;
++                                vsync-active = <0>;
++                                de-active = <0>;
++                                pixelclk-active = <0>;
++                        };
++                };
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&mipi_dsi_out>;
++			};
++		};
++	};
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@0 {
++			reg = <0>;
++			mipi_dsi_in: endpoint {
++				remote-endpoint = <&dcss_out>;
++			};
++		};
++
++		port@1 {
++			reg = <1>;
++			mipi_dsi_out: endpoint {
++				remote-endpoint = <&panel_in>;
++			};
++		};
++	};
++};
++
++&dphy {
++	status = "okay";
++};
++
++&iomuxc {
++	pinctrl_mipi_dsi_en: mipi_dsi_en {
++		fsl,pins = <
++			MX8MQ_IOMUXC_GPIO1_IO00_GPIO1_IO0       0x16                                    // DSI_BKLT_EN  
++			MX8MQ_IOMUXC_SPDIF_TX_GPIO5_IO3         0x16                                    // DSI_VDD_EN
++			MX8MQ_IOMUXC_GPIO1_IO01_GPIO1_IO1       0x16
++		>;
++	};
++};
+diff --git a/arch/arm64/configs/lec_imx8m_defconfig b/arch/arm64/configs/lec_imx8m_defconfig
+index 7d25a0b671c7..a3e0dac7570d 100644
+--- a/arch/arm64/configs/lec_imx8m_defconfig
++++ b/arch/arm64/configs/lec_imx8m_defconfig
+@@ -467,6 +467,7 @@ CONFIG_DRM_MALI_DISPLAY=m
+ CONFIG_DRM_NOUVEAU=m
+ CONFIG_DRM_RCAR_LVDS=m
+ CONFIG_DRM_PANEL_LECIMX8=y
++CONFIG_DRM_PANEL_B101UAN01=y
+ CONFIG_DRM_PANEL_RAYDIUM_RM67191=y
+ CONFIG_DRM_TI_SN65DSI84=y
+ CONFIG_DRM_SII902X=m
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+index e65e0e6ff182..634a5a65e08f 100644
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -87,6 +87,15 @@ config DRM_PANEL_LECIMX8
+ 	  that it can be automatically turned off when the panel goes into a
+ 	  low power state.
+ 
++config DRM_PANEL_B101UAN01
++        tristate "Support B101UAN01 MIPI DSI Panel for lecimx8m"
++        depends on OF
++        depends on DRM_MIPI_DSI
++        depends on BACKLIGHT_CLASS_DEVICE
++        help
++          Say Y here if you want to enable support for B101UAN01
++          (1920x1200) DSI panel.
++ 
+ config DRM_PANEL_JDI_LT070ME05000
+ 	tristate "JDI LT070ME05000 WUXGA DSI panel"
+ 	depends on OF
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+index 5710a9d75614..a74ffe2c8812 100644
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -3,6 +3,7 @@ obj-$(CONFIG_DRM_PANEL_ARM_VERSATILE) += panel-arm-versatile.o
+ obj-$(CONFIG_DRM_PANEL_LVDS) += panel-lvds.o
+ obj-$(CONFIG_DRM_PANEL_SIMPLE) += panel-simple.o
+ obj-$(CONFIG_DRM_PANEL_LECIMX8) += panel-lecimx8.o
++obj-$(CONFIG_DRM_PANEL_B101UAN01) += panel-b101uan01.o
+ obj-$(CONFIG_DRM_PANEL_FEIYANG_FY07024DI26A30D) += panel-feiyang-fy07024di26a30d.o
+ obj-$(CONFIG_DRM_PANEL_ILITEK_IL9322) += panel-ilitek-ili9322.o
+ obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9881C) += panel-ilitek-ili9881c.o
+diff --git a/drivers/gpu/drm/panel/panel-b101uan01.c b/drivers/gpu/drm/panel/panel-b101uan01.c
+new file mode 100644
+index 000000000000..175186c6037c
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-b101uan01.c
+@@ -0,0 +1,327 @@
++/*
++ * i.MX drm driver - B101UAN01 MIPI-DSI panel driver
++ *
++ * Copyright (C) 2017 NXP
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <drm/drmP.h>
++#include <drm/drm_crtc.h>
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_panel.h>
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/regulator/consumer.h>
++#include <video/mipi_display.h>
++#include <video/of_videomode.h>
++#include <video/videomode.h>
++
++static const u32 b101uan01_bus_formats[] = {
++	MEDIA_BUS_FMT_RGB888_1X24,
++	MEDIA_BUS_FMT_RGB666_1X18,
++	MEDIA_BUS_FMT_RGB565_1X16,
++};
++
++struct b101uan01_panel {
++	struct drm_panel base;
++	struct mipi_dsi_device *dsi;
++
++        struct gpio_desc *power_gpio;
++        struct gpio_desc *bklite_gpio;
++        struct gpio_desc *bkliteen_gpio;
++
++	bool prepared;
++	bool enabled;
++
++	struct videomode vm;
++	u32 width_mm;
++	u32 height_mm;
++};
++
++static inline struct b101uan01_panel *to_b101uan01_panel(struct drm_panel *panel)
++{
++	return container_of(panel, struct b101uan01_panel, base);
++}
++
++static int b101uan01_panel_prepare(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++
++	if (b101uan01->prepared) {
++		return 0;
++	}
++	b101uan01->prepared = true;
++
++	return 0;
++}
++
++static int b101uan01_panel_unprepare(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++
++	if (!b101uan01->prepared) {
++		return 0;
++	}
++
++	if (b101uan01->enabled) {
++		return -EPERM;
++	}
++
++	b101uan01->prepared = false;
++
++	return 0;
++}
++
++static int b101uan01_panel_enable(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++        struct mipi_dsi_device *dsi = b101uan01->dsi;
++
++	if (b101uan01->enabled) {
++		return 0;
++	}
++
++	if (!b101uan01->prepared) {
++		return -EPERM;
++	}
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	b101uan01->enabled = true;
++
++	return 0;
++}
++
++static int b101uan01_panel_disable(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++        struct mipi_dsi_device *dsi = b101uan01->dsi;
++
++	if (!b101uan01->enabled) {
++		return 0;
++	};
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	b101uan01->enabled = false;
++	return 0;
++}
++
++static int b101uan01_panel_get_modes(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++	struct device *dev = &b101uan01->dsi->dev;
++	struct drm_connector *connector = panel->connector;
++	struct drm_display_mode *mode;
++	u32 *bus_flags = &connector->display_info.bus_flags;
++	int ret;
++
++	mode = drm_mode_create(connector->dev);
++	if (!mode) {
++		DRM_DEV_ERROR(dev, "Failed to create display mode!\n");
++		return 0;
++	}
++
++	drm_display_mode_from_videomode(&b101uan01->vm, mode);
++	mode->width_mm = b101uan01->width_mm;
++	mode->height_mm = b101uan01->height_mm;
++	connector->display_info.width_mm = b101uan01->width_mm;
++	connector->display_info.height_mm = b101uan01->height_mm;
++	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
++
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_DE_HIGH)
++		*bus_flags |= DRM_BUS_FLAG_DE_HIGH;
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_DE_LOW)
++		*bus_flags |= DRM_BUS_FLAG_DE_LOW;
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_PIXDATA_NEGEDGE)
++		*bus_flags |= DRM_BUS_FLAG_PIXDATA_NEGEDGE;
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_PIXDATA_POSEDGE)
++		*bus_flags |= DRM_BUS_FLAG_PIXDATA_POSEDGE;
++
++	ret = drm_display_info_set_bus_formats(&connector->display_info,
++			b101uan01_bus_formats, ARRAY_SIZE(b101uan01_bus_formats));
++	if (ret)
++		return ret;
++
++	drm_mode_probed_add(panel->connector, mode);
++
++	return 1;
++}
++
++static const struct drm_panel_funcs b101uan01_panel_funcs = {
++	.prepare = b101uan01_panel_prepare,
++	.unprepare = b101uan01_panel_unprepare,
++	.enable = b101uan01_panel_enable,
++	.disable = b101uan01_panel_disable,
++	.get_modes = b101uan01_panel_get_modes,
++};
++
++static int b101uan01_panel_probe(struct mipi_dsi_device *dsi)
++{
++	struct device *dev = &dsi->dev;
++	struct device_node *np = dev->of_node;
++	struct device_node *timings;
++	struct b101uan01_panel *panel;
++	int ret;
++	u32 video_mode;
++	
++	panel = devm_kzalloc(&dsi->dev, sizeof(*panel), GFP_KERNEL);
++	if (!panel)
++		return -ENOMEM;
++
++	mipi_dsi_set_drvdata(dsi, panel);
++
++	panel->dsi = dsi;
++
++	dsi->format = MIPI_DSI_FMT_RGB888;
++
++        dsi->mode_flags = MIPI_DSI_MODE_VIDEO;
++
++/*	dsi->mode_flags =  MIPI_DSI_MODE_VIDEO_HSE | MIPI_DSI_MODE_VIDEO |
++			   MIPI_DSI_CLOCK_NON_CONTINUOUS;*/
++
++	ret = of_property_read_u32(np, "video-mode", &video_mode);
++	if (!ret) {
++		switch (video_mode) {
++		case 0:
++			/* burst mode */
++			dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_BURST;
++			break;
++		case 1:
++			/* non-burst mode with sync event */
++			break;
++		case 2:
++			/* non-burst mode with sync pulse */
++			dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
++			break;
++		default:
++			dev_warn(dev, "invalid video mode %d\n", video_mode);
++			break;
++
++		}
++	}
++
++	ret = of_property_read_u32(np, "dsi-lanes", &dsi->lanes);
++	if (ret < 0) {
++		dev_err(dev, "Failed to get dsi-lanes property (%d)\n", ret);
++		return ret;
++	}
++
++	/*
++	 * 'display-timings' is optional, so verify if the node is present
++	 * before calling of_get_videomode so we won't get console error
++	 * messages
++	 */
++	timings = of_get_child_by_name(np, "display-timings");
++	if (timings) {
++		of_node_put(timings);
++		ret = of_get_videomode(np, &panel->vm, 0);
++	}
++
++	if (ret < 0)
++		return ret;
++
++	of_property_read_u32(np, "panel-width-mm", &panel->width_mm);
++	of_property_read_u32(np, "panel-height-mm", &panel->height_mm);
++
++        panel->power_gpio = devm_gpiod_get_optional(dev, "power",
++                                                     GPIOD_OUT_HIGH);
++        if (IS_ERR(panel->power_gpio)) {
++                ret = PTR_ERR(panel->power_gpio);
++                dev_err(dev, "failed to request power GPIO: %d\n", ret);
++                return ret;
++        }
++        gpiod_set_value_cansleep(panel->power_gpio, 1);
++
++
++        panel->bklite_gpio = devm_gpiod_get_optional(dev, "bklite",
++                        GPIOD_OUT_HIGH);
++        if (IS_ERR(panel->bklite_gpio)) {
++                ret = PTR_ERR(panel->bklite_gpio);
++                dev_err(dev, "failed to request backlight gpio\n");
++                return ret;
++        }
++
++        panel->bkliteen_gpio = devm_gpiod_get_optional(dev, "bkliteen",
++                        GPIOD_OUT_HIGH);
++        if (IS_ERR(panel->bkliteen_gpio)) {
++                ret = PTR_ERR(panel->bkliteen_gpio);
++                dev_err(dev, "failed to request backlight gpio\n");
++                return ret;
++        }
++
++	drm_panel_init(&panel->base);
++	panel->base.funcs = &b101uan01_panel_funcs;
++	panel->base.dev = dev;
++
++	ret = drm_panel_add(&panel->base);
++
++	if (ret < 0) {
++		printk("ADLINk: panel add failed\n");
++		return ret;
++	}
++
++	ret = mipi_dsi_attach(dsi);
++	if (ret < 0) {
++		drm_panel_remove(&panel->base);
++	}
++
++	return ret;
++}
++
++static int b101uan01_panel_remove(struct mipi_dsi_device *dsi)
++{
++	struct b101uan01_panel *b101uan01 = mipi_dsi_get_drvdata(dsi);
++	struct device *dev = &dsi->dev;
++	int ret;
++
++	ret = mipi_dsi_detach(dsi);
++	if (ret < 0)
++		DRM_DEV_ERROR(dev, "Failed to detach from host (%d)\n",
++			ret);
++
++	drm_panel_detach(&b101uan01->base);
++
++	if (b101uan01->base.dev)
++		drm_panel_remove(&b101uan01->base);
++
++	return 0;
++}
++
++static void b101uan01_panel_shutdown(struct mipi_dsi_device *dsi)
++{
++	struct b101uan01_panel *b101uan01 = mipi_dsi_get_drvdata(dsi);
++
++	b101uan01_panel_disable(&b101uan01->base);
++	b101uan01_panel_unprepare(&b101uan01->base);
++}
++
++static const struct of_device_id dsi_of_match[] = {
++	{ .compatible = "auo,b101uan01", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, dsi_of_match);
++
++static struct mipi_dsi_driver b101uan01_panel_driver = {
++	.driver = {
++		.name = "panel-b101uan01",
++		.of_match_table = dsi_of_match,
++	},
++	.probe = b101uan01_panel_probe,
++	.remove = b101uan01_panel_remove,
++	.shutdown = b101uan01_panel_shutdown,
++};
++module_mipi_dsi_driver(b101uan01_panel_driver);
++
++MODULE_AUTHOR("NXP Semiconductor");
++MODULE_DESCRIPTION("B101UAN01");
++MODULE_LICENSE("GPL v2");
+-- 
+2.17.1
+

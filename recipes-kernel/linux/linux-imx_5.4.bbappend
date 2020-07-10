@@ -25,4 +25,11 @@ SRC_URI_append_lec-imx8m += " \
 			    file://0010-otg-peripheral-and-host-mode-support.patch \
 			    file://0011-Add-support-for-pcal6416a-gpio-expander.patch \
 			    file://0012-Add-Ethernet-ethphy0_DP83867_phy_support_and_complai.patch \
+			    file://0013-Add-external-thermal-sensor-support.patch \
+			    file://0014-Add-sgtl5000-audio-codec-support.patch \
+			    file://0015-Add-OV5640-mipi_csi-camera-support.patch \
+			    file://0016-Add-rtc-rv3028-support.patch \
+			    file://0017-Add-DSI-to-LVDS-panel-suppot.patch \
+			    file://0018-Add-dual-display-support.patch \
+			    file://0019-Add-MIPI-DSI-Panel-support.patch \
 "
