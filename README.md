@@ -20,6 +20,7 @@
 
 <br>
 **Supported features & interfaces**
+
 * Linux Kernel version: 5.4
 * UART ports: Com 0, Com1, COM2 on LEC BASE 2.0
 * 2x USB 2.0 + 2x USB 3.0
@@ -51,3 +52,11 @@
 
 Please feel free to send us (email: ryanzj.huang@adlinktech.com) patches for this layer or report any bugs found in this layer. 
 <br> For hardware support, please contact your local representative.
+
+
+
+
+Best Regards
+Ryan
+#8906
+
