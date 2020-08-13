@@ -1,0 +1,64 @@
+From bb2b87971c357693244a78a224887584b5394c45 Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Mon, 3 Aug 2020 18:41:15 +0530
+Subject: [PATCH 19/19] Solo_DualLite lvds parallel RGB specific option
+
+lvds- Solo/DualLite must disable either LVDS or parallel RGB devices, so
+      create a specific option in the .dts.
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6s.dts | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6s.dts b/arch/arm/boot/dts/lec-imx6s.dts
+index e001b0b3e30d..483a5570fa57 100644
+--- a/arch/arm/boot/dts/lec-imx6s.dts
++++ b/arch/arm/boot/dts/lec-imx6s.dts
+@@ -2,6 +2,13 @@
+ //
+ // Copyright (C) 2013 Freescale Semiconductor, Inc.
+ 
++/* The i.MX6 Solo/DualLite only has 1 IPU i.e. can only operate 2 of the 3
++ * display options at the same time. lec-imx6.dtsi assigns the IPU's 2 DIs such
++ * that HDMI always works, whereas parallel RGB and LVDS compete for the same
++ * DI. The following option leaves only one of them enabled. (The Quad/Dual DTS
++ * maps LVDS to the 2nd IPU, enabling all displays simultaneously.) */
++#define CONFIG_SOLO_LVDS       0
++
+ /dts-v1/;
+ 
+ #include "imx6dl.dtsi"
+@@ -151,12 +158,28 @@
+ 	data-lanes = <1 2>;
+ };
+ 
+-&ldb {
++&ldb {	/* LVDS (see fb in lec-imx6.dtsi) */
+ 	lvds-channel@0 {
+ 		crtc = "ipu1-di0";
+ 	};
+ };
+ 
++#if CONFIG_SOLO_LVDS
++&mxcfb2 {	/* parallel RGB */
++#else
++&mxcfb3 {	/* LVDS */
++#endif
++	status = "disabled";
++};
++
++#if CONFIG_SOLO_LVDS
++&rgb {	/* parallel RGB */
++#else
++&ldb {	/* LVDS */
++#endif
++	status = "disabled";
++};
++
+ &pxp {
+ 	status = "okay";
+ };
+-- 
+2.17.1
+

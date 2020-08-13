@@ -4,7 +4,7 @@ LICENSE= "CLOSED"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
-SRC_URI_append_mx8mq += "file://adlink.jpg"
+SRC_URI += "file://adlink.jpg"
 
 do_install_append() {
 
