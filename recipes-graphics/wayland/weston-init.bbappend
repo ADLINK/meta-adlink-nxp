@@ -7,6 +7,7 @@ LICENSE= "CLOSED"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 SRC_URI_append_lec-imx6-1 += "file://weston-adlink-imx6.ini"
+SRC_URI_append_lec-imx6-2 += "file://weston-adlink-imx6.ini"
 SRC_URI_append_mx8mq += "file://weston-adlink-imx8m.ini"
 
 do_install_append() {

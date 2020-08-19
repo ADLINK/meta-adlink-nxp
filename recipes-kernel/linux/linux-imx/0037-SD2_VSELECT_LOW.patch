@@ -1,0 +1,29 @@
+From e7cd29de162817247d0be940ed8ff47dbd742997 Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Mon, 17 Aug 2020 11:29:39 +0530
+Subject: [PATCH 37/37] SD2_VSELECT_LOW
+
+This patch will change SMARC SDIO_PWR_EN gpio as active low
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index b1ebebd34153..2aee16d91048 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -95,8 +95,7 @@
+ 		regulator-name = "smarc_sdio_pwr";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+-		gpio = <&gpio4 11 GPIO_ACTIVE_HIGH>; /* SMARC SDIO_PWR_EN */
+-		enable-active-high;
++		gpio = <&gpio4 11 GPIO_ACTIVE_LOW>; /* SMARC SDIO_PWR_EN */
+ 		regulator-boot-on;
+ 	};
+ 
+-- 
+2.17.1
+

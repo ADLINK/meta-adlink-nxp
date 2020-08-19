@@ -1,0 +1,121 @@
+From 7b65fd0bec6286cfa8b750d4d2eb90ba7f3f306b Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Tue, 18 Aug 2020 12:18:55 +0530
+Subject: [PATCH 41/41] SPI Device Node Entry corrected
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 53 +++++++++++++++++++++++++--------
+ 1 file changed, 41 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 8ed85bc12503..480b7a072033 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -366,6 +366,7 @@
+ 	status = "okay";
+ };
+ 
++#if 0
+ #if !CONFIG_I2S_AUDIO
+ &ecspi1 {	/* SMARC SPI0 (instead of I2S0) */
+ 	fsl,spi-num-chipselects = <2>;
+@@ -387,6 +388,7 @@
+ 	};
+ };
+ #endif
++#endif
+ 
+ &ecspi2 {	/* SMARC SPI1 */
+ 	fsl,spi-num-chipselects = <2>;
+@@ -396,7 +398,7 @@
+ 	pinctrl-0 = <&pinctrl_ecspi2>;
+ 	status = "okay";
+ 
+-	spidev:spidev@0 {
++	spidev:spidev5@0 {
+ 		status = "okay";
+ 		compatible = "linux,spidev";
+ 		spi-max-frequency = <2500000>;
+@@ -404,21 +406,38 @@
+ 	};
+ };
+ 
+-&ecspi4 {	/* on-module U-Boot SPI */
++&ecspi3 {      /* SMARC SPI2 */
+ 	fsl,spi-num-chipselects = <1>;
+-	cs-gpios = <&gpio3 25 GPIO_ACTIVE_LOW>;
++	cs-gpios = <&gpio3 25 GPIO_ACTIVE_LOW>; /* SMARC CS0 */            
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_ecspi3>;
++	status = "okay";
++
++	spidev6:spidev6@0 {
++		status = "okay";
++		compatible = "linux,spidev";
++		spi-max-frequency = <2500000>;
++		reg = <0>;
++	};
++};
++
++&ecspi4 {	/* on-module U-Boot SPI */
++	fsl,spi-num-chipselects = <2>;
++	cs-gpios = <&gpio4 24 GPIO_ACTIVE_LOW>, /* SMARC CS0 */
++		   <&gpio4 25 GPIO_ACTIVE_LOW>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_ecspi4>;
+-	fsl,clk-workaround-freq = <30000000>;
+ 	status = "okay";
+ 
+ 	flash: m25p80@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "winbond,w25q64";
+-		spi-max-frequency = <66000000>; /* slowest we used was SST25VF032B; i.MX6 provides 60MHz max */
++		#compatible = "spansion,m25p80", "jedec,spi-nor";
++		compatible = "mx25l6405d";
++		spi-max-frequency = <40000000>; /* slowest we used was SST25VF032B; i.MX6 provides 60MHz max */
+ 		reg = <0>;
+-		m25p,fast-read;
++		spi-cpol;
++		spi-cpha;
+ 	};
+ };
+ 
+@@ -814,6 +833,16 @@
+ 			>;
+ 		};
+ 
++		pinctrl_ecspi3: ecspi3grp {
++			fsl,pins = <    /* SMARC SPI2 */
++				MX6QDL_PAD_DISP0_DAT2__ECSPI3_MISO      0x100b1
++				MX6QDL_PAD_DISP0_DAT1__ECSPI3_MOSI      0x100b1
++				MX6QDL_PAD_DISP0_DAT0__ECSPI3_SCLK      0x100b1
++				MX6QDL_PAD_DISP0_DAT3__GPIO4_IO24       0x1b0b0 /* CS0 */
++				MX6QDL_PAD_DISP0_DAT4__GPIO4_IO25       0x1b0b0 /* CS1 */
++                        >;
++                };
++
+ 		pinctrl_ecspi4: ecspi4grp {
+ 			fsl,pins = <	/* on-module U-Boot SPI */
+ 				MX6QDL_PAD_EIM_D22__ECSPI4_MISO         0x100b1
+@@ -920,11 +949,11 @@
+ 				MX6QDL_PAD_DI0_PIN2__IPU1_DI0_PIN02        0xf1
+ 				MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03        0xf1
+ 				MX6QDL_PAD_DI0_PIN4__IPU1_DI0_PIN04        0x80000000
+-				MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00   0xf1
+-				MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01   0xf1
+-				MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02   0xf1
+-				MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03   0xf1
+-				MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04   0xf1
++				//MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00   0xf1
++				//MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01   0xf1
++				//MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02   0xf1
++				//MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03   0xf1
++				//MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04   0xf1
+ 				MX6QDL_PAD_DISP0_DAT5__IPU1_DISP0_DATA05   0xf1
+ 				MX6QDL_PAD_DISP0_DAT6__IPU1_DISP0_DATA06   0xf1
+ 				MX6QDL_PAD_DISP0_DAT7__IPU1_DISP0_DATA07   0xf1
+-- 
+2.17.1
+
