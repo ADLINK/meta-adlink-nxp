@@ -55,6 +55,7 @@ SRC_URI_append_lec-imx6-1 += " \
 			    file://0033-optimize-compile-when-6Q-SL-SX-UL-7D-support-is-disa.patch \
 			    file://0034-We-don-t-need-stdout-path-in-chosen-node.patch \
 			    file://0035-Change-copyright.patch \
+			    file://0036-Change-SGTL5000-audio-codec-i2c-node-and-add-regualt.patch \
 "
 
 SRC_URI_append_lec-imx6-2 += " \
