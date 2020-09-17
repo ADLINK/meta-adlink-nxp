@@ -5,3 +5,6 @@ require recipes-fsl/images/imx-image-multimedia.bb
 
 #Additional Tools & Test Tools
 IMAGE_INSTALL += "imx-test gcc"
+
+## SEMA applications
+IMAGE_INSTALL_append = " sema startupconfig"

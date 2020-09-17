@@ -101,6 +101,10 @@ SRC_URI_append_lec-imx6-2 += " \
 			    file://0040-Critical-and-passive-temperature-is-103-c.patch \
 			    file://0041-SPI-Device-Node-Entry-corrected.patch \
 			    file://0042-Do-not-disable-RTC-output-clock.patch \
+			    file://0043-Add-support-for-OV13850-camera-sensor.patch \
+			    file://0044-Pad-register-changes-for-IMX6R2-A2-module.patch \
+			    file://0045-Set-GPIO_0-EIM_A25-to-100K-ohm-pull-up.patch \
+			    file://0046-Support-for-i.MX6R2-QP-module.patch \
 "
 
 SRC_URI_append_lec-imx8m += " \

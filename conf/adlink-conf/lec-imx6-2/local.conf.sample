@@ -20,6 +20,12 @@ DL_DIR ?= "${BSPDIR}/downloads/"
 ACCEPT_FSL_EULA = "1"
 
 ## For additional tools/packages
-IMAGE_INSTALL_append = " cmake make libstdc++ ethtool iproute2 gdb iperf3 hdparm stress-ng"
+IMAGE_INSTALL_append = " cmake make libstdc++ ethtool iproute2 gdb iperf3 hdparm stress-ng v4l2 imagemagick version"
 
 CORE_IMAGE_EXTRA_INSTALL += "kernel-devicetree ssh"
+
+## For sdcard image type creation
+IMAGE_BOOT_FILES ?= " \
+	${KERNEL_IMAGETYPE} \
+	${@make_dtb_boot_files(d)} \
+"
