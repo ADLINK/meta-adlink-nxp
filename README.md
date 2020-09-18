@@ -32,7 +32,10 @@
 * LVDS panel with 1920x1080 Dual 24bit: tested with AUO G133HAN01 panel
 * eMMC/SD card support
 * PCIe Gen2 support
-
+* Support the following Video Codec:
+   * 4Kp60 HEVC/H.265 main, and main 10 decoder
+   * 4Kp30 AVC/H.264 decoder
+   * 1080p60 MPEG-2, MPEG-4 
 
 
 
