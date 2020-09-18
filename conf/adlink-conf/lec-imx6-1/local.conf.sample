@@ -23,3 +23,9 @@ ACCEPT_FSL_EULA = "1"
 IMAGE_INSTALL_append = " cmake make libstdc++ ethtool iproute2 gdb gdbserver pulseaudio"
 
 CORE_IMAGE_EXTRA_INSTALL += "kernel-devicetree ssh"
+
+## For sdcard image type creation
+IMAGE_BOOT_FILES ?= " \
+        ${KERNEL_IMAGETYPE} \
+        ${@make_dtb_boot_files(d)} \
+"
