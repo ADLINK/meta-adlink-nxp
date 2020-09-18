@@ -27,9 +27,9 @@
 * 2x USB 2.0 + 2x USB 3.0
 * HDMI output 
 * Audio & speaker
-* Camera 2 Lane support: OV5640 Camera module
-* MIPI DSI with the resolution up to 1920x1200 (BOM change is required): tested with AUO B101UAN0 panel  
-* LVDS panel with 1920x1080 Dual 24bit: tested with AUO G133HAN01 panel
+* Suport MIPI CSI Camera with 2 Lane : OV5640 Camera module
+* Support AUO B101UAN0 MIPI DSI panel with the resolution up to 1920x1200 (BOM change is required)  
+* Support AUO G133HAN01 LVDS panel with 1920x1080 Dual 24bit
 * eMMC/SD card support
 * PCIe Gen2 support
 * Support the following Video Codec:
