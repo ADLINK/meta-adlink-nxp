@@ -22,7 +22,7 @@
 
 **Supported features & interfaces**
 
-* Linux Kernel version: 5.4
+* Linux Kernel version: 5.4.3
 * UART ports: Com 0, Com1, COM2 on LEC BASE 2.0
 * 2x USB 2.0 + 2x USB 3.0
 * HDMI output 
