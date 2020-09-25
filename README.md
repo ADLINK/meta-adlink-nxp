@@ -26,6 +26,7 @@
 * Support MIPI CSI Camera with 2 Lane : OV5640 Camera module
 * Support AUO B101UAN0 MIPI DSI panel with the resolution up to 1920x1200 (BOM change is required)  
 * Support AUO G133HAN01 LVDS panel with 1920x1080 Dual 24bit
+* Support 10B/100MB/1GB Ethernet port
 * eMMC/SD card support
 * PCIe Gen2 support
 * Support the following Video Codec:
@@ -41,11 +42,11 @@
 
 |                         SMARC Module                         | Description                                                  |
 | :----------------------------------------------------------: | :----------------------------------------------------------- |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1838/LEC-iMX6R2-F_web.png" alt="img"  width="200" /> | **LEC-iMX6R2** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6R2?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 6 Multicore Arm® Cortex®-A9<br /> |
+| <img src="https://cdn.adlinktech.com/webupd/products/images/1838/LEC-iMX6R2-F_web.png" alt="img" width="200" /> | **LEC-iMX6R2** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6R2?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 6 Multicore Arm® Cortex®-A9<br /> |
 
 **SD Card image (32bit) for the quick evaluation**
 
-| Module supported                                             |                                       |
+| Module supported                                             |                                        |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | NXP i.MX6 Quad & Dual with 2GB memory + [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en) carrier board and support Wayland Weston Desktop | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6R2/Images/Yocto/LEC-iMX6R2-2GQ-LEC-BASE2.0-Yocto-Zeus-sdcard-2v1-20200925.zip) |
 | NXP i.MX6 Quad & Dual with 1GB memory + [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en) carrier board and support Wayland Weston Desktop | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6R2/Images/Yocto/LEC-iMX6R2-1GQ-LEC-BASE2.0-Yocto-Zeus-sdcard-2v1-20200925.zip) |
@@ -76,11 +77,9 @@
 
 * PCIe Gen2 support
 
-* Support 1x SATA
+* Support 10B/100MB/1GB Ethernet port
 
-* Support 12x GPIO (PCA9535)
-
-* Support 2x SPI, 3x I2C, 2x CANBus,
+* Support 1x SATA, 12x GPIO (PCA9535), 2x SPI, 3x I2C, 2x CANBus,
 
 * Support Ethernet
 
@@ -104,11 +103,11 @@
 
 |                         SMARC Module                         | Description                                                  |
 | :----------------------------------------------------------: | :----------------------------------------------------------- |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1344/LEC-iMX6_20171201_v2.jpg" alt="img"  width="200" /> | **LEC-iMX6** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en))  <br />    SMARC Short Size Module with Freescale i.MX6 Solo, DualLite, Dual or Quad Core Processor<br /> |
+| <img src="https://cdn.adlinktech.com/webupd/products/images/1344/LEC-iMX6_20171201_v2.jpg" alt="img" width="200" /> | **LEC-iMX6** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en))  <br />    SMARC Short Size Module with Freescale i.MX6 Solo, DualLite, Dual or Quad Core Processor<br /> |
 
 **SD Card image (32bit) for the quick evaluation**
 
-| Module supported                                             |                                        |
+| Module supported                                             |                                       |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | NXP i.MX6 Quad & Dual with 2GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en) carrier board and support Wayland Weston Desktop | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-2GQ-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20200925.zip) |
 | NXP i.MX6 Quad & Dual with 1GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en)carrier board and support Wayland Weston Desktop | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-1GQ-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20200925.zip) |
@@ -137,15 +136,9 @@
 
 * PCIe Gen1 support
 
-* Support 1x SATA
+* Support 1x SATA, 12x GPIO (PCA9535), SPI, I2C, 2x CANBus
 
-* Support 12x GPIO (PCA9535)
-
-* Support SPI, I2C, 2x CANBus
-
-* Support i2c
-
-* Support  2 CANBus
+* Support 10B/100MB/1GB Ethernet port
 
 * SEMA 3.5 support
 
