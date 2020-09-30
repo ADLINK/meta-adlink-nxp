@@ -10,9 +10,9 @@
 
 **SD Card image (64bit) for the quick evaluation**
 
-* NXP i.MX8M 4G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-4G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
-* NXP i.MX8M 2G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-2G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
-* NXP i.MX8M 1G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [download link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-1G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
+* NXP i.MX8M 4G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [ link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-4G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
+* NXP i.MX8M 2G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-2G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
+* NXP i.MX8M 1G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-1G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
 
 <br>
 
