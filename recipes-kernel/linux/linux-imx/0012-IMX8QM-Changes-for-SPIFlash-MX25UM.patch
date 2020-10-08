@@ -1,0 +1,51 @@
+From 313f7cb6ecfbdc50b6c8d2907e3439d79b7396e9 Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Fri, 14 Aug 2020 18:06:04 +0530
+Subject: [PATCH 1/7] IMX8QM: Changes for SPIFlash MX25UM
+
+Added dts changes for spi flash chip MX25UM. Add JEDEC
+ID in spi-nor driver.
+
+Signed-off-by: Viswanathan M <viswanathan.m@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi | 7 ++++---
+ drivers/mtd/spi-nor/spi-nor.c                     | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+index 0f37dd6..8eb4fe7 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+@@ -776,13 +776,14 @@
+ 	pinctrl-0 = <&pinctrl_flexspi0>;
+ 	status = "okay";
+ 
+-	flash0: mt35xu512aba@0 {
++	/*Macronix MX25UM51345G Flash Support*/
++	flash0: mx25um51345g@0 {
+ 		reg = <0>;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "micron,mt35xu512aba";
++		compatible = "micron,mx25um51345g";
+ 		spi-max-frequency = <133000000>;
+-		spi-nor,ddr-quad-read-dummy = <8>;
++		/*spi-nor,ddr-quad-read-dummy = <8>;*/
+ 	};
+ };
+ 
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index f1ffe81..57939d0 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1115,6 +1115,7 @@ static const struct flash_info spi_nor_ids[] = {
+ 	{ "mx66u51235f", INFO(0xc2253a, 0, 64 * 1024, 1024, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
+ 	{ "mx66l1g45g",  INFO(0xc2201b, 0, 64 * 1024, 2048, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+ 	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
++	{ "mx25um51345g",INFO(0xc2813a, 0, 64 * 1024, 1024, SECT_4K | SPI_NOR_4B_OPCODES)}, /*Adlink: Added to support macronix spi flash*/
+ 
+ 	/* Micron */
+ 	{ "n25q016a",	 INFO(0x20bb15, 0, 64 * 1024,   32, SECT_4K | SPI_NOR_QUAD_READ) },
+-- 
+2.10.2
+

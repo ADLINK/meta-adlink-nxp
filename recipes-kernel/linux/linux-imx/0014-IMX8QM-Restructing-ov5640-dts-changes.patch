@@ -1,0 +1,185 @@
+From a8d215f90757ec740f1c1630fa71c74feecfa81e Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Tue, 18 Aug 2020 11:01:48 +0530
+Subject: [PATCH 3/7] IMX8QM: Restructing ov5640 dts changes
+
+Include ov5640 dts into hdmi and dvi dts files.
+Keep all isi channel disabled. Enable only isi_0
+channel from ov5640 dts to enable data from MIPI-CSI0
+and output to MEM.
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/Makefile                |  1 -
+ .../boot/dts/adlink/adlink-lec-imx8qm-dvi.dts      |  1 +
+ .../boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts     |  1 +
+ .../boot/dts/adlink/adlink-lec-imx8qm-ov5640.dts   | 51 +---------------------
+ arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi  | 32 --------------
+ 5 files changed, 3 insertions(+), 83 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index 0e518c7..b66e8d1 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -1,6 +1,5 @@
+ dtb-$(CONFIG_ARCH_LEC_IMX8QM) += adlink-lec-imx8qm.dtb \
+ 				adlink-lec-imx8qm-hdmi.dtb \
+-				adlink-lec-imx8qm-ov5640.dtb \
+ 				adlink-lec-imx8qm-dvi.dtb \
+ 
+ always         := $(dtb-y)
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-dvi.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-dvi.dts
+index 398e2ba..49f9406 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-dvi.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-dvi.dts
+@@ -3,6 +3,7 @@
+  */
+ 
+ #include "adlink-lec-imx8qm.dts"
++#include "adlink-lec-imx8qm-ov5640.dts"
+ 
+ / {
+ 	sound-hdmi-tx {
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
+index 40b56a1..daae376 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-hdmi.dts
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include "adlink-lec-imx8qm.dts"
++#include "adlink-lec-imx8qm-ov5640.dts"
+ 
+ / {
+ 	sound-hdmi-tx {
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov5640.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov5640.dts
+index 9ff7ba5..1a07fff 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov5640.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov5640.dts
+@@ -12,52 +12,11 @@
+  * GNU General Public License for more details.
+  */
+ 
+-#include "adlink-lec-imx8qm.dts"
+-
+-&iomuxc {
+-	imx8qm-mek {
+-		pinctrl_mipi_csi0: mipicsi0grp{
+-			fsl,pins = <
+-				/*SC_P_MIPI_CSI0_MCLK_OUT_MIPI_CSI0_ACM_MCLK_OUT	0xC0000041*/
+-				SC_P_MIPI_CSI0_GPIO0_00_LSIO_GPIO1_IO27			0x00000021
+-				SC_P_MIPI_CSI0_GPIO0_01_LSIO_GPIO1_IO28			0x00000021
+-			>;
+-		};
+-	};
+-};
+ 
+ &isi_0 {
+ 	status = "okay";
+ };
+ 
+-&isi_4 {
+-	status = "disabled";
+-};
+-
+-&isi_1 {
+-	status = "disabled";
+-};
+-
+-&isi_2 {
+-	status = "disabled";
+-};
+-
+-&isi_3 {
+-	status = "disabled";
+-};
+-
+-&isi_5 {
+-	status = "disabled";
+-};
+-
+-&isi_6 {
+-	status = "disabled";
+-};
+-
+-&isi_7 {
+-	status = "disabled";
+-};
+-
+ &i2c0_mipi_csi0 {
+ 	clock-frequency = <100000>;
+ 	status = "okay";
+@@ -66,7 +25,7 @@
+ 		compatible = "ovti,ov5640_mipi_v3";
+ 		reg = <0x3c>;
+ 		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_mipi_csi0>;
++		pinctrl-0 = <&pinctrl_mipi_csi0_en_rst>;
+ 		clocks = <&clk IMX8QM_CLK_DUMMY>;
+ 		clock-names = "csi_mclk";
+ 		csi_id = <0>;
+@@ -86,10 +45,6 @@
+ 	/delete-node/max9286_mipi@6A;
+ };
+ 
+-&i2c0_mipi_csi1 {
+-	status = "disabled";
+-};
+-
+ &mipi_csi_0 {
+ 	/delete-property/virtual-channel;
+ 	status = "okay";
+@@ -102,7 +57,3 @@
+ 		};
+ 	};
+ };
+-
+-&mipi_csi_1 {
+-	status = "disabled";
+-};
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+index 6cc87b4..9a1af0e 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm.dtsi
+@@ -1266,38 +1266,6 @@
+ 	};
+ };
+ 
+-&isi_0 {
+-	status = "okay";
+-};
+-
+-&isi_1 {
+-	status = "okay";
+-};
+-
+-&isi_2 {
+-	status = "okay";
+-};
+-
+-&isi_3 {
+-	status = "okay";
+-};
+-
+-&isi_4 {
+-	status = "okay";
+-};
+-
+-&isi_5 {
+-	status = "okay";
+-};
+-
+-&isi_6 {
+-	status = "okay";
+-};
+-
+-&isi_7 {
+-	status = "okay";
+-};
+-
+ &sata {
+ 	pinctrl-0 = <&pinctrl_pciea>;
+ 	clkreq-gpio = <&gpio4 27 GPIO_ACTIVE_LOW>;
+-- 
+2.10.2
+

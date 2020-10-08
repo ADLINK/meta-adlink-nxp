@@ -14,4 +14,11 @@ SRC_URI_append_lec-imx8qm += " \
 			file://0009-IMX8QM-Add-additional-resolution-for-DVI.patch \
 			file://0010-IMX8QM-Additional-Changes-for-fec2-interface.patch \
 			file://0011-IMX8QM-Fork-separate-dts-for-DVI.patch \
+			file://0012-IMX8QM-Changes-for-SPIFlash-MX25UM.patch \
+			file://0013-IMX8QM-Initial-LVDS-backlight-changes.patch \
+			file://0014-IMX8QM-Restructing-ov5640-dts-changes.patch \
+			file://0015-IMX8QM-Support-for-ov13850-camera-sensor.patch \
+			file://0016-IMX8QM-Modified-Changes-for-SPIFlash-MX25UM-U5.patch \
+			file://0017-IMX8QM-Changes-for-Single-Channel-LVDS.patch \
+			file://0018-IMX8QM-Add-Bayer-RAW-format-in-capture-driver.patch \
 "

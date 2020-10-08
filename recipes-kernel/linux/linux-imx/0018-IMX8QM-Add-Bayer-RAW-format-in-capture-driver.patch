@@ -1,0 +1,154 @@
+From 8f60f80a201cc6c4a5fe5444de0cae2d6cadd785 Mon Sep 17 00:00:00 2001
+From: Arun Kumar <arunkumar.ev@adlinktech.com>
+Date: Thu, 8 Oct 2020 09:23:53 +0530
+Subject: [PATCH 7/7] IMX8QM: Add Bayer RAW format in capture driver
+
+Add bayer RAW format in capture driver. Set ov13850
+virtual channel to 1
+
+Signed-off-by: Arun Kumar <arunkumar.ev@adlinktech.com>
+---
+ .../boot/dts/adlink/adlink-lec-imx8qm-ov13850.dts     |  2 +-
+ drivers/media/platform/imx8/mxc-isi-cap.c             | 19 ++++++++++++++++++-
+ drivers/media/platform/imx8/ov13850.c                 | 19 ++++++++++++++++---
+ 3 files changed, 35 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov13850.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov13850.dts
+index 86f195f3..3a9797b 100644
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov13850.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8qm-ov13850.dts
+@@ -32,7 +32,7 @@
+ 		mclk_source = <0>;
+ 		pwn-gpios = <&gpio1 30 GPIO_ACTIVE_HIGH>;
+ 		rst-gpios = <&gpio1 31 GPIO_ACTIVE_HIGH>;
+-		csi_id = <1>;
++		virtual_channel = <1>;
+ 		mipi_csi;
+ 		//virtual-channel;
+ 		port {
+diff --git a/drivers/media/platform/imx8/mxc-isi-cap.c b/drivers/media/platform/imx8/mxc-isi-cap.c
+index 5ef4968..210fd38 100644
+--- a/drivers/media/platform/imx8/mxc-isi-cap.c
++++ b/drivers/media/platform/imx8/mxc-isi-cap.c
+@@ -106,6 +106,14 @@ struct mxc_isi_fmt mxc_isi_out_formats[] = {
+ 		.memplanes	= 1,
+ 		.colplanes	= 1,
+ 		.mbus_code	= MEDIA_BUS_FMT_RGB888_1X24,
++	}, {
++		.name           = "BGGR",
++		.fourcc         = V4L2_PIX_FMT_SBGGR8,
++		.depth          = { 8 },
++		.color          = MXC_ISI_OUT_FMT_RAW8,
++		.memplanes      = 1,
++		.colplanes      = 1,
++		.mbus_code      = MEDIA_BUS_FMT_SBGGR8_1X8,
+ 	}
+ };
+ 
+@@ -123,7 +131,14 @@ struct mxc_isi_fmt mxc_isi_src_formats[] = {
+ 		.depth		= { 32 },
+ 		.memplanes	= 1,
+ 		.colplanes	= 1,
++	}, {
++		.name		= "BGGR",
++		.fourcc         = V4L2_PIX_FMT_SBGGR8,
++		.depth          = { 8 },
++		.memplanes      = 1,
++		.colplanes      = 1,
+ 	}
++
+ };
+ 
+ struct mxc_isi_fmt *mxc_isi_get_format(unsigned int index)
+@@ -168,6 +183,9 @@ struct mxc_isi_fmt *mxc_isi_get_src_fmt(struct v4l2_subdev_format *sd_fmt)
+ 		sd_fmt->format.code == MEDIA_BUS_FMT_UYVY8_2X8 ||
+ 		sd_fmt->format.code == MEDIA_BUS_FMT_YUYV8_2X8)
+ 		index = 1;
++	else if(sd_fmt->format.code == MEDIA_BUS_FMT_SBGGR8_1X8) {
++		index = 2;
++	}
+ 	else
+ 		index = 0;
+ 	return &mxc_isi_src_formats[index];
+@@ -971,7 +989,6 @@ static int mxc_isi_cap_s_fmt_mplane(struct file *file, void *priv,
+ 		if ((bpl == 0) || (bpl / (fmt->depth[i] >> 3)) < pix->width)
+ 			pix->plane_fmt[i].bytesperline =
+ 						(pix->width * fmt->depth[i]) >> 3;
+-
+ 		if (pix->plane_fmt[i].sizeimage == 0) {
+ 
+ 			if ((i == 1) && (pix->pixelformat == V4L2_PIX_FMT_NV12))
+diff --git a/drivers/media/platform/imx8/ov13850.c b/drivers/media/platform/imx8/ov13850.c
+index 190a6c1..2e5b178 100644
+--- a/drivers/media/platform/imx8/ov13850.c
++++ b/drivers/media/platform/imx8/ov13850.c
+@@ -118,7 +118,7 @@ struct ov13850 {
+ 	u32 mclk;
+ 	u8 mclk_source;
+ 	struct clk *sensor_clk;
+-	int csi;
++	int csi_vc;
+ 
+ 	void (*io_init)(int, int);
+ 	int pwn_gpio;
+@@ -1086,6 +1086,7 @@ static int ov13850_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
+ static int ov13850_s_stream(struct v4l2_subdev *sd, int enable)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13850 *sensor = to_ov13850(client);
+ 	int retval;
+ 
+ 	pr_info("s_stream: %d\n", enable);
+@@ -1101,6 +1102,13 @@ static int ov13850_s_stream(struct v4l2_subdev *sd, int enable)
+ 			pr_err("OV13850 start stream failed !\n");
+ 			return retval;
+ 		}
++
++		retval = ov13850_write_reg(client, OV13850_VCHANNEL,
++					OV13850_REG_VALUE_08BIT, sensor->csi_vc);
++		if(retval) {
++			pr_err("%s: set virtual channel failed\n", __func__);
++			return retval;
++		}
+ 	}
+ 	else {
+ 		retval = ov13850_stop_stream(client);
+@@ -1109,6 +1117,7 @@ static int ov13850_s_stream(struct v4l2_subdev *sd, int enable)
+ 			return retval;
+ 		}
+ 	}
++
+ 	return 0;
+ }
+ 
+@@ -1125,12 +1134,16 @@ static int ov13850_set_fmt(struct v4l2_subdev *sd,
+ 	{
+ 		sensor->mode = 1;
+ 		ov13850_global_regs = ov13850_init_4224x3136_r2a;
++		sensor->pix.width = OV13850_RES_HIGH_WIDTH;
++		sensor->pix.height = OV13850_RES_HIGH_HEIGHT;
+ 	}
+ 	else if(format->format.width == OV13850_RES_LOW_WIDTH &&
+ 		format->format.height == OV13850_RES_LOW_HEIGHT)
+ 	{
+ 		sensor->mode = 0;
+ 		ov13850_global_regs = ov13850_init_2112x1568_r2a;
++		sensor->pix.width = OV13850_RES_LOW_WIDTH;
++		sensor->pix.height = OV13850_RES_LOW_HEIGHT;
+ 	}
+ 	else
+ 	{
+@@ -1247,8 +1260,8 @@ static int ov13850_probe(struct i2c_client *client,
+ 		return ret;
+ 	}
+ 
+-	ret = of_property_read_u32(dev->of_node, "csi_id",
+-					&(sensor->csi));
++	ret = of_property_read_u32(dev->of_node, "virtual_channel",
++					&(sensor->csi_vc));
+ 	if (ret) {
+ 		dev_err(dev, "csi id missing or invalid\n");
+ 		return ret;
+-- 
+2.10.2
+
