@@ -109,9 +109,9 @@
 
 | Module supported                                             |                                       |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| NXP i.MX6 Quad & Dual with 2GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en) carrier board and support Wayland Weston | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-2GQ-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20200925.zip) |
+| NXP i.MX6 Quad & Dual with 2GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en) carrier board and support Wayland Weston | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-2GQ-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20201012.zip) |
 | NXP i.MX6 Quad & Dual with 1GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en)carrier board and support Wayland Weston | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-1GQ-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20200925.zip) |
-| NXP i.MX6 Dual Lite with 2GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en) carrier board and support Wayland Weston | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-2GS-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20200925.zip) |
+| NXP i.MX6 Dual Lite with 2GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en) carrier board and support Wayland Weston | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-2GS-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20201012.zip) |
 | NXP i.MX6 Solo with 1GB memory + [LEC BASE R1](https://www.adlinktech.com/Products/Computer_on_Modules/SMARCCarrierBoards/LEC-BASE_R1?lang=en)carrier board and support Wayland Weston | [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX6/Images/Yocto/LEC-iMX6-1GS-LEC-BASER1-Yocto-Zeus-sdcard-1v1-20200925.zip) |
 
 
