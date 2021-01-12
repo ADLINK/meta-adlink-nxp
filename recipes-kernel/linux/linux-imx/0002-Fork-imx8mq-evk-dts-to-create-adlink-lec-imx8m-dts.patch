@@ -1,0 +1,3357 @@
+From a853610f374f2bd51f12c3461840261523b58cb5 Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Thu, 7 May 2020 15:32:31 +0530
+Subject: [PATCH 2/3] Fork-imx8mq-evk-dts-to-create-adlink-lec-imx8m-dts
+
+- This patch will fork imx8mq-evk dts file to create adlink-lec-imx8m dts file.
+- Forks dependency dtsi file and pin function header file.
+- Renames the model name with ADLINK target name.
+- Enables LEC-IMX8M platform config in lec_imx8m_defconfig.
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm64/Kconfig.platforms                  |    3 +
+ arch/arm64/boot/dts/Makefile                  |    1 +
+ arch/arm64/boot/dts/adlink/Makefile           |    3 +
+ .../boot/dts/adlink/adlink-lec-imx8m.dts      | 1104 ++++++++++++
+ arch/arm64/boot/dts/adlink/imx8mq-pinfunc.h   |  623 +++++++
+ arch/arm64/boot/dts/adlink/imx8mq.dtsi        | 1540 +++++++++++++++++
+ arch/arm64/configs/lec_imx8m_defconfig        |    1 +
+ 7 files changed, 3275 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/adlink/Makefile
+ create mode 100755 arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+ create mode 100644 arch/arm64/boot/dts/adlink/imx8mq-pinfunc.h
+ create mode 100755 arch/arm64/boot/dts/adlink/imx8mq.dtsi
+
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index 5785677c9b31..7867a30e7f54 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -318,4 +318,7 @@ config ARCH_ZYNQMP
+ 	help
+ 	  This enables support for Xilinx ZynqMP Family
+ 
++config ARCH_LEC_IMX8M
++        bool "Adlink LEC i.MX8M SOC"
++
+ endmenu
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index f19b762c008d..5e56540b5d16 100644
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ subdir-y += actions
++subdir-y += adlink
+ subdir-y += al
+ subdir-y += allwinner
+ subdir-y += altera
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+new file mode 100644
+index 000000000000..4414abd5fabc
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0
++
++dtb-$(CONFIG_ARCH_LEC_IMX8M) += adlink-lec-imx8m.dtb
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+new file mode 100755
+index 000000000000..8c3fdec62cd1
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+@@ -0,0 +1,1104 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright 2017 NXP
++ * Copyright (C) 2017-2018 Pengutronix, Lucas Stach <kernel@pengutronix.de>
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/usb/pd.h>
++#include "imx8mq.dtsi"
++
++/ {
++	model = "ADLINK LEC i.MX8M";
++	compatible = "adlink,lec-imx8m", "fsl,imx8mq";
++
++	chosen {
++		stdout-path = &uart1;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x00000000 0x40000000 0 0xc0000000>;
++	};
++
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		rpmsg_reserved: rpmsg@0xb8000000 {
++			no-map;
++			reg = <0 0xb8000000 0 0x400000>;
++		};
++	};
++
++	modem_reset: modem-reset {
++		compatible = "gpio-reset";
++		reset-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
++		reset-delay-us = <2000>;
++		reset-post-delay-ms = <40>;
++		#reset-cells = <0>;
++	};
++
++	resmem: reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/* global autoconfigured region for contiguous allocations */
++		linux,cma {
++			compatible = "shared-dma-pool";
++			reusable;
++			size = <0 0x3c000000>;
++			alloc-ranges = <0 0x40000000 0 0x40000000>;
++			linux,cma-default;
++		};
++	};
++
++	pcie0_refclk: pcie0-refclk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <100000000>;
++	};
++
++	pcie1_refclk: pcie0-refclk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <100000000>;
++	};
++
++	ptn36043 {
++		compatible = "nxp,ptn36043";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_ss_sel>;
++		switch-gpios = <&gpio3 15 GPIO_ACTIVE_HIGH>;
++		orientation-switch;
++
++		port {
++			usb3_data_ss: endpoint {
++				remote-endpoint = <&typec_con_ss>;
++			};
++		};
++	};
++
++	reg_usdhc2_vmmc: regulator-vsd-3v3 {
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_reg_usdhc2>;
++		compatible = "regulator-fixed";
++		regulator-name = "VSD_3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++		off-on-delay-us = <20000>;
++		enable-active-high;
++	};
++
++	buck2_reg: regulator-buck2 {
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_buck2>;
++		compatible = "regulator-gpio";
++		regulator-name = "vdd_arm";
++		regulator-min-microvolt = <900000>;
++		regulator-max-microvolt = <1000000>;
++		gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
++		states = <1000000 0x0
++			  900000 0x1>;
++	};
++
++	wm8524: audio-codec {
++		#sound-dai-cells = <0>;
++		compatible = "wlf,wm8524";
++		wlf,mute-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
++	};
++
++	sound-wm8524 {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "wm8524-audio";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,frame-master = <&cpudai>;
++		simple-audio-card,bitclock-master = <&cpudai>;
++		simple-audio-card,widgets =
++			"Line", "Left Line Out Jack",
++			"Line", "Right Line Out Jack";
++		simple-audio-card,routing =
++			"Left Line Out Jack", "LINEVOUTL",
++			"Right Line Out Jack", "LINEVOUTR";
++
++		cpudai: simple-audio-card,cpu {
++			sound-dai = <&sai2>;
++			dai-tdm-slot-num = <2>;
++			dai-tdm-slot-width = <32>;
++		};
++
++		link_codec: simple-audio-card,codec {
++			sound-dai = <&wm8524>;
++			clocks = <&clk IMX8MQ_CLK_SAI2_ROOT>;
++		};
++	};
++
++	sound-hdmi {
++		compatible = "fsl,imx8mq-evk-cdnhdmi",
++				"fsl,imx-audio-cdnhdmi";
++		model = "imx-audio-hdmi";
++		audio-cpu = <&sai4>;
++		protocol = <1>;
++		hdmi-out;
++		constraint-rate = <44100>,
++				<88200>,
++				<176400>,
++				<32000>,
++				<48000>,
++				<96000>,
++				<192000>;
++	};
++
++	sound-spdif {
++		compatible = "fsl,imx-audio-spdif";
++		model = "imx-spdif";
++		spdif-controller = <&spdif1>;
++		spdif-out;
++		spdif-in;
++	};
++
++	sound-hdmi-arc {
++		compatible = "fsl,imx-audio-spdif";
++		model = "imx-hdmi-arc";
++		spdif-controller = <&spdif2>;
++		spdif-in;
++	};
++
++	sound-ak4458 {
++		compatible = "fsl,imx-audio-ak4458-mq";
++		model = "ak4458-audio";
++		audio-cpu = <&sai1>;
++		audio-codec = <&ak4458_1>, <&ak4458_2>;
++		ak4458,pdn-gpio = <&gpio3 18 GPIO_ACTIVE_HIGH>;
++	};
++
++	sound-ak5558 {
++		compatible = "fsl,imx-audio-ak5558-mq";
++		model = "ak5558-audio";
++		audio-cpu = <&sai5>;
++		audio-codec = <&ak5558>;
++	};
++
++	sound-ak4497 {
++		compatible = "fsl,imx-audio-ak4497-mq";
++		model = "ak4497-audio";
++		audio-cpu = <&sai1>;
++		audio-codec = <&ak4497>;
++		status = "disabled";
++	};
++};
++
++&A53_0 {
++	cpu-supply = <&buck2_reg>;
++};
++
++&A53_1 {
++	cpu-supply = <&buck2_reg>;
++};
++
++&A53_2 {
++	cpu-supply = <&buck2_reg>;
++};
++
++&A53_3 {
++	cpu-supply = <&buck2_reg>;
++};
++
++&csi1_bridge {
++	fsl,mipi-mode;
++	fsl,two-8bit-sensor-mode;
++	status = "okay";
++
++	port {
++		csi1_ep: endpoint {
++			remote-endpoint = <&csi1_mipi_ep>;
++		};
++	};
++};
++
++&csi2_bridge {
++	fsl,mipi-mode;
++	fsl,two-8bit-sensor-mode;
++	status = "okay";
++
++	port {
++		csi2_ep: endpoint {
++			remote-endpoint = <&csi2_mipi_ep>;
++		};
++	};
++};
++
++&fec1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_fec1>;
++	phy-mode = "rgmii-id";
++	phy-handle = <&ethphy0>;
++	fsl,magic-packet;
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		ethphy0: ethernet-phy@0 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <0>;
++			at803x,eee-disabled;
++		};
++	};
++};
++
++&mipi_csi_1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++	port {
++		mipi1_sensor_ep: endpoint@0 {
++			remote-endpoint = <&ov5640_mipi1_ep>;
++			data-lanes = <1 2>;
++			bus-type = <4>;
++		};
++
++		csi1_mipi_ep: endpoint@1 {
++			remote-endpoint = <&csi1_ep>;
++		};
++	};
++};
++
++&mipi_csi_2 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++	port {
++		mipi2_sensor_ep: endpoint@0 {
++			remote-endpoint = <&ov5640_mipi2_ep>;
++			data-lanes = <1 2>;
++			bus-type = <4>;
++		};
++
++		csi2_mipi_ep: endpoint@1 {
++			remote-endpoint = <&csi2_ep>;
++		};
++	};
++};
++
++&sai2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai2>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI2>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <24576000>;
++	status = "okay";
++};
++
++&sai1 {
++	pinctrl-names = "default", "pcm_b2m", "dsd";
++	pinctrl-0 = <&pinctrl_sai1_pcm>;
++	pinctrl-1 = <&pinctrl_sai1_pcm_b2m>;
++	pinctrl-2 = <&pinctrl_sai1_dsd>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI1>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <49152000>;
++	clocks = <&clk IMX8MQ_CLK_SAI1_IPG>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_SAI1_ROOT>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_AUDIO_PLL1_OUT>,
++		<&clk IMX8MQ_AUDIO_PLL2_OUT>;
++	clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
++	fsl,sai-multi-lane;
++	fsl,dataline,dsd = <0 0xff 0xff 2 0xff 0x11>;
++	dmas = <&sdma2 8 25 0>, <&sdma2 9 25 0>;
++	status = "okay";
++};
++
++&sai4 {
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI4>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <24576000>;
++	clocks = <&clk IMX8MQ_CLK_SAI4_IPG>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_SAI4_ROOT>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_AUDIO_PLL1_OUT>,
++		<&clk IMX8MQ_AUDIO_PLL2_OUT>;
++	clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
++	status = "okay";
++};
++
++&sai5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai5>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SAI5>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <49152000>;
++	clocks = <&clk IMX8MQ_CLK_SAI5_IPG>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_SAI5_ROOT>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_AUDIO_PLL1_OUT>,
++		<&clk IMX8MQ_AUDIO_PLL2_OUT>;
++	clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
++	fsl,sai-asynchronous;
++	status = "okay";
++};
++
++&spdif1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_spdif1>;
++	assigned-clocks = <&clk IMX8MQ_CLK_SPDIF1>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <24576000>;
++	clocks = <&clk IMX8MQ_CLK_IPG_ROOT>, <&clk IMX8MQ_CLK_25M>,
++		<&clk IMX8MQ_CLK_SPDIF1>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_IPG_ROOT>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>,
++		<&clk IMX8MQ_AUDIO_PLL1_OUT>, <&clk IMX8MQ_AUDIO_PLL2_OUT>;
++	clock-names = "core", "rxtx0", "rxtx1", "rxtx2", "rxtx3", "rxtx4",
++		      "rxtx5", "rxtx6", "rxtx7", "spba", "pll8k", "pll11k";
++	status = "okay";
++};
++
++&spdif2 {
++	assigned-clocks = <&clk IMX8MQ_CLK_SPDIF2>;
++	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
++	assigned-clock-rates = <24576000>;
++	status = "okay";
++};
++
++
++&gpio5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_wifi_reset>;
++
++	wl-reg-on {
++		gpio-hog;
++		gpios = <29 GPIO_ACTIVE_HIGH>;
++		output-high;
++	};
++};
++
++&i2c1 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c1>;
++	status = "okay";
++
++	ov5640_mipi2: ov5640_mipi2@3c {
++		compatible = "ovti,ov5640_mipi";
++		reg = <0x3c>;
++		status = "okay";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_csi2_pwn>, <&pinctrl_csi_rst>;
++		clocks = <&clk IMX8MQ_CLK_CLKO2>;
++		clock-names = "csi_mclk";
++		assigned-clocks = <&clk IMX8MQ_CLK_CLKO2>;
++		assigned-clock-parents = <&clk IMX8MQ_SYS2_PLL_200M>;
++		assigned-clock-rates = <20000000>;
++		csi_id = <1>;
++		pwn-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
++		mclk = <20000000>;
++		mclk_source = <0>;
++		port {
++			ov5640_mipi2_ep: endpoint {
++				remote-endpoint = <&mipi2_sensor_ep>;
++			};
++		};
++	};
++
++	pmic@8 {
++		compatible = "fsl,pfuze100";
++		fsl,pfuze-support-disable-sw;
++		reg = <0x8>;
++
++		regulators {
++			sw1a_reg: sw1ab {
++				regulator-min-microvolt = <825000>;
++				regulator-max-microvolt = <1100000>;
++			};
++
++			sw1c_reg: sw1c {
++				regulator-min-microvolt = <825000>;
++				regulator-max-microvolt = <1100000>;
++			};
++
++			sw2_reg: sw2 {
++				regulator-min-microvolt = <1100000>;
++				regulator-max-microvolt = <1100000>;
++				regulator-always-on;
++			};
++
++			sw3a_reg: sw3ab {
++				regulator-min-microvolt = <825000>;
++				regulator-max-microvolt = <1100000>;
++				regulator-always-on;
++			};
++
++			sw4_reg: sw4 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++				regulator-always-on;
++			};
++
++			swbst_reg: swbst {
++				regulator-min-microvolt = <5000000>;
++				regulator-max-microvolt = <5150000>;
++			};
++
++			snvs_reg: vsnvs {
++				regulator-min-microvolt = <1000000>;
++				regulator-max-microvolt = <3000000>;
++				regulator-always-on;
++			};
++
++			vref_reg: vrefddr {
++				regulator-always-on;
++			};
++
++			vgen1_reg: vgen1 {
++				regulator-min-microvolt = <800000>;
++				regulator-max-microvolt = <1550000>;
++			};
++
++			vgen2_reg: vgen2 {
++				regulator-min-microvolt = <850000>;
++				regulator-max-microvolt = <975000>;
++				regulator-always-on;
++			};
++
++			vgen3_reg: vgen3 {
++				regulator-min-microvolt = <1675000>;
++				regulator-max-microvolt = <1975000>;
++				regulator-always-on;
++			};
++
++			vgen4_reg: vgen4 {
++				regulator-min-microvolt = <1625000>;
++				regulator-max-microvolt = <1875000>;
++				regulator-always-on;
++			};
++
++			vgen5_reg: vgen5 {
++				regulator-min-microvolt = <3075000>;
++				regulator-max-microvolt = <3625000>;
++				regulator-always-on;
++			};
++
++			vgen6_reg: vgen6 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++			};
++		};
++	};
++
++	ptn5110: tcpc@50 {
++		compatible = "nxp,ptn5110";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_typec>;
++		reg = <0x50>;
++		interrupt-parent = <&gpio3>;
++		interrupts = <3 8>;
++
++		port {
++			typec_dr_sw: endpoint {
++				remote-endpoint = <&usb3_drd_sw>;
++			};
++		};
++
++		usb_con: connector {
++			compatible = "usb-c-connector";
++			label = "USB-C";
++			power-role = "dual";
++			try-power-role = "sink";
++			source-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)>;
++			sink-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)
++				     PDO_VAR(5000, 20000, 3000)>;
++			op-sink-microwatt = <15000000>;
++			self-powered;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@1 {
++					reg = <1>;
++					typec_con_ss: endpoint {
++						remote-endpoint = <&usb3_data_ss>;
++					};
++				};
++			};
++		};
++	};
++};
++
++&i2c3 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c3>;
++	status = "okay";
++
++	synaptics_dsx_ts: synaptics_dsx_ts@20 {
++		compatible = "synaptics_dsx";
++		reg = <0x20>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_i2c1_dsi_ts_int>;
++		interrupt-parent = <&gpio5>;
++		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
++		synaptics,diagonal-rotation;
++		status = "disabled";
++	};
++
++	ak4458_1: ak4458@10 {
++		compatible = "asahi-kasei,ak4458";
++		reg = <0x10>;
++	};
++
++	ak4458_2: ak4458@12 {
++		compatible = "asahi-kasei,ak4458";
++		reg = <0x12>;
++	};
++
++	ak5558: ak5558@13 {
++		compatible = "asahi-kasei,ak5558";
++		reg = <0x13>;
++		ak5558,pdn-gpio = <&gpio3 17 GPIO_ACTIVE_HIGH>;
++	};
++
++	ak4497: ak4497@11 {
++		compatible = "asahi-kasei,ak4497";
++		reg = <0x11>;
++		ak4497,pdn-gpio = <&gpio3 16 GPIO_ACTIVE_HIGH>;
++	};
++
++	adv_bridge: adv7535@3d {
++		compatible = "adi,adv7535";
++		reg = <0x3d>;
++		adi,addr-cec = <0x3b>;
++		adi,dsi-lanes = <4>;
++		pinctrl-0 = <&pinctrl_i2c1_dsi_ts_int>;
++		interrupt-parent = <&gpio5>;
++		interrupts = <7 IRQ_TYPE_LEVEL_LOW>;
++
++		status = "disabled";
++	};
++};
++
++&i2c2 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c2>;
++	status = "okay";
++
++	ov5640_mipi: ov5640_mipi@3c {
++		compatible = "ovti,ov5640_mipi";
++		reg = <0x3c>;
++		status = "okay";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_csi1_pwn>;
++		clocks = <&clk IMX8MQ_CLK_CLKO2>;
++		clock-names = "csi_mclk";
++		assigned-clocks = <&clk IMX8MQ_CLK_CLKO2>;
++		assigned-clock-parents = <&clk IMX8MQ_SYS2_PLL_200M>;
++		assigned-clock-rates = <20000000>;
++		csi_id = <0>;
++		pwn-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
++		mclk = <20000000>;
++		mclk_source = <0>;
++		port {
++			ov5640_mipi1_ep: endpoint {
++				remote-endpoint = <&mipi1_sensor_ep>;
++			};
++		};
++	};
++};
++
++&pcie0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pcie0>;
++	reset-gpio = <&gpio5 28 GPIO_ACTIVE_LOW>;
++	clocks = <&clk IMX8MQ_CLK_PCIE1_ROOT>,
++		 <&clk IMX8MQ_CLK_PCIE1_AUX>,
++		 <&clk IMX8MQ_CLK_PCIE1_PHY>,
++		 <&pcie0_refclk>;
++	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
++	hard-wired = <1>;
++	status = "okay";
++};
++
++&pcie1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pcie1>;
++	disable-gpio = <&gpio5 10 GPIO_ACTIVE_LOW>;
++	reset-gpio = <&gpio5 12 GPIO_ACTIVE_LOW>;
++	clocks = <&clk IMX8MQ_CLK_PCIE2_ROOT>,
++		 <&clk IMX8MQ_CLK_PCIE2_AUX>,
++		 <&clk IMX8MQ_CLK_PCIE2_PHY>,
++		 <&pcie1_refclk>;
++	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
++	reserved-region = <&rpmsg_reserved>;
++	status = "okay";
++};
++
++&pgc_gpu {
++	power-supply = <&sw1a_reg>;
++};
++
++&pgc_vpu {
++	power-supply = <&sw1c_reg>;
++};
++
++&snvs_pwrkey {
++	status = "okay";
++};
++
++&qspi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_qspi>;
++	status = "okay";
++
++	flash0: n25q256a@0 {
++		reg = <0>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		spi-max-frequency = <29000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		spi-nor,ddr-quad-read-dummy = <6>;
++	};
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart1>;
++	assigned-clocks = <&clk IMX8MQ_CLK_UART1>;
++	assigned-clock-parents = <&clk IMX8MQ_CLK_25M>;
++	status = "okay";
++};
++
++&uart3 { /* BT */
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart3>;
++	assigned-clocks = <&clk IMX8MQ_CLK_UART3>;
++	assigned-clock-parents = <&clk IMX8MQ_SYS1_PLL_80M>;
++	fsl,uart-has-rtscts;
++	resets = <&modem_reset>;
++	status = "okay";
++};
++
++&usb3_phy0 {
++	status = "okay";
++};
++
++&usb_dwc3_0 {
++	dr_mode = "otg";
++	hnp-disable;
++	srp-disable;
++	adp-disable;
++	usb-role-switch;
++	status = "okay";
++
++	port {
++		usb3_drd_sw: endpoint {
++			remote-endpoint = <&typec_dr_sw>;
++		};
++	};
++};
++
++&usb3_phy1 {
++	status = "okay";
++};
++
++&usb_dwc3_1 {
++	dr_mode = "host";
++	status = "okay";
++};
++
++&usdhc1 {
++	pinctrl-names = "default", "state_100mhz", "state_200mhz";
++	pinctrl-0 = <&pinctrl_usdhc1>;
++	pinctrl-1 = <&pinctrl_usdhc1_100mhz>;
++	pinctrl-2 = <&pinctrl_usdhc1_200mhz>;
++	vqmmc-supply = <&sw4_reg>;
++	bus-width = <8>;
++	non-removable;
++	no-sd;
++	no-sdio;
++	status = "okay";
++};
++
++&usdhc2 {
++	pinctrl-names = "default", "state_100mhz", "state_200mhz";
++	pinctrl-0 = <&pinctrl_usdhc2>;
++	pinctrl-1 = <&pinctrl_usdhc2_100mhz>;
++	pinctrl-2 = <&pinctrl_usdhc2_200mhz>;
++	cd-gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
++	vmmc-supply = <&reg_usdhc2_vmmc>;
++	status = "okay";
++};
++
++&wdog1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_wdog>;
++	fsl,ext-reset-output;
++	status = "okay";
++};
++
++&iomuxc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hog>;
++
++	pinctrl_hog: hoggrp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_NAND_READY_B_GPIO3_IO16		0x19
++			MX8MQ_IOMUXC_NAND_WE_B_GPIO3_IO17		0x19
++			MX8MQ_IOMUXC_NAND_WP_B_GPIO3_IO18		0x19
++			MX8MQ_IOMUXC_GPIO1_IO08_GPIO1_IO8		0xd6
++			MX8MQ_IOMUXC_GPIO1_IO00_ANAMIX_REF_CLK_32K	0x16
++		>;
++	};
++
++	pinctrl_buck2: vddarmgrp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_GPIO1_IO13_GPIO1_IO13		0x19
++		>;
++
++	};
++
++	pinctrl_csi1_pwn: csi1_pwn_grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_GPIO1_IO03_GPIO1_IO3		0x19
++		>;
++	};
++	pinctrl_csi2_pwn: csi2_pwn_grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_GPIO1_IO05_GPIO1_IO5		0x19
++		>;
++	};
++
++	pinctrl_csi_rst: csi_rst_grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
++			MX8MQ_IOMUXC_GPIO1_IO15_CCMSRCGPCMIX_CLKO2	0x59
++		>;
++	};
++
++	pinctrl_fec1: fec1grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_ENET_MDC_ENET1_MDC			0x3
++			MX8MQ_IOMUXC_ENET_MDIO_ENET1_MDIO		0x23
++			MX8MQ_IOMUXC_ENET_TD3_ENET1_RGMII_TD3		0x1f
++			MX8MQ_IOMUXC_ENET_TD2_ENET1_RGMII_TD2		0x1f
++			MX8MQ_IOMUXC_ENET_TD1_ENET1_RGMII_TD1		0x1f
++			MX8MQ_IOMUXC_ENET_TD0_ENET1_RGMII_TD0		0x1f
++			MX8MQ_IOMUXC_ENET_RD3_ENET1_RGMII_RD3		0x91
++			MX8MQ_IOMUXC_ENET_RD2_ENET1_RGMII_RD2		0x91
++			MX8MQ_IOMUXC_ENET_RD1_ENET1_RGMII_RD1		0x91
++			MX8MQ_IOMUXC_ENET_RD0_ENET1_RGMII_RD0		0x91
++			MX8MQ_IOMUXC_ENET_TXC_ENET1_RGMII_TXC		0x1f
++			MX8MQ_IOMUXC_ENET_RXC_ENET1_RGMII_RXC		0x91
++			MX8MQ_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL	0x91
++			MX8MQ_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL	0x1f
++			MX8MQ_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x19
++		>;
++	};
++
++	pinctrl_i2c1: i2c1grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_I2C1_SCL_I2C1_SCL			0x4000007f
++			MX8MQ_IOMUXC_I2C1_SDA_I2C1_SDA			0x4000007f
++		>;
++	};
++
++	pinctrl_i2c3: i2c3grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_I2C3_SCL_I2C3_SCL			0x4000007f
++			MX8MQ_IOMUXC_I2C3_SDA_I2C3_SDA			0x4000007f
++		>;
++	};
++
++	pinctrl_i2c1_dsi_ts_int: dsi_ts_int {
++		fsl,pins = <
++			MX8MQ_IOMUXC_ECSPI1_MOSI_GPIO5_IO7		0x19
++		>;
++	};
++
++	pinctrl_i2c2: i2c2grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_I2C2_SCL_I2C2_SCL			0x40000067
++			MX8MQ_IOMUXC_I2C2_SDA_I2C2_SDA			0x40000067
++		>;
++	};
++
++	pinctrl_pcie0: pcie0grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_I2C4_SCL_PCIE1_CLKREQ_B		0x76
++			MX8MQ_IOMUXC_UART4_RXD_GPIO5_IO28		0x16
++		>;
++	};
++
++	pinctrl_pcie1: pcie1grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_I2C4_SDA_PCIE2_CLKREQ_B		0x76 /* open drain, pull up */
++			MX8MQ_IOMUXC_ECSPI2_SCLK_GPIO5_IO10		0x16
++			MX8MQ_IOMUXC_ECSPI2_MISO_GPIO5_IO12		0x16
++		>;
++	};
++
++	pinctrl_qspi: qspigrp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_NAND_ALE_QSPI_A_SCLK	0x82
++			MX8MQ_IOMUXC_NAND_CE0_B_QSPI_A_SS0_B	0x82
++			MX8MQ_IOMUXC_NAND_DATA00_QSPI_A_DATA0	0x82
++			MX8MQ_IOMUXC_NAND_DATA01_QSPI_A_DATA1	0x82
++			MX8MQ_IOMUXC_NAND_DATA02_QSPI_A_DATA2	0x82
++			MX8MQ_IOMUXC_NAND_DATA03_QSPI_A_DATA3	0x82
++
++		>;
++	};
++
++	pinctrl_reg_usdhc2: regusdhc2grpgpio {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SD2_RESET_B_GPIO2_IO19		0x41
++		>;
++	};
++
++	pinctrl_sai2: sai2grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SAI2_TXFS_SAI2_TX_SYNC     0xd6
++			MX8MQ_IOMUXC_SAI2_TXC_SAI2_TX_BCLK      0xd6
++			MX8MQ_IOMUXC_SAI2_MCLK_SAI2_MCLK        0xd6
++			MX8MQ_IOMUXC_SAI2_TXD0_SAI2_TX_DATA0    0xd6
++		>;
++	};
++
++	pinctrl_sai1_pcm: sai1grp_pcm {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SAI1_MCLK_SAI1_MCLK		0xd6
++			MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC		0xd6
++			MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_SYNC		0xd6
++			MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7		0xd6
++		>;
++	};
++
++	pinctrl_sai1_pcm_b2m: sai1grp_pcm_b2m {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SAI1_MCLK_SAI1_TX_BCLK		0xd6
++			MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC		0xd6
++			MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_SYNC		0xd6
++			MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7		0xd6
++		>;
++	};
++
++	pinctrl_sai1_dsd: sai1grp_dsd {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SAI1_MCLK_SAI1_MCLK		0xd6
++			MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC		0xd6
++			MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_DATA4		0xd6
++			MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6		0xd6
++			MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7		0xd6
++		>;
++	};
++
++	pinctrl_sai5: sai5grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SAI5_MCLK_SAI5_MCLK	0xd6
++			MX8MQ_IOMUXC_SAI5_RXC_SAI5_RX_BCLK	0xd6
++			MX8MQ_IOMUXC_SAI5_RXFS_SAI5_RX_SYNC	0xd6
++			MX8MQ_IOMUXC_SAI5_RXD0_SAI5_RX_DATA0	0xd6
++			MX8MQ_IOMUXC_SAI5_RXD1_SAI5_RX_DATA1    0xd6
++			MX8MQ_IOMUXC_SAI5_RXD2_SAI5_RX_DATA2    0xd6
++			MX8MQ_IOMUXC_SAI5_RXD3_SAI5_RX_DATA3    0xd6
++		>;
++	};
++
++	pinctrl_spdif1: spdif1grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SPDIF_TX_SPDIF1_OUT	0xd6
++			MX8MQ_IOMUXC_SPDIF_RX_SPDIF1_IN		0xd6
++		>;
++	};
++
++	pinctrl_ss_sel: usb3ssgrp{
++		fsl,pins = <
++			MX8MQ_IOMUXC_NAND_RE_B_GPIO3_IO15		0x16
++		>;
++	};
++
++	pinctrl_typec: typecgrp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_NAND_CE2_B_GPIO3_IO3		0x17059
++		>;
++	};
++
++	pinctrl_uart1: uart1grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_UART1_RXD_UART1_DCE_RX		0x49
++			MX8MQ_IOMUXC_UART1_TXD_UART1_DCE_TX		0x49
++		>;
++	};
++
++	pinctrl_uart3: uart3grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_UART3_TXD_UART3_DCE_TX		0x49
++			MX8MQ_IOMUXC_UART3_RXD_UART3_DCE_RX		0x49
++			MX8MQ_IOMUXC_ECSPI1_MISO_UART3_DCE_CTS_B	0x49
++			MX8MQ_IOMUXC_ECSPI1_SS0_UART3_DCE_RTS_B		0x49
++			MX8MQ_IOMUXC_NAND_CLE_GPIO3_IO5			0x19
++		>;
++	};
++
++	pinctrl_usdhc1: usdhc1grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK			0x83
++			MX8MQ_IOMUXC_SD1_CMD_USDHC1_CMD			0xc3
++			MX8MQ_IOMUXC_SD1_DATA0_USDHC1_DATA0		0xc3
++			MX8MQ_IOMUXC_SD1_DATA1_USDHC1_DATA1		0xc3
++			MX8MQ_IOMUXC_SD1_DATA2_USDHC1_DATA2		0xc3
++			MX8MQ_IOMUXC_SD1_DATA3_USDHC1_DATA3		0xc3
++			MX8MQ_IOMUXC_SD1_DATA4_USDHC1_DATA4		0xc3
++			MX8MQ_IOMUXC_SD1_DATA5_USDHC1_DATA5		0xc3
++			MX8MQ_IOMUXC_SD1_DATA6_USDHC1_DATA6		0xc3
++			MX8MQ_IOMUXC_SD1_DATA7_USDHC1_DATA7		0xc3
++			MX8MQ_IOMUXC_SD1_STROBE_USDHC1_STROBE		0x83
++			MX8MQ_IOMUXC_SD1_RESET_B_USDHC1_RESET_B		0xc1
++		>;
++	};
++
++	pinctrl_usdhc1_100mhz: usdhc1-100grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK			0x8d
++			MX8MQ_IOMUXC_SD1_CMD_USDHC1_CMD			0xcd
++			MX8MQ_IOMUXC_SD1_DATA0_USDHC1_DATA0		0xcd
++			MX8MQ_IOMUXC_SD1_DATA1_USDHC1_DATA1		0xcd
++			MX8MQ_IOMUXC_SD1_DATA2_USDHC1_DATA2		0xcd
++			MX8MQ_IOMUXC_SD1_DATA3_USDHC1_DATA3		0xcd
++			MX8MQ_IOMUXC_SD1_DATA4_USDHC1_DATA4		0xcd
++			MX8MQ_IOMUXC_SD1_DATA5_USDHC1_DATA5		0xcd
++			MX8MQ_IOMUXC_SD1_DATA6_USDHC1_DATA6		0xcd
++			MX8MQ_IOMUXC_SD1_DATA7_USDHC1_DATA7		0xcd
++			MX8MQ_IOMUXC_SD1_STROBE_USDHC1_STROBE		0x8d
++			MX8MQ_IOMUXC_SD1_RESET_B_USDHC1_RESET_B		0xc1
++		>;
++	};
++
++	pinctrl_usdhc1_200mhz: usdhc1-200grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK			0x9f
++			MX8MQ_IOMUXC_SD1_CMD_USDHC1_CMD			0xdf
++			MX8MQ_IOMUXC_SD1_DATA0_USDHC1_DATA0		0xdf
++			MX8MQ_IOMUXC_SD1_DATA1_USDHC1_DATA1		0xdf
++			MX8MQ_IOMUXC_SD1_DATA2_USDHC1_DATA2		0xdf
++			MX8MQ_IOMUXC_SD1_DATA3_USDHC1_DATA3		0xdf
++			MX8MQ_IOMUXC_SD1_DATA4_USDHC1_DATA4		0xdf
++			MX8MQ_IOMUXC_SD1_DATA5_USDHC1_DATA5		0xdf
++			MX8MQ_IOMUXC_SD1_DATA6_USDHC1_DATA6		0xdf
++			MX8MQ_IOMUXC_SD1_DATA7_USDHC1_DATA7		0xdf
++			MX8MQ_IOMUXC_SD1_STROBE_USDHC1_STROBE		0x9f
++			MX8MQ_IOMUXC_SD1_RESET_B_USDHC1_RESET_B		0xc1
++		>;
++	};
++
++	pinctrl_usdhc2: usdhc2grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SD2_CLK_USDHC2_CLK			0x83
++			MX8MQ_IOMUXC_SD2_CMD_USDHC2_CMD			0xc3
++			MX8MQ_IOMUXC_SD2_DATA0_USDHC2_DATA0		0xc3
++			MX8MQ_IOMUXC_SD2_DATA1_USDHC2_DATA1		0xc3
++			MX8MQ_IOMUXC_SD2_DATA2_USDHC2_DATA2		0xc3
++			MX8MQ_IOMUXC_SD2_DATA3_USDHC2_DATA3		0xc3
++			MX8MQ_IOMUXC_GPIO1_IO04_USDHC2_VSELECT		0xc1
++		>;
++	};
++
++	pinctrl_usdhc2_100mhz: usdhc2-100grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SD2_CLK_USDHC2_CLK			0x85
++			MX8MQ_IOMUXC_SD2_CMD_USDHC2_CMD			0xc5
++			MX8MQ_IOMUXC_SD2_DATA0_USDHC2_DATA0		0xc5
++			MX8MQ_IOMUXC_SD2_DATA1_USDHC2_DATA1		0xc5
++			MX8MQ_IOMUXC_SD2_DATA2_USDHC2_DATA2		0xc5
++			MX8MQ_IOMUXC_SD2_DATA3_USDHC2_DATA3		0xc5
++			MX8MQ_IOMUXC_GPIO1_IO04_USDHC2_VSELECT		0xc1
++		>;
++	};
++
++	pinctrl_usdhc2_200mhz: usdhc2-200grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_SD2_CLK_USDHC2_CLK			0x87
++			MX8MQ_IOMUXC_SD2_CMD_USDHC2_CMD			0xc7
++			MX8MQ_IOMUXC_SD2_DATA0_USDHC2_DATA0		0xc7
++			MX8MQ_IOMUXC_SD2_DATA1_USDHC2_DATA1		0xc7
++			MX8MQ_IOMUXC_SD2_DATA2_USDHC2_DATA2		0xc7
++			MX8MQ_IOMUXC_SD2_DATA3_USDHC2_DATA3		0xc7
++			MX8MQ_IOMUXC_GPIO1_IO04_USDHC2_VSELECT		0xc1
++		>;
++	};
++
++	pinctrl_wdog: wdog1grp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_GPIO1_IO02_WDOG1_WDOG_B		0xc6
++		>;
++	};
++
++	pinctrl_wifi_reset: wifiresetgrp {
++		fsl,pins = <
++			MX8MQ_IOMUXC_UART4_TXD_GPIO5_IO29		0x16
++		>;
++	};
++};
++
++&vpu {
++	status = "okay";
++};
++
++&gpu3d {
++	status = "okay";
++};
++
++&irqsteer {
++	status = "okay";
++};
++
++&dcss {
++	status = "okay";
++
++	port@0 {
++		dcss_out: endpoint {
++			  remote-endpoint = <&hdmi_in>;
++		};
++	};
++};
++
++&hdmi {
++	compatible = "cdn,imx8mq-hdmi";
++	lane-mapping = <0xe4>;
++	status = "okay";
++	port@1 {
++		hdmi_in: endpoint {
++			remote-endpoint = <&dcss_out>;
++		};
++	};
++};
+diff --git a/arch/arm64/boot/dts/adlink/imx8mq-pinfunc.h b/arch/arm64/boot/dts/adlink/imx8mq-pinfunc.h
+new file mode 100644
+index 000000000000..b94b02080a34
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/imx8mq-pinfunc.h
+@@ -0,0 +1,623 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ * Copyright 2017 NXP
++ */
++
++#ifndef __DTS_IMX8MQ_PINFUNC_H
++#define __DTS_IMX8MQ_PINFUNC_H
++
++/*
++ * The pin function ID is a tuple of
++ * <mux_reg conf_reg input_reg mux_mode input_val>
++ */
++
++#define MX8MQ_IOMUXC_PMIC_STBY_REQ_CCMSRCGPCMIX_PMIC_STBY_REQ               0x014 0x27C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_PMIC_ON_REQ_SNVSMIX_PMIC_ON_REQ                        0x018 0x280 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ONOFF_SNVSMIX_ONOFF                                    0x01C 0x284 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_POR_B_SNVSMIX_POR_B                                    0x020 0x288 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_RTC_RESET_B_SNVSMIX_RTC_RESET_B                        0x024 0x28C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO00_GPIO1_IO0                                   0x028 0x290 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO00_CCMSRCGPCMIX_ENET_PHY_REF_CLK_ROOT          0x028 0x290 0x4C0 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO00_ANAMIX_REF_CLK_32K                          0x028 0x290 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO00_CCMSRCGPCMIX_EXT_CLK1                       0x028 0x290 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO00_SJC_FAIL                                    0x028 0x290 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO01_GPIO1_IO1                                   0x02C 0x294 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO01_PWM1_OUT                                    0x02C 0x294 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO01_ANAMIX_REF_CLK_24M                          0x02C 0x294 0x4BC 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO01_CCMSRCGPCMIX_EXT_CLK2                       0x02C 0x294 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO01_SJC_ACTIVE                                  0x02C 0x294 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO02_GPIO1_IO2                                   0x030 0x298 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO02_WDOG1_WDOG_B                                0x030 0x298 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO02_WDOG1_WDOG_ANY                              0x030 0x298 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO02_SJC_DE_B                                    0x030 0x298 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO03_GPIO1_IO3                                   0x034 0x29C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO03_USDHC1_VSELECT                              0x034 0x29C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO03_SDMA1_EXT_EVENT0                            0x034 0x29C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO03_ANAMIX_XTAL_OK                              0x034 0x29C 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO03_SJC_DONE                                    0x034 0x29C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO04_GPIO1_IO4                                   0x038 0x2A0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO04_USDHC2_VSELECT                              0x038 0x2A0 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO04_SDMA1_EXT_EVENT1                            0x038 0x2A0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO04_ANAMIX_XTAL_OK_LV                           0x038 0x2A0 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO04_USDHC1_TEST_TRIG                            0x038 0x2A0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO05_GPIO1_IO5                                   0x03C 0x2A4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO05_M4_NMI                                      0x03C 0x2A4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO05_CCMSRCGPCMIX_PMIC_READY                     0x03C 0x2A4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO05_CCMSRCGPCMIX_INT_BOOT                       0x03C 0x2A4 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO05_USDHC2_TEST_TRIG                            0x03C 0x2A4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO06_GPIO1_IO6                                   0x040 0x2A8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO06_ENET1_MDC                                   0x040 0x2A8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO06_USDHC1_CD_B                                 0x040 0x2A8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO06_CCMSRCGPCMIX_EXT_CLK3                       0x040 0x2A8 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO06_ECSPI1_TEST_TRIG                            0x040 0x2A8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO07_GPIO1_IO7                                   0x044 0x2AC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO07_ENET1_MDIO                                  0x044 0x2AC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO07_USDHC1_WP                                   0x044 0x2AC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO07_CCMSRCGPCMIX_EXT_CLK4                       0x044 0x2AC 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO07_ECSPI2_TEST_TRIG                            0x044 0x2AC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO08_GPIO1_IO8                                   0x048 0x2B0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO08_ENET1_1588_EVENT0_IN                        0x048 0x2B0 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO08_USDHC2_RESET_B                              0x048 0x2B0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO08_CCMSRCGPCMIX_WAIT                           0x048 0x2B0 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO08_QSPI_TEST_TRIG                              0x048 0x2B0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO09_GPIO1_IO9                                   0x04C 0x2B4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO09_ENET1_1588_EVENT0_OUT                       0x04C 0x2B4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO09_SDMA2_EXT_EVENT0                            0x04C 0x2B4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO09_CCMSRCGPCMIX_STOP                           0x04C 0x2B4 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO09_RAWNAND_TEST_TRIG                           0x04C 0x2B4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO10_GPIO1_IO10                                  0x050 0x2B8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO10_USB1_OTG_ID                                 0x050 0x2B8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO10_OCOTP_CTRL_WRAPPER_FUSE_LATCHED             0x050 0x2B8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO11_GPIO1_IO11                                  0x054 0x2BC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO11_USB2_OTG_ID                                 0x054 0x2BC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO11_CCMSRCGPCMIX_PMIC_READY                     0x054 0x2BC 0x4BC 0x5 0x1
++#define MX8MQ_IOMUXC_GPIO1_IO11_CCMSRCGPCMIX_OUT0                           0x054 0x2BC 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO11_CAAM_WRAPPER_RNG_OSC_OBS                    0x054 0x2BC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO12_GPIO1_IO12                                  0x058 0x2C0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO12_USB1_OTG_PWR                                0x058 0x2C0 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO12_SDMA2_EXT_EVENT1                            0x058 0x2C0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO12_CCMSRCGPCMIX_OUT1                           0x058 0x2C0 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO12_CSU_CSU_ALARM_AUT0                          0x058 0x2C0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO13_GPIO1_IO13                                  0x05C 0x2C4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO13_USB1_OTG_OC                                 0x05C 0x2C4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO13_PWM2_OUT                                    0x05C 0x2C4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO13_CCMSRCGPCMIX_OUT2                           0x05C 0x2C4 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO13_CSU_CSU_ALARM_AUT1                          0x05C 0x2C4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO14_GPIO1_IO14                                  0x060 0x2C8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO14_USB2_OTG_PWR                                0x060 0x2C8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO14_PWM3_OUT                                    0x060 0x2C8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO14_CCMSRCGPCMIX_CLKO1                          0x060 0x2C8 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO14_CSU_CSU_ALARM_AUT2                          0x060 0x2C8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO15_GPIO1_IO15                                  0x064 0x2CC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO15_USB2_OTG_OC                                 0x064 0x2CC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO15_PWM4_OUT                                    0x064 0x2CC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO15_CCMSRCGPCMIX_CLKO2                          0x064 0x2CC 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_GPIO1_IO15_CSU_CSU_INT_DEB                             0x064 0x2CC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ENET_MDC_ENET1_MDC                                     0x068 0x2D0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_MDC_GPIO1_IO16                                    0x068 0x2D0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_MDIO_ENET1_MDIO                                   0x06C 0x2D4 0x4C0 0x0 0x1
++#define MX8MQ_IOMUXC_ENET_MDIO_GPIO1_IO17                                   0x06C 0x2D4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_TD3_ENET1_RGMII_TD3                               0x070 0x2D8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_TD3_GPIO1_IO18                                    0x070 0x2D8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_TD2_ENET1_RGMII_TD2                               0x074 0x2DC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_TD2_ENET1_TX_CLK                                  0x074 0x2DC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ENET_TD2_GPIO1_IO19                                    0x074 0x2DC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_TD1_ENET1_RGMII_TD1                               0x078 0x2E0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_TD1_GPIO1_IO20                                    0x078 0x2E0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_TD0_ENET1_RGMII_TD0                               0x07C 0x2E4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_TD0_GPIO1_IO21                                    0x07C 0x2E4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_TX_CTL_ENET1_RGMII_TX_CTL                         0x080 0x2E8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_TX_CTL_GPIO1_IO22                                 0x080 0x2E8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_TXC_ENET1_RGMII_TXC                               0x084 0x2EC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_TXC_ENET1_TX_ER                                   0x084 0x2EC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ENET_TXC_GPIO1_IO23                                    0x084 0x2EC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_RX_CTL_ENET1_RGMII_RX_CTL                         0x088 0x2F0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_RX_CTL_GPIO1_IO24                                 0x088 0x2F0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_RXC_ENET1_RGMII_RXC                               0x08C 0x2F4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_RXC_ENET1_RX_ER                                   0x08C 0x2F4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ENET_RXC_GPIO1_IO25                                    0x08C 0x2F4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_RD0_ENET1_RGMII_RD0                               0x090 0x2F8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_RD0_GPIO1_IO26                                    0x090 0x2F8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_RD1_ENET1_RGMII_RD1                               0x094 0x2FC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_RD1_GPIO1_IO27                                    0x094 0x2FC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_RD2_ENET1_RGMII_RD2                               0x098 0x300 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_RD2_GPIO1_IO28                                    0x098 0x300 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ENET_RD3_ENET1_RGMII_RD3                               0x09C 0x304 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ENET_RD3_GPIO1_IO29                                    0x09C 0x304 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK                                     0x0A0 0x308 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_CLK_GPIO2_IO0                                      0x0A0 0x308 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_CMD_USDHC1_CMD                                     0x0A4 0x30C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_CMD_GPIO2_IO1                                      0x0A4 0x30C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA0_USDHC1_DATA0                                 0x0A8 0x310 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA0_GPIO2_IO2                                    0x0A8 0x31  0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA1_USDHC1_DATA1                                 0x0AC 0x314 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA1_GPIO2_IO3                                    0x0AC 0x314 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA2_USDHC1_DATA2                                 0x0B0 0x318 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA2_GPIO2_IO4                                    0x0B0 0x318 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA3_USDHC1_DATA3                                 0x0B4 0x31C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA3_GPIO2_IO5                                    0x0B4 0x31C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA4_USDHC1_DATA4                                 0x0B8 0x320 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA4_GPIO2_IO6                                    0x0B8 0x320 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA5_USDHC1_DATA5                                 0x0BC 0x324 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA5_GPIO2_IO7                                    0x0BC 0x324 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA6_USDHC1_DATA6                                 0x0C0 0x328 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA6_GPIO2_IO8                                    0x0C0 0x328 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_DATA7_USDHC1_DATA7                                 0x0C4 0x32C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_DATA7_GPIO2_IO9                                    0x0C4 0x32C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_RESET_B_USDHC1_RESET_B                             0x0C8 0x330 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_RESET_B_GPIO2_IO10                                 0x0C8 0x330 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD1_STROBE_USDHC1_STROBE                               0x0CC 0x334 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD1_STROBE_GPIO2_IO11                                  0x0CC 0x334 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_CD_B_USDHC2_CD_B                                   0x0D0 0x338 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_CD_B_GPIO2_IO12                                    0x0D0 0x338 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_CLK_USDHC2_CLK                                     0x0D4 0x33C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_CLK_GPIO2_IO13                                     0x0D4 0x33C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_CLK_CCMSRCGPCMIX_OBSERVE0                          0x0D4 0x33C 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SD2_CLK_OBSERVE_MUX_OUT0                               0x0D4 0x33C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SD2_CMD_USDHC2_CMD                                     0x0D8 0x340 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_CMD_GPIO2_IO14                                     0x0D8 0x340 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_CMD_CCMSRCGPCMIX_OBSERVE1                          0x0D8 0x340 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SD2_CMD_OBSERVE_MUX_OUT1                               0x0D8 0x340 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SD2_DATA0_USDHC2_DATA0                                 0x0DC 0x344 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_DATA0_GPIO2_IO15                                   0x0DC 0x344 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_DATA0_CCMSRCGPCMIX_OBSERVE2                        0x0DC 0x344 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SD2_DATA0_OBSERVE_MUX_OUT2                             0x0DC 0x344 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SD2_DATA1_USDHC2_DATA1                                 0x0E0 0x348 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_DATA1_GPIO2_IO16                                   0x0E0 0x348 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_DATA1_CCMSRCGPCMIX_WAIT                            0x0E0 0x348 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SD2_DATA1_OBSERVE_MUX_OUT3                             0x0E0 0x348 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SD2_DATA2_USDHC2_DATA2                                 0x0E4 0x34C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_DATA2_GPIO2_IO17                                   0x0E4 0x34C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_DATA2_CCMSRCGPCMIX_STOP                            0x0E4 0x34C 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SD2_DATA2_OBSERVE_MUX_OUT4                             0x0E4 0x34C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SD2_DATA3_USDHC2_DATA3                                 0x0E8 0x350 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_DATA3_GPIO2_IO18                                   0x0E8 0x350 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_DATA3_CCMSRCGPCMIX_EARLY_RESET                     0x0E8 0x350 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SD2_RESET_B_USDHC2_RESET_B                             0x0EC 0x354 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_RESET_B_GPIO2_IO19                                 0x0EC 0x354 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_RESET_B_CCMSRCGPCMIX_SYSTEM_RESET                  0x0EC 0x354 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SD2_WP_USDHC2_WP                                       0x0F0 0x358 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SD2_WP_GPIO2_IO20                                      0x0F0 0x358 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SD2_WP_SIM_M_HMASTLOCK                                 0x0F0 0x358 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_ALE_RAWNAND_ALE                                   0x0F4 0x35C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_ALE_QSPI_A_SCLK                                   0x0F4 0x35C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_ALE_GPIO3_IO0                                     0x0F4 0x35C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_ALE_SIM_M_HPROT0                                  0x0F4 0x35C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_CE0_B_RAWNAND_CE0_B                               0x0F8 0x360 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_CE0_B_QSPI_A_SS0_B                                0x0F8 0x360 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_CE0_B_GPIO3_IO1                                   0x0F8 0x360 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_CE0_B_SIM_M_HPROT1                                0x0F8 0x360 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_CE1_B_RAWNAND_CE1_B                               0x0FC 0x364 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_CE1_B_QSPI_A_SS1_B                                0x0FC 0x364 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_CE1_B_GPIO3_IO2                                   0x0FC 0x364 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_CE1_B_SIM_M_HPROT2                                0x0FC 0x364 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_CE2_B_RAWNAND_CE2_B                               0x100 0x368 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_CE2_B_QSPI_B_SS0_B                                0x100 0x368 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_CE2_B_GPIO3_IO3                                   0x100 0x368 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_CE2_B_SIM_M_HPROT3                                0x100 0x368 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_CE3_B_RAWNAND_CE3_B                               0x104 0x36C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_CE3_B_QSPI_B_SS1_B                                0x104 0x36C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_CE3_B_GPIO3_IO4                                   0x104 0x36C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_CE3_B_SIM_M_HADDR0                                0x104 0x36C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_CLE_RAWNAND_CLE                                   0x108 0x370 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_CLE_QSPI_B_SCLK                                   0x108 0x370 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_CLE_GPIO3_IO5                                     0x108 0x370 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_CLE_SIM_M_HADDR1                                  0x108 0x370 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA00_RAWNAND_DATA00                             0x10C 0x374 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA00_QSPI_A_DATA0                               0x10C 0x374 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA00_GPIO3_IO6                                  0x10C 0x374 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA00_SIM_M_HADDR2                               0x10C 0x374 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA01_RAWNAND_DATA01                             0x110 0x378 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA01_QSPI_A_DATA1                               0x110 0x378 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA01_GPIO3_IO7                                  0x110 0x378 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA01_SIM_M_HADDR3                               0x110 0x378 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA02_RAWNAND_DATA02                             0x114 0x37C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA02_QSPI_A_DATA2                               0x114 0x37C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA02_GPIO3_IO8                                  0x114 0x37C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA02_SIM_M_HADDR4                               0x114 0x37C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA03_RAWNAND_DATA03                             0x118 0x380 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA03_QSPI_A_DATA3                               0x118 0x380 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA03_GPIO3_IO9                                  0x118 0x380 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA03_SIM_M_HADDR5                               0x118 0x380 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA04_RAWNAND_DATA04                             0x11C 0x384 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA04_QSPI_B_DATA0                               0x11C 0x384 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA04_GPIO3_IO10                                 0x11C 0x384 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA04_SIM_M_HADDR6                               0x11C 0x384 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA05_RAWNAND_DATA05                             0x120 0x388 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA05_QSPI_B_DATA1                               0x120 0x388 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA05_GPIO3_IO11                                 0x120 0x388 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA05_SIM_M_HADDR7                               0x120 0x388 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA06_RAWNAND_DATA06                             0x124 0x38C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA06_QSPI_B_DATA2                               0x124 0x38C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA06_GPIO3_IO12                                 0x124 0x38C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA06_SIM_M_HADDR8                               0x124 0x38C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DATA07_RAWNAND_DATA07                             0x128 0x390 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DATA07_QSPI_B_DATA3                               0x128 0x390 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DATA07_GPIO3_IO13                                 0x128 0x390 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DATA07_SIM_M_HADDR9                               0x128 0x390 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_DQS_RAWNAND_DQS                                   0x12C 0x394 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_DQS_QSPI_A_DQS                                    0x12C 0x394 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_DQS_GPIO3_IO14                                    0x12C 0x394 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_DQS_SIM_M_HADDR10                                 0x12C 0x394 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_RE_B_RAWNAND_RE_B                                 0x130 0x398 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_RE_B_QSPI_B_DQS                                   0x130 0x398 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_NAND_RE_B_GPIO3_IO15                                   0x130 0x398 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_RE_B_SIM_M_HADDR11                                0x130 0x398 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_READY_B_RAWNAND_READY_B                           0x134 0x39C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_READY_B_GPIO3_IO16                                0x134 0x39C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_READY_B_SIM_M_HADDR12                             0x134 0x39C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_WE_B_RAWNAND_WE_B                                 0x138 0x3A0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_WE_B_GPIO3_IO17                                   0x138 0x3A0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_WE_B_SIM_M_HADDR13                                0x138 0x3A0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_NAND_WP_B_RAWNAND_WP_B                                 0x13C 0x3A4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_NAND_WP_B_GPIO3_IO18                                   0x13C 0x3A4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_NAND_WP_B_SIM_M_HADDR14                                0x13C 0x3A4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI5_RXFS_SAI5_RX_SYNC                                 0x140 0x3A8 0x4E4 0x0 0x0
++#define MX8MQ_IOMUXC_SAI5_RXFS_SAI1_TX_DATA0                                0x140 0x3A8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI5_RXFS_GPIO3_IO19                                   0x140 0x3A8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI5_RXC_SAI5_RX_BCLK                                  0x144 0x3AC 0x4D0 0x0 0x0
++#define MX8MQ_IOMUXC_SAI5_RXC_SAI1_TX_DATA1                                 0x144 0x3AC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI5_RXC_GPIO3_IO20                                    0x144 0x3AC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD0_SAI5_RX_DATA0                                0x148 0x3B0 0x4D4 0x0 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD0_SAI1_TX_DATA2                                0x148 0x3B0 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD0_GPIO3_IO21                                   0x148 0x3B0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD1_SAI5_RX_DATA1                                0x14C 0x3B4 0x4D8 0x0 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD1_SAI1_TX_DATA3                                0x14C 0x3B4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD1_SAI1_TX_SYNC                                 0x14C 0x3B4 0x4CC 0x2 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD1_SAI5_TX_SYNC                                 0x14C 0x3B4 0x4EC 0x3 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD1_GPIO3_IO22                                   0x14C 0x3B4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD2_SAI5_RX_DATA2                                0x150 0x3B8 0x4DC 0x0 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD2_SAI1_TX_DATA4                                0x150 0x3B8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD2_SAI1_TX_SYNC                                 0x150 0x3B8 0x4CC 0x2 0x1
++#define MX8MQ_IOMUXC_SAI5_RXD2_SAI5_TX_BCLK                                 0x150 0x3B8 0x4E8 0x3 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD2_GPIO3_IO23                                   0x150 0x3B8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD3_SAI5_RX_DATA3                                0x154 0x3BC 0x4E0 0x0 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD3_SAI1_TX_DATA5                                0x154 0x3BC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD3_SAI1_TX_SYNC                                 0x154 0x3BC 0x4CC 0x2 0x2
++#define MX8MQ_IOMUXC_SAI5_RXD3_SAI5_TX_DATA0                                0x154 0x3BC 0x000 0x3 0x0
++#define MX8MQ_IOMUXC_SAI5_RXD3_GPIO3_IO24                                   0x154 0x3BC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI5_MCLK_SAI5_MCLK                                    0x158 0x3C0 0x52C 0x0 0x0
++#define MX8MQ_IOMUXC_SAI5_MCLK_SAI1_TX_BCLK                                 0x158 0x3C0 0x4C8 0x1 0x0
++#define MX8MQ_IOMUXC_SAI5_MCLK_SAI4_MCLK                                    0x158 0x3C0 0x000 0x2 0x0
++#define MX8MQ_IOMUXC_SAI5_MCLK_GPIO3_IO25                                   0x158 0x3C0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI5_MCLK_CCMSRCGPCMIX_TESTER_ACK                      0x158 0x3C0 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXFS_SAI1_RX_SYNC                                 0x15C 0x3C4 0x4C4 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXFS_SAI5_RX_SYNC                                 0x15C 0x3C4 0x4E4 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_RXFS_CORESIGHT_TRACE_CLK                          0x15C 0x3C4 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXFS_GPIO4_IO0                                    0x15C 0x3C4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXFS_SIM_M_HADDR15                                0x15C 0x3C4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXC_SAI1_RX_BCLK                                  0x160 0x3C8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXC_SAI5_RX_BCLK                                  0x160 0x3C8 0x4D0 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_RXC_CORESIGHT_TRACE_CTL                           0x160 0x3C8 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXC_GPIO4_IO1                                     0x160 0x3C8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXC_SIM_M_HADDR16                                 0x160 0x3C8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0                                0x164 0x3CC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD0_SAI5_RX_DATA0                                0x164 0x3CC 0x4D4 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_RXD0_CORESIGHT_TRACE0                             0x164 0x3CC 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD0_GPIO4_IO2                                    0x164 0x3CC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD0_CCMSRCGPCMIX_BOOT_CFG0                       0x164 0x3CC 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD0_SIM_M_HADDR17                                0x164 0x3CC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD1_SAI1_RX_DATA1                                0x168 0x3D0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD1_SAI5_RX_DATA1                                0x168 0x3D0 0x4D8 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_RXD1_CORESIGHT_TRACE1                             0x168 0x3D0 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD1_GPIO4_IO3                                    0x168 0x3D0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD1_CCMSRCGPCMIX_BOOT_CFG1                       0x168 0x3D0 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD1_SIM_M_HADDR18                                0x168 0x3D0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD2_SAI1_RX_DATA2                                0x16C 0x3D4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD2_SAI5_RX_DATA2                                0x16C 0x3D4 0x4DC 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_RXD2_CORESIGHT_TRACE2                             0x16C 0x3D4 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD2_GPIO4_IO4                                    0x16C 0x3D4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD2_CCMSRCGPCMIX_BOOT_CFG2                       0x16C 0x3D4 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD2_SIM_M_HADDR19                                0x16C 0x3D4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD3_SAI1_RX_DATA3                                0x170 0x3D8 0x4E0 0x0 0x1
++#define MX8MQ_IOMUXC_SAI1_RXD3_SAI5_RX_DATA3                                0x170 0x3D8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD3_CORESIGHT_TRACE3                             0x170 0x3D8 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD3_GPIO4_IO5                                    0x170 0x3D8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD3_CCMSRCGPCMIX_BOOT_CFG3                       0x170 0x3D8 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD3_SIM_M_HADDR20                                0x170 0x3D8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD4_SAI1_RX_DATA4                                0x174 0x3DC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD4_SAI6_TX_BCLK                                 0x174 0x3DC 0x51C 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD4_SAI6_RX_BCLK                                 0x174 0x3DC 0x510 0x2 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD4_CORESIGHT_TRACE4                             0x174 0x3DC 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD4_GPIO4_IO6                                    0x174 0x3DC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD4_CCMSRCGPCMIX_BOOT_CFG4                       0x174 0x3DC 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD4_SIM_M_HADDR21                                0x174 0x3DC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD5_SAI1_RX_DATA5                                0x178 0x3E0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD5_SAI6_TX_DATA0                                0x178 0x3E0 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD5_SAI6_RX_DATA0                                0x178 0x3E0 0x514 0x2 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD5_SAI1_RX_SYNC                                 0x178 0x3E0 0x4C4 0x3 0x1
++#define MX8MQ_IOMUXC_SAI1_RXD5_CORESIGHT_TRACE5                             0x178 0x3E0 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD5_GPIO4_IO7                                    0x178 0x3E0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD5_CCMSRCGPCMIX_BOOT_CFG5                       0x178 0x3E0 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD5_SIM_M_HADDR22                                0x178 0x3E0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD6_SAI1_RX_DATA6                                0x17C 0x3E4 0x520 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD6_SAI6_TX_SYNC                                 0x17C 0x3E4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD6_SAI6_RX_SYNC                                 0x17C 0x3E4 0x518 0x2 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD6_CORESIGHT_TRACE6                             0x17C 0x3E4 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD6_GPIO4_IO8                                    0x17C 0x3E4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD6_CCMSRCGPCMIX_BOOT_CFG6                       0x17C 0x3E4 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD6_SIM_M_HADDR23                                0x17C 0x3E4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD7_SAI1_RX_DATA7                                0x180 0x3E8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD7_SAI6_MCLK                                    0x180 0x3E8 0x530 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_SYNC                                 0x180 0x3E8 0x4CC 0x2 0x4
++#define MX8MQ_IOMUXC_SAI1_RXD7_SAI1_TX_DATA4                                0x180 0x3E8 0x000 0x3 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD7_CORESIGHT_TRACE7                             0x180 0x3E8 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD7_GPIO4_IO9                                    0x180 0x3E8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD7_CCMSRCGPCMIX_BOOT_CFG7                       0x180 0x3E8 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_RXD7_SIM_M_HADDR24                                0x180 0x3E8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC                                 0x184 0x3EC 0x4CC 0x0 0x3
++#define MX8MQ_IOMUXC_SAI1_TXFS_SAI5_TX_SYNC                                 0x184 0x3EC 0x4EC 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_TXFS_CORESIGHT_EVENTO                             0x184 0x3EC 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXFS_GPIO4_IO10                                   0x184 0x3EC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXFS_SIM_M_HADDR25                                0x184 0x3EC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK                                  0x188 0x3F0 0x4C8 0x0 0x1
++#define MX8MQ_IOMUXC_SAI1_TXC_SAI5_TX_BCLK                                  0x188 0x3F0 0x4E8 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_TXC_CORESIGHT_EVENTI                              0x188 0x3F0 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXC_GPIO4_IO11                                    0x188 0x3F0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXC_SIM_M_HADDR26                                 0x188 0x3F0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0                                0x18C 0x3F4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD0_SAI5_TX_DATA0                                0x18C 0x3F4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD0_CORESIGHT_TRACE8                             0x18C 0x3F4 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD0_GPIO4_IO12                                   0x18C 0x3F4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD0_CCMSRCGPCMIX_BOOT_CFG8                       0x18C 0x3F4 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD0_SIM_M_HADDR27                                0x18C 0x3F4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD1_SAI1_TX_DATA1                                0x190 0x3F8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD1_SAI5_TX_DATA1                                0x190 0x3F8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD1_CORESIGHT_TRACE9                             0x190 0x3F8 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD1_GPIO4_IO13                                   0x190 0x3F8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD1_CCMSRCGPCMIX_BOOT_CFG9                       0x190 0x3F8 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD1_SIM_M_HADDR28                                0x190 0x3F8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD2_SAI1_TX_DATA2                                0x194 0x3FC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD2_SAI5_TX_DATA2                                0x194 0x3FC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD2_CORESIGHT_TRACE10                            0x194 0x3FC 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD2_GPIO4_IO14                                   0x194 0x3FC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD2_CCMSRCGPCMIX_BOOT_CFG10                      0x194 0x3FC 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD2_SIM_M_HADDR29                                0x194 0x3FC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD3_SAI1_TX_DATA3                                0x198 0x400 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD3_SAI5_TX_DATA3                                0x198 0x400 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD3_CORESIGHT_TRACE11                            0x198 0x400 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD3_GPIO4_IO15                                   0x198 0x400 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD3_CCMSRCGPCMIX_BOOT_CFG11                      0x198 0x400 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD3_SIM_M_HADDR30                                0x198 0x400 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD4_SAI1_TX_DATA4                                0x19C 0x404 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD4_SAI6_RX_BCLK                                 0x19C 0x404 0x510 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_TXD4_SAI6_TX_BCLK                                 0x19C 0x404 0x51C 0x2 0x1
++#define MX8MQ_IOMUXC_SAI1_TXD4_CORESIGHT_TRACE12                            0x19C 0x404 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD4_GPIO4_IO16                                   0x19C 0x404 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD4_CCMSRCGPCMIX_BOOT_CFG12                      0x19C 0x404 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD4_SIM_M_HADDR31                                0x19C 0x404 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD5_SAI1_TX_DATA5                                0x1A0 0x408 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD5_SAI6_RX_DATA0                                0x1A0 0x408 0x514 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_TXD5_SAI6_TX_DATA0                                0x1A0 0x408 0x000 0x2 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD5_CORESIGHT_TRACE13                            0x1A0 0x408 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD5_GPIO4_IO17                                   0x1A0 0x408 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD5_CCMSRCGPCMIX_BOOT_CFG13                      0x1A0 0x408 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD5_SIM_M_HBURST0                                0x1A0 0x408 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD6_SAI1_TX_DATA6                                0x1A4 0x40C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD6_SAI6_RX_SYNC                                 0x1A4 0x40C 0x518 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_TXD6_SAI6_TX_SYNC                                 0x1A4 0x40C 0x520 0x2 0x1
++#define MX8MQ_IOMUXC_SAI1_TXD6_CORESIGHT_TRACE14                            0x1A4 0x40C 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD6_GPIO4_IO18                                   0x1A4 0x40C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD6_CCMSRCGPCMIX_BOOT_CFG14                      0x1A4 0x40C 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD6_SIM_M_HBURST1                                0x1A4 0x40C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD7_SAI1_TX_DATA7                                0x1A8 0x410 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD7_SAI6_MCLK                                    0x1A8 0x410 0x530 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_TXD7_CORESIGHT_TRACE15                            0x1A8 0x410 0x000 0x4 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD7_GPIO4_IO19                                   0x1A8 0x410 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD7_CCMSRCGPCMIX_BOOT_CFG15                      0x1A8 0x410 0x000 0x6 0x0
++#define MX8MQ_IOMUXC_SAI1_TXD7_SIM_M_HBURST2                                0x1A8 0x410 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI1_MCLK_SAI1_MCLK                                    0x1AC 0x414 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI1_MCLK_SAI5_MCLK                                    0x1AC 0x414 0x52C 0x1 0x1
++#define MX8MQ_IOMUXC_SAI1_MCLK_SAI1_TX_BCLK                                 0x1AC 0x414 0x4C8 0x2 0x2
++#define MX8MQ_IOMUXC_SAI1_MCLK_GPIO4_IO20                                   0x1AC 0x414 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI1_MCLK_SIM_M_HRESP                                  0x1AC 0x414 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI2_RXFS_SAI2_RX_SYNC                                 0x1B0 0x418 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI2_RXFS_SAI5_TX_SYNC                                 0x1B0 0x418 0x4EC 0x1 0x2
++#define MX8MQ_IOMUXC_SAI2_RXFS_GPIO4_IO21                                   0x1B0 0x418 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI2_RXFS_SIM_M_HSIZE0                                 0x1B0 0x418 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI2_RXC_SAI2_RX_BCLK                                  0x1B4 0x41C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI2_RXC_SAI5_TX_BCLK                                  0x1B4 0x41C 0x4E8 0x1 0x2
++#define MX8MQ_IOMUXC_SAI2_RXC_GPIO4_IO22                                    0x1B4 0x41C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI2_RXC_SIM_M_HSIZE1                                  0x1B4 0x41C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI2_RXD0_SAI2_RX_DATA0                                0x1B8 0x420 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI2_RXD0_SAI5_TX_DATA0                                0x1B8 0x420 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI2_RXD0_GPIO4_IO23                                   0x1B8 0x420 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI2_RXD0_SIM_M_HSIZE2                                 0x1B8 0x420 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI2_TXFS_SAI2_TX_SYNC                                 0x1BC 0x424 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI2_TXFS_SAI5_TX_DATA1                                0x1BC 0x424 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI2_TXFS_GPIO4_IO24                                   0x1BC 0x424 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI2_TXFS_SIM_M_HWRITE                                 0x1BC 0x424 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI2_TXC_SAI2_TX_BCLK                                  0x1C0 0x428 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI2_TXC_SAI5_TX_DATA2                                 0x1C0 0x428 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI2_TXC_GPIO4_IO25                                    0x1C0 0x428 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI2_TXC_SIM_M_HREADYOUT                               0x1C0 0x428 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI2_TXD0_SAI2_TX_DATA0                                0x1C4 0x42C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI2_TXD0_SAI5_TX_DATA3                                0x1C4 0x42C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI2_TXD0_GPIO4_IO26                                   0x1C4 0x42C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI2_TXD0_TPSMP_CLK                                    0x1C4 0x42C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI2_MCLK_SAI2_MCLK                                    0x1C8 0x430 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI2_MCLK_SAI5_MCLK                                    0x1C8 0x430 0x52C 0x1 0x2
++#define MX8MQ_IOMUXC_SAI2_MCLK_GPIO4_IO27                                   0x1C8 0x430 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI2_MCLK_TPSMP_HDATA_DIR                              0x1C8 0x430 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI3_RXFS_SAI3_RX_SYNC                                 0x1CC 0x434 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI3_RXFS_GPT1_CAPTURE1                                0x1CC 0x434 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI3_RXFS_SAI5_RX_SYNC                                 0x1CC 0x434 0x4E4 0x2 0x2
++#define MX8MQ_IOMUXC_SAI3_RXFS_GPIO4_IO28                                   0x1CC 0x434 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI3_RXFS_TPSMP_HTRANS0                                0x1CC 0x434 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI3_RXC_SAI3_RX_BCLK                                  0x1D0 0x438 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI3_RXC_GPT1_CAPTURE2                                 0x1D0 0x438 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI3_RXC_SAI5_RX_BCLK                                  0x1D0 0x438 0x4D0 0x2 0x2
++#define MX8MQ_IOMUXC_SAI3_RXC_GPIO4_IO29                                    0x1D0 0x438 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI3_RXC_TPSMP_HTRANS1                                 0x1D0 0x438 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI3_RXD_SAI3_RX_DATA0                                 0x1D4 0x43C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI3_RXD_GPT1_COMPARE1                                 0x1D4 0x43C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI3_RXD_SAI5_RX_DATA0                                 0x1D4 0x43C 0x4D4 0x2 0x2
++#define MX8MQ_IOMUXC_SAI3_RXD_GPIO4_IO30                                    0x1D4 0x43C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI3_RXD_TPSMP_HDATA0                                  0x1D4 0x43C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI3_TXFS_SAI3_TX_SYNC                                 0x1D8 0x440 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI3_TXFS_GPT1_CLK                                     0x1D8 0x440 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI3_TXFS_SAI5_RX_DATA1                                0x1D8 0x440 0x4D8 0x2 0x2
++#define MX8MQ_IOMUXC_SAI3_TXFS_GPIO4_IO31                                   0x1D8 0x440 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI3_TXFS_TPSMP_HDATA1                                 0x1D8 0x440 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI3_TXC_SAI3_TX_BCLK                                  0x1DC 0x444 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI3_TXC_GPT1_COMPARE2                                 0x1DC 0x444 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI3_TXC_SAI5_RX_DATA2                                 0x1DC 0x444 0x4DC 0x2 0x2
++#define MX8MQ_IOMUXC_SAI3_TXC_GPIO5_IO0                                     0x1DC 0x444 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI3_TXC_TPSMP_HDATA2                                  0x1DC 0x444 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI3_TXD_SAI3_TX_DATA0                                 0x1E0 0x448 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI3_TXD_GPT1_COMPARE3                                 0x1E0 0x448 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI3_TXD_SAI5_RX_DATA3                                 0x1E0 0x448 0x4E0 0x2 0x2
++#define MX8MQ_IOMUXC_SAI3_TXD_GPIO5_IO1                                     0x1E0 0x448 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI3_TXD_TPSMP_HDATA3                                  0x1E0 0x448 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SAI3_MCLK_SAI3_MCLK                                    0x1E4 0x44C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SAI3_MCLK_PWM4_OUT                                     0x1E4 0x44C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SAI3_MCLK_SAI5_MCLK                                    0x1E4 0x44C 0x52C 0x2 0x3
++#define MX8MQ_IOMUXC_SAI3_MCLK_GPIO5_IO2                                    0x1E4 0x44C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SAI3_MCLK_TPSMP_HDATA4                                 0x1E4 0x44C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SPDIF_TX_SPDIF1_OUT                                    0x1E8 0x450 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SPDIF_TX_PWM3_OUT                                      0x1E8 0x450 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SPDIF_TX_GPIO5_IO3                                     0x1E8 0x450 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SPDIF_TX_TPSMP_HDATA5                                  0x1E8 0x450 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SPDIF_RX_SPDIF1_IN                                     0x1EC 0x454 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SPDIF_RX_PWM2_OUT                                      0x1EC 0x454 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SPDIF_RX_GPIO5_IO4                                     0x1EC 0x454 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SPDIF_RX_TPSMP_HDATA6                                  0x1EC 0x454 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_SPDIF_EXT_CLK_SPDIF1_EXT_CLK                           0x1F0 0x458 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_SPDIF_EXT_CLK_PWM1_OUT                                 0x1F0 0x458 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_SPDIF_EXT_CLK_GPIO5_IO5                                0x1F0 0x458 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_SPDIF_EXT_CLK_TPSMP_HDATA7                             0x1F0 0x458 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SCLK_ECSPI1_SCLK                                0x1F4 0x45C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SCLK_UART3_DCE_RX                               0x1F4 0x45C 0x504 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SCLK_UART3_DTE_TX                               0x1F4 0x45C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SCLK_GPIO5_IO6                                  0x1F4 0x45C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SCLK_TPSMP_HDATA8                               0x1F4 0x45C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MOSI_ECSPI1_MOSI                                0x1F8 0x460 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MOSI_UART3_DCE_TX                               0x1F8 0x460 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MOSI_UART3_DTE_RX                               0x1F8 0x460 0x504 0x1 0x1
++#define MX8MQ_IOMUXC_ECSPI1_MOSI_GPIO5_IO7                                  0x1F8 0x460 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MOSI_TPSMP_HDATA9                               0x1F8 0x460 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MISO_ECSPI1_MISO                                0x1FC 0x464 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MISO_UART3_DCE_CTS_B                            0x1FC 0x464 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MISO_UART3_DTE_RTS_B                            0x1FC 0x464 0x500 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MISO_GPIO5_IO8                                  0x1FC 0x464 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI1_MISO_TPSMP_HDATA10                              0x1FC 0x464 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SS0_ECSPI1_SS0                                  0x200 0x468 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SS0_UART3_DCE_RTS_B                             0x200 0x468 0x500 0x1 0x1
++#define MX8MQ_IOMUXC_ECSPI1_SS0_UART3_DTE_CTS_B                             0x200 0x468 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SS0_GPIO5_IO9                                   0x200 0x468 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI1_SS0_TPSMP_HDATA11                               0x200 0x468 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SCLK_ECSPI2_SCLK                                0x204 0x46C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SCLK_UART4_DCE_RX                               0x204 0x46C 0x50C 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SCLK_UART4_DTE_TX                               0x204 0x46C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SCLK_GPIO5_IO10                                 0x204 0x46C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SCLK_TPSMP_HDATA12                              0x204 0x46C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MOSI_ECSPI2_MOSI                                0x208 0x470 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MOSI_UART4_DCE_TX                               0x208 0x470 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MOSI_UART4_DTE_RX                               0x208 0x470 0x50C 0x1 0x1
++#define MX8MQ_IOMUXC_ECSPI2_MOSI_GPIO5_IO11                                 0x208 0x470 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MOSI_TPSMP_HDATA13                              0x208 0x470 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MISO_ECSPI2_MISO                                0x20C 0x474 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MISO_UART4_DCE_CTS_B                            0x20C 0x474 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MISO_UART4_DTE_RTS_B                            0x20C 0x474 0x508 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MISO_GPIO5_IO12                                 0x20C 0x474 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI2_MISO_TPSMP_HDATA14                              0x20C 0x474 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SS0_ECSPI2_SS0                                  0x210 0x478 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SS0_UART4_DCE_RTS_B                             0x210 0x478 0x508 0x1 0x1
++#define MX8MQ_IOMUXC_ECSPI2_SS0_UART4_DTE_CTS_B                             0x210 0x478 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SS0_GPIO5_IO13                                  0x210 0x478 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_ECSPI2_SS0_TPSMP_HDATA15                               0x210 0x478 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C1_SCL_I2C1_SCL                                      0x214 0x47C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C1_SCL_ENET1_MDC                                     0x214 0x47C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_I2C1_SCL_GPIO5_IO14                                    0x214 0x47C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C1_SCL_TPSMP_HDATA16                                 0x214 0x47C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C1_SDA_I2C1_SDA                                      0x218 0x480 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C1_SDA_ENET1_MDIO                                    0x218 0x480 0x4C0 0x1 0x2
++#define MX8MQ_IOMUXC_I2C1_SDA_GPIO5_IO15                                    0x218 0x480 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C1_SDA_TPSMP_HDATA17                                 0x218 0x480 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C2_SCL_I2C2_SCL                                      0x21C 0x484 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C2_SCL_ENET1_1588_EVENT1_IN                          0x21C 0x484 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_I2C2_SCL_GPIO5_IO16                                    0x21C 0x484 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C2_SCL_TPSMP_HDATA18                                 0x21C 0x484 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C2_SDA_I2C2_SDA                                      0x220 0x488 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C2_SDA_ENET1_1588_EVENT1_OUT                         0x220 0x488 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_I2C2_SDA_GPIO5_IO17                                    0x220 0x488 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C2_SDA_TPSMP_HDATA19                                 0x220 0x488 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C3_SCL_I2C3_SCL                                      0x224 0x48C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C3_SCL_PWM4_OUT                                      0x224 0x48C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_I2C3_SCL_GPT2_CLK                                      0x224 0x48C 0x000 0x2 0x0
++#define MX8MQ_IOMUXC_I2C3_SCL_GPIO5_IO18                                    0x224 0x48C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C3_SCL_TPSMP_HDATA20                                 0x224 0x48C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C3_SDA_I2C3_SDA                                      0x228 0x490 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C3_SDA_PWM3_OUT                                      0x228 0x490 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_I2C3_SDA_GPT3_CLK                                      0x228 0x490 0x000 0x2 0x0
++#define MX8MQ_IOMUXC_I2C3_SDA_GPIO5_IO19                                    0x228 0x490 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C3_SDA_TPSMP_HDATA21                                 0x228 0x490 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C4_SCL_I2C4_SCL                                      0x22C 0x494 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C4_SCL_PWM2_OUT                                      0x22C 0x494 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_I2C4_SCL_PCIE1_CLKREQ_B                                0x22C 0x494 0x524 0x2 0x0
++#define MX8MQ_IOMUXC_I2C4_SCL_GPIO5_IO20                                    0x22C 0x494 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C4_SCL_TPSMP_HDATA22                                 0x22C 0x494 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_I2C4_SDA_I2C4_SDA                                      0x230 0x498 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_I2C4_SDA_PWM1_OUT                                      0x230 0x498 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_I2C4_SDA_PCIE2_CLKREQ_B                                0x230 0x498 0x528 0x2 0x0
++#define MX8MQ_IOMUXC_I2C4_SDA_GPIO5_IO21                                    0x230 0x498 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_I2C4_SDA_TPSMP_HDATA23                                 0x230 0x498 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART1_RXD_UART1_DCE_RX                                 0x234 0x49C 0x4F4 0x0 0x0
++#define MX8MQ_IOMUXC_UART1_RXD_UART1_DTE_TX                                 0x234 0x49C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART1_RXD_ECSPI3_SCLK                                  0x234 0x49C 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART1_RXD_GPIO5_IO22                                   0x234 0x49C 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART1_RXD_TPSMP_HDATA24                                0x234 0x49C 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART1_TXD_UART1_DCE_TX                                 0x238 0x4A0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART1_TXD_UART1_DTE_RX                                 0x238 0x4A0 0x4F4 0x0 0x0
++#define MX8MQ_IOMUXC_UART1_TXD_ECSPI3_MOSI                                  0x238 0x4A0 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART1_TXD_GPIO5_IO23                                   0x238 0x4A0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART1_TXD_TPSMP_HDATA25                                0x238 0x4A0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART2_RXD_UART2_DCE_RX                                 0x23C 0x4A4 0x4FC 0x0 0x0
++#define MX8MQ_IOMUXC_UART2_RXD_UART2_DTE_TX                                 0x23C 0x4A4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART2_RXD_ECSPI3_MISO                                  0x23C 0x4A4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART2_RXD_GPIO5_IO24                                   0x23C 0x4A4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART2_RXD_TPSMP_HDATA26                                0x23C 0x4A4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART2_TXD_UART2_DCE_TX                                 0x240 0x4A8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART2_TXD_UART2_DTE_RX                                 0x240 0x4A8 0x4FC 0x0 0x1
++#define MX8MQ_IOMUXC_UART2_TXD_ECSPI3_SS0                                   0x240 0x4A8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART2_TXD_GPIO5_IO25                                   0x240 0x4A8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART2_TXD_TPSMP_HDATA27                                0x240 0x4A8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART3_RXD_UART3_DCE_RX                                 0x244 0x4AC 0x504 0x0 0x2
++#define MX8MQ_IOMUXC_UART3_RXD_UART3_DTE_TX                                 0x244 0x4AC 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART3_RXD_UART1_DCE_CTS_B                              0x244 0x4AC 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART3_RXD_UART1_DTE_RTS_B                              0x244 0x4AC 0x4F0 0x1 0x0
++#define MX8MQ_IOMUXC_UART3_RXD_GPIO5_IO26                                   0x244 0x4AC 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART3_RXD_TPSMP_HDATA28                                0x244 0x4AC 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART3_TXD_UART3_DCE_TX                                 0x248 0x4B0 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART3_TXD_UART3_DTE_RX                                 0x248 0x4B0 0x504 0x0 0x3
++#define MX8MQ_IOMUXC_UART3_TXD_UART1_DCE_RTS_B                              0x248 0x4B0 0x4F0 0x1 0x1
++#define MX8MQ_IOMUXC_UART3_TXD_UART1_DTE_CTS_B                              0x248 0x4B0 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART3_TXD_GPIO5_IO27                                   0x248 0x4B0 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART3_TXD_TPSMP_HDATA29                                0x248 0x4B0 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART4_RXD_UART4_DCE_RX                                 0x24C 0x4B4 0x50C 0x0 0x2
++#define MX8MQ_IOMUXC_UART4_RXD_UART4_DTE_TX                                 0x24C 0x4B4 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART4_RXD_UART2_DCE_CTS_B                              0x24C 0x4B4 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART4_RXD_UART2_DTE_RTS_B                              0x24C 0x4B4 0x4F8 0x1 0x0
++#define MX8MQ_IOMUXC_UART4_RXD_PCIE1_CLKREQ_B                               0x24C 0x4B4 0x524 0x2 0x1
++#define MX8MQ_IOMUXC_UART4_RXD_GPIO5_IO28                                   0x24C 0x4B4 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART4_RXD_TPSMP_HDATA30                                0x24C 0x4B4 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_UART4_TXD_UART4_DCE_TX                                 0x250 0x4B8 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_UART4_TXD_UART4_DTE_RX                                 0x250 0x4B8 0x50C 0x0 0x3
++#define MX8MQ_IOMUXC_UART4_TXD_UART2_DCE_RTS_B                              0x250 0x4B8 0x4F8 0x1 0x1
++#define MX8MQ_IOMUXC_UART4_TXD_UART2_DTE_CTS_B                              0x250 0x4B8 0x000 0x1 0x0
++#define MX8MQ_IOMUXC_UART4_TXD_PCIE2_CLKREQ_B                               0x250 0x4B8 0x528 0x2 0x1
++#define MX8MQ_IOMUXC_UART4_TXD_GPIO5_IO29                                   0x250 0x4B8 0x000 0x5 0x0
++#define MX8MQ_IOMUXC_UART4_TXD_TPSMP_HDATA31                                0x250 0x4B8 0x000 0x7 0x0
++#define MX8MQ_IOMUXC_TEST_MODE                                              0x000 0x254 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_BOOT_MODE0                                             0x000 0x258 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_BOOT_MODE1                                             0x000 0x25C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_JTAG_MOD                                               0x000 0x260 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_JTAG_TRST_B                                            0x000 0x264 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_JTAG_TDI                                               0x000 0x268 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_JTAG_TMS                                               0x000 0x26C 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_JTAG_TCK                                               0x000 0x270 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_JTAG_TDO                                               0x000 0x274 0x000 0x0 0x0
++#define MX8MQ_IOMUXC_RTC                                                    0x000 0x278 0x000 0x0 0x0
++
++#endif /* __DTS_IMX8MQ_PINFUNC_H */
+diff --git a/arch/arm64/boot/dts/adlink/imx8mq.dtsi b/arch/arm64/boot/dts/adlink/imx8mq.dtsi
+new file mode 100755
+index 000000000000..4e837545609e
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/imx8mq.dtsi
+@@ -0,0 +1,1540 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright 2017 NXP
++ * Copyright (C) 2017-2018 Pengutronix, Lucas Stach <kernel@pengutronix.de>
++ */
++
++#include <dt-bindings/clock/imx8mq-clock.h>
++#include <dt-bindings/power/imx8mq-power.h>
++#include <dt-bindings/reset/imx8mq-reset.h>
++#include <dt-bindings/gpio/gpio.h>
++#include "dt-bindings/input/input.h"
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/thermal/thermal.h>
++#include "imx8mq-pinfunc.h"
++
++/ {
++	interrupt-parent = <&gpc>;
++
++	#address-cells = <2>;
++	#size-cells = <2>;
++
++	aliases {
++		csi0 = &mipi_csi_1;
++		csi1 = &mipi_csi_2;
++		ethernet0 = &fec1;
++		gpio0 = &gpio1;
++		gpio1 = &gpio2;
++		gpio2 = &gpio3;
++		gpio3 = &gpio4;
++		gpio4 = &gpio5;
++		i2c0 = &i2c1;
++		i2c1 = &i2c2;
++		i2c2 = &i2c3;
++		i2c3 = &i2c4;
++		serial0 = &uart1;
++		serial1 = &uart2;
++		serial2 = &uart3;
++		serial3 = &uart4;
++		spi0 = &ecspi1;
++		spi1 = &ecspi2;
++		spi2 = &ecspi3;
++	};
++
++	ckil: clock-ckil {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <32768>;
++		clock-output-names = "ckil";
++	};
++
++	osc_25m: clock-osc-25m {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <25000000>;
++		clock-output-names = "osc_25m";
++	};
++
++	osc_27m: clock-osc-27m {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <27000000>;
++		clock-output-names = "osc_27m";
++	};
++
++	clk_ext1: clock-ext1 {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <133000000>;
++		clock-output-names = "clk_ext1";
++	};
++
++	clk_ext2: clock-ext2 {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <133000000>;
++		clock-output-names = "clk_ext2";
++	};
++
++	clk_ext3: clock-ext3 {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <133000000>;
++		clock-output-names = "clk_ext3";
++	};
++
++	clk_ext4: clock-ext4 {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency= <133000000>;
++		clock-output-names = "clk_ext4";
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		A53_0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x0>;
++			clock-latency = <61036>; /* two CLK32 periods */
++			clocks = <&clk IMX8MQ_CLK_ARM>;
++			enable-method = "psci";
++			next-level-cache = <&A53_L2>;
++			operating-points-v2 = <&a53_opp_table>;
++			#cooling-cells = <2>;
++			nvmem-cells = <&cpu_speed_grade>;
++			nvmem-cell-names = "speed_grade";
++			cpu-idle-states = <&CPU_SLEEP>;
++		};
++
++		A53_1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x1>;
++			clock-latency = <61036>; /* two CLK32 periods */
++			clocks = <&clk IMX8MQ_CLK_ARM>;
++			enable-method = "psci";
++			next-level-cache = <&A53_L2>;
++			operating-points-v2 = <&a53_opp_table>;
++			#cooling-cells = <2>;
++			cpu-idle-states = <&CPU_SLEEP>;
++		};
++
++		A53_2: cpu@2 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x2>;
++			clock-latency = <61036>; /* two CLK32 periods */
++			clocks = <&clk IMX8MQ_CLK_ARM>;
++			enable-method = "psci";
++			next-level-cache = <&A53_L2>;
++			operating-points-v2 = <&a53_opp_table>;
++			#cooling-cells = <2>;
++			cpu-idle-states = <&CPU_SLEEP>;
++		};
++
++		A53_3: cpu@3 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x3>;
++			clock-latency = <61036>; /* two CLK32 periods */
++			clocks = <&clk IMX8MQ_CLK_ARM>;
++			enable-method = "psci";
++			next-level-cache = <&A53_L2>;
++			operating-points-v2 = <&a53_opp_table>;
++			#cooling-cells = <2>;
++			cpu-idle-states = <&CPU_SLEEP>;
++		};
++
++		A53_L2: l2-cache0 {
++			compatible = "cache";
++		};
++
++		idle-states {
++			entry-method = "psci";
++
++			CPU_SLEEP: cpu-sleep {
++				compatible = "arm,idle-state";
++				arm,psci-suspend-param = <0x0010033>;
++				local-timer-stop;
++				entry-latency-us = <1000>;
++				exit-latency-us = <700>;
++				min-residency-us = <2700>;
++				wakeup-latency-us = <1500>;
++			};
++		};
++
++	};
++
++	a53_opp_table: opp-table {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		opp-800000000 {
++			opp-hz = /bits/ 64 <800000000>;
++			opp-microvolt = <900000>;
++			/* Industrial only */
++			opp-supported-hw = <0xf>, <0x4>;
++			clock-latency-ns = <150000>;
++			opp-suspend;
++		};
++
++		opp-1000000000 {
++			opp-hz = /bits/ 64 <1000000000>;
++			opp-microvolt = <900000>;
++			/* Consumer only */
++			opp-supported-hw = <0xe>, <0x3>;
++			clock-latency-ns = <150000>;
++			opp-suspend;
++		};
++
++		opp-1300000000 {
++			opp-hz = /bits/ 64 <1300000000>;
++			opp-microvolt = <1000000>;
++			opp-supported-hw = <0xc>, <0x4>;
++			clock-latency-ns = <150000>;
++			opp-suspend;
++		};
++
++		opp-1500000000 {
++			opp-hz = /bits/ 64 <1500000000>;
++			opp-microvolt = <1000000>;
++			opp-supported-hw = <0x8>, <0x3>;
++			clock-latency-ns = <150000>;
++			opp-suspend;
++		};
++	};
++
++	pmu {
++		compatible = "arm,cortex-a53-pmu";
++		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-parent = <&gic>;
++		interrupt-affinity = <&A53_0>, <&A53_1>, <&A53_2>, <&A53_3>;
++	};
++
++	psci {
++		compatible = "arm,psci-1.0";
++		method = "smc";
++	};
++
++	thermal-zones {
++		cpu-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <2000>;
++			thermal-sensors = <&tmu 0>;
++
++			trips {
++				cpu_alert: cpu-alert {
++					temperature = <80000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				cpu-crit {
++					temperature = <90000>;
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&cpu_alert>;
++					cooling-device =
++						<&A53_0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&A53_1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&A53_2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++						<&A53_3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++	};
++
++	timer {
++		compatible = "arm,armv8-timer";
++		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>, /* Physical Secure */
++		             <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>, /* Physical Non-Secure */
++		             <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>, /* Virtual */
++		             <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>; /* Hypervisor */
++		interrupt-parent = <&gic>;
++		arm,no-tick-in-suspend;
++	};
++
++	busfreq { /* BUSFREQ */
++		compatible = "fsl,imx_busfreq";
++		clocks = <&clk IMX8MQ_DRAM_PLL_OUT>, <&clk IMX8MQ_CLK_DRAM_ALT>,
++			 <&clk IMX8MQ_CLK_DRAM_APB>, <&clk IMX8MQ_CLK_DRAM_APB>,
++			 <&clk IMX8MQ_CLK_DRAM_CORE>, <&clk IMX8MQ_CLK_DRAM_ALT_ROOT>,
++			 <&clk IMX8MQ_SYS1_PLL_40M>, <&clk IMX8MQ_SYS1_PLL_400M>,
++			 <&clk IMX8MQ_SYS1_PLL_100M>, <&clk IMX8MQ_SYS1_PLL_800M>,
++			 <&clk IMX8MQ_CLK_NOC>, <&clk IMX8MQ_CLK_MAIN_AXI>,
++			 <&clk IMX8MQ_CLK_AHB>, <&clk IMX8MQ_CLK_25M>,
++			 <&clk IMX8MQ_SYS2_PLL_333M>, <&clk IMX8MQ_SYS1_PLL_133M>;
++		clock-names = "dram_pll", "dram_alt_src", "dram_apb_src", "dram_apb_pre_div",
++			      "dram_core", "dram_alt_root", "sys1_pll_40m", "sys1_pll_400m",
++			      "sys1_pll_100m", "sys1_pll_800m", "noc_div", "main_axi_src",
++			      "ahb_div", "osc_25m", "sys2_pll_333m", "sys1_pll_133m";
++		interrupts = <GIC_SPI 102 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 110 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 111 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-name = "irq_busfreq_0", "irq_busfreq_1", "irq_busfreq_2", "irq_busfreq_3";
++	};
++
++	soc@0 {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0x0 0x0 0x0 0x3e000000>;
++		dma-ranges = <0x40000000 0x0 0x40000000 0xc0000000>;
++
++		caam_sm: caam-sm@100000 {
++			compatible = "fsl,imx6q-caam-sm";
++			reg = <0x100000 0x8000>;
++		};
++
++		bus@30000000 { /* AIPS1 */
++			compatible = "fsl,imx8mq-aips-bus", "simple-bus";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0x30000000 0x30000000 0x400000>;
++
++			sai1: sai@30010000 {
++				compatible = "fsl,imx8mq-sai",
++					     "fsl,imx6sx-sai";
++				reg = <0x30010000 0x10000>;
++				interrupts = <GIC_SPI 95 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SAI1_IPG>,
++					<&clk IMX8MQ_CLK_DUMMY>,
++					<&clk IMX8MQ_CLK_SAI1_ROOT>,
++					<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3";
++				dmas = <&sdma2 8 1 0>, <&sdma2 9 1 0>;
++				dma-names = "rx", "tx";
++				fsl,dataline = <0 0xff 0xff>;
++				status = "disabled";
++			};
++
++			sai6: sai@30030000 {
++				compatible = "fsl,imx8mq-sai",
++					     "fsl,imx6sx-sai";
++				reg = <0x30030000 0x10000>;
++				interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SAI6_IPG>,
++					<&clk IMX8MQ_CLK_DUMMY>,
++					<&clk IMX8MQ_CLK_SAI6_ROOT>,
++					<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3";
++				dmas = <&sdma2 4 24 0>, <&sdma2 5 24 0>;
++				dma-names = "rx", "tx";
++				fsl,shared-interrupt;
++				status = "disabled";
++			};
++
++			sai5: sai@30040000 {
++				compatible = "fsl,imx8mq-sai",
++					     "fsl,imx6sx-sai";
++				reg = <0x30040000 0x10000>;
++				interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SAI5_IPG>,
++					<&clk IMX8MQ_CLK_DUMMY>,
++					<&clk IMX8MQ_CLK_SAI5_ROOT>,
++					<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3";
++				dmas = <&sdma2 2 24 0>, <&sdma2 3 24 0>;
++				dma-names = "rx", "tx";
++				fsl,shared-interrupt;
++				fsl,dataline = <0 0xf 0xf>;
++				status = "disabled";
++			};
++
++			sai4: sai@30050000 {
++				compatible = "fsl,imx8mq-sai",
++					     "fsl,imx6sx-sai";
++				reg = <0x30050000 0x10000>;
++				interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SAI4_IPG>,
++					<&clk IMX8MQ_CLK_DUMMY>,
++					<&clk IMX8MQ_CLK_SAI4_ROOT>,
++					<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3";
++				dmas = <&sdma2 0 24 0>, <&sdma2 1 24 0>;
++				dma-names = "rx", "tx";
++				fsl,dataline = <0 0x0 0xf>;
++				status = "disabled";
++			};
++
++			gpio1: gpio@30200000 {
++				compatible = "fsl,imx8mq-gpio", "fsl,imx35-gpio";
++				reg = <0x30200000 0x10000>;
++				interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_GPIO1_ROOT>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				interrupt-controller;
++				#interrupt-cells = <2>;
++				gpio-ranges = <&iomuxc 0 10 30>;
++			};
++
++			gpio2: gpio@30210000 {
++				compatible = "fsl,imx8mq-gpio", "fsl,imx35-gpio";
++				reg = <0x30210000 0x10000>;
++				interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_GPIO2_ROOT>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				interrupt-controller;
++				#interrupt-cells = <2>;
++				gpio-ranges = <&iomuxc 0 40 21>;
++			};
++
++			gpio3: gpio@30220000 {
++				compatible = "fsl,imx8mq-gpio", "fsl,imx35-gpio";
++				reg = <0x30220000 0x10000>;
++				interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_GPIO3_ROOT>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				interrupt-controller;
++				#interrupt-cells = <2>;
++				gpio-ranges = <&iomuxc 0 61 26>;
++			};
++
++			gpio4: gpio@30230000 {
++				compatible = "fsl,imx8mq-gpio", "fsl,imx35-gpio";
++				reg = <0x30230000 0x10000>;
++				interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_GPIO4_ROOT>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				interrupt-controller;
++				#interrupt-cells = <2>;
++				gpio-ranges = <&iomuxc 0 87 32>;
++			};
++
++			gpio5: gpio@30240000 {
++				compatible = "fsl,imx8mq-gpio", "fsl,imx35-gpio";
++				reg = <0x30240000 0x10000>;
++				interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_GPIO5_ROOT>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				interrupt-controller;
++				#interrupt-cells = <2>;
++				gpio-ranges = <&iomuxc 0 119 30>;
++			};
++
++			tmu: tmu@30260000 {
++				compatible = "fsl,imx8mq-tmu";
++				reg = <0x30260000 0x10000>;
++				interrupt = <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_TMU_ROOT>;
++				little-endian;
++				fsl,tmu-range = <0xb0000 0xa0026 0x80048 0x70061>;
++				fsl,tmu-calibration = <0x00000000 0x00000023
++						       0x00000001 0x00000029
++						       0x00000002 0x0000002f
++						       0x00000003 0x00000035
++						       0x00000004 0x0000003d
++						       0x00000005 0x00000043
++						       0x00000006 0x0000004b
++						       0x00000007 0x00000051
++						       0x00000008 0x00000057
++						       0x00000009 0x0000005f
++						       0x0000000a 0x00000067
++						       0x0000000b 0x0000006f
++
++						       0x00010000 0x0000001b
++						       0x00010001 0x00000023
++						       0x00010002 0x0000002b
++						       0x00010003 0x00000033
++						       0x00010004 0x0000003b
++						       0x00010005 0x00000043
++						       0x00010006 0x0000004b
++						       0x00010007 0x00000055
++						       0x00010008 0x0000005d
++						       0x00010009 0x00000067
++						       0x0001000a 0x00000070
++
++						       0x00020000 0x00000017
++						       0x00020001 0x00000023
++						       0x00020002 0x0000002d
++						       0x00020003 0x00000037
++						       0x00020004 0x00000041
++						       0x00020005 0x0000004b
++						       0x00020006 0x00000057
++						       0x00020007 0x00000063
++						       0x00020008 0x0000006f
++
++						       0x00030000 0x00000015
++						       0x00030001 0x00000021
++						       0x00030002 0x0000002d
++						       0x00030003 0x00000039
++						       0x00030004 0x00000045
++						       0x00030005 0x00000053
++						       0x00030006 0x0000005f
++						       0x00030007 0x00000071>;
++				#thermal-sensor-cells =  <0>;
++			};
++
++			wdog1: watchdog@30280000 {
++				compatible = "fsl,imx8mq-wdt", "fsl,imx21-wdt";
++				reg = <0x30280000 0x10000>;
++				interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_WDOG1_ROOT>;
++				status = "disabled";
++			};
++
++			wdog2: watchdog@30290000 {
++				compatible = "fsl,imx8mq-wdt", "fsl,imx21-wdt";
++				reg = <0x30290000 0x10000>;
++				interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_WDOG2_ROOT>;
++				status = "disabled";
++			};
++
++			wdog3: watchdog@302a0000 {
++				compatible = "fsl,imx8mq-wdt", "fsl,imx21-wdt";
++				reg = <0x302a0000 0x10000>;
++				interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_WDOG3_ROOT>;
++				status = "disabled";
++			};
++
++			sdma2: sdma@302c0000 {
++				compatible = "fsl,imx8mq-sdma","fsl,imx7d-sdma";
++				reg = <0x302c0000 0x10000>;
++				interrupts = <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SDMA2_ROOT>,
++					 <&clk IMX8MQ_CLK_SDMA2_ROOT>;
++				clock-names = "ipg", "ahb";
++				#dma-cells = <3>;
++				fsl,sdma-ram-script-name = "imx/sdma/sdma-imx7d.bin";
++			};
++
++			lcdif: lcdif@30320000 {
++				compatible = "fsl,imx8mq-lcdif", "fsl,imx28-lcdif";
++				reg = <0x30320000 0x10000>;
++				clocks = <&clk IMX8MQ_CLK_LCDIF_PIXEL>;
++				clock-names = "pix";
++				assigned-clocks = <&clk IMX8MQ_CLK_LCDIF_PIXEL>,
++						  <&clk IMX8MQ_VIDEO_PLL1_BYPASS>,
++						  <&clk IMX8MQ_VIDEO_PLL1_REF_SEL>;
++				assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
++							 <&clk IMX8MQ_VIDEO_PLL1>,
++							 <&clk IMX8MQ_CLK_27M>;
++				interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>;
++				status = "disabled";
++			};
++
++			iomuxc: iomuxc@30330000 {
++				compatible = "fsl,imx8mq-iomuxc";
++				reg = <0x30330000 0x10000>;
++			};
++
++			iomuxc_gpr: syscon@30340000 {
++				compatible = "fsl,imx8mq-iomuxc-gpr", "fsl,imx6q-iomuxc-gpr",
++					     "syscon", "simple-mfd";
++				reg = <0x30340000 0x10000>;
++
++				mux: mux-controller {
++					compatible = "mmio-mux";
++					#mux-control-cells = <1>;
++					mux-reg-masks = <0x34 0x00000004>; /* MIPI_MUX_SEL */
++				};
++			};
++
++			ocotp: ocotp-ctrl@30350000 {
++				compatible = "fsl,imx8mq-ocotp", "syscon";
++				reg = <0x30350000 0x10000>;
++				clocks = <&clk IMX8MQ_CLK_OCOTP_ROOT>;
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				cpu_speed_grade: speed-grade@10 {
++					reg = <0x10 4>;
++				};
++
++				fec_mac_address: mac-address@640 {
++					reg = <0x90 6>;
++				};
++			};
++
++			anatop: syscon@30360000 {
++				compatible = "fsl,imx8mq-anatop", "syscon";
++				reg = <0x30360000 0x10000>;
++				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
++			};
++
++			irq_sec_vio: caam_secvio {
++				compatible = "fsl,imx6q-caam-secvio";
++				interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
++				jtag-tamper = "disabled";
++				watchdog-tamper = "enabled";
++				internal-boot-tamper = "enabled";
++				external-pin-tamper = "disabled";
++			};
++
++			caam_snvs: caam-snvs@30370000 {
++				compatible = "fsl,imx6q-caam-snvs";
++				reg = <0x30370000 0x10000>;
++			};
++
++			snvs: snvs@30370000 {
++				compatible = "fsl,sec-v4.0-mon", "syscon", "simple-mfd";
++				reg = <0x30370000 0x10000>;
++
++				snvs_rtc: snvs-rtc-lp{
++					compatible = "fsl,sec-v4.0-mon-rtc-lp";
++					regmap =<&snvs>;
++					offset = <0x34>;
++					interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>,
++						<GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
++					clocks = <&clk IMX8MQ_CLK_SNVS_ROOT>;
++					clock-names = "snvs-rtc";
++				};
++
++				snvs_pwrkey: snvs-powerkey {
++					compatible = "fsl,sec-v4.0-pwrkey";
++					regmap = <&snvs>;
++					interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>;
++					clocks = <&clk IMX8MQ_CLK_SNVS_ROOT>;
++					clock-names = "snvs";
++					linux,keycode = <KEY_POWER>;
++					wakeup-source;
++					status = "disabled";
++				};
++			};
++
++			clk: clock-controller@30380000 {
++				compatible = "fsl,imx8mq-ccm";
++				reg = <0x30380000 0x10000>;
++				interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
++				#clock-cells = <1>;
++				clocks = <&ckil>, <&osc_25m>, <&osc_27m>,
++				         <&clk_ext1>, <&clk_ext2>,
++				         <&clk_ext3>, <&clk_ext4>;
++				clock-names = "ckil", "osc_25m", "osc_27m",
++				              "clk_ext1", "clk_ext2",
++				              "clk_ext3", "clk_ext4";
++				assigned-clocks = <&clk IMX8MQ_CLK_NAND_USDHC_BUS>,
++						  <&clk IMX8MQ_CLK_AUDIO_AHB>,
++						  <&clk IMX8MQ_AUDIO_PLL1>,
++						  <&clk IMX8MQ_AUDIO_PLL2>;
++				assigned-clock-parents = <&clk IMX8MQ_SYS1_PLL_266M>,
++							 <&clk IMX8MQ_SYS2_PLL_500M>;
++				assigned-clock-rates = <0>,
++						       <0>,
++						       <786432000>,
++						       <722534400>;
++			};
++
++			src: reset-controller@30390000 {
++				compatible = "fsl,imx8mq-src", "syscon";
++				reg = <0x30390000 0x10000>;
++				#reset-cells = <1>;
++			};
++
++			gpc: gpc@303a0000 {
++				compatible = "fsl,imx8mq-gpc";
++				reg = <0x303a0000 0x10000>;
++				interrupt-parent = <&gic>;
++				interrupt-controller;
++				broken-wake-request-signals;
++				#interrupt-cells = <3>;
++
++				pgc {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					pgc_mipi: power-domain@0 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_MIPI>;
++					};
++
++					/*
++					 * As per comment in ATF source code:
++					 *
++					 * PCIE1 and PCIE2 share the
++					 * same reset signal, if we
++					 * power down PCIE2, PCIE1
++					 * will be held in reset too.
++					 *
++					 * So instead of creating two
++					 * separate power domains for
++					 * PCIE1 and PCIE2 we create a
++					 * link between both and use
++					 * it as a shared PCIE power
++					 * domain.
++					 */
++					pgc_pcie: power-domain@1 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_PCIE1>;
++						power-domains = <&pgc_pcie2>;
++					};
++
++					pgc_otg1: power-domain@2 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_USB_OTG1>;
++					};
++
++					pgc_otg2: power-domain@3 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_USB_OTG2>;
++					};
++
++					pgc_ddr1: power-domain@4 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_DDR1>;
++					};
++
++					pgc_gpu: power-domain@5 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_GPU>;
++						clocks = <&clk IMX8MQ_CLK_GPU_ROOT>,
++						         <&clk IMX8MQ_CLK_GPU_SHADER_DIV>,
++							 <&clk IMX8MQ_CLK_GPU_AXI>,
++						         <&clk IMX8MQ_CLK_GPU_AHB>;
++					};
++
++					pgc_vpu: power-domain@6 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_VPU>;
++					};
++
++					pgc_disp: power-domain@7 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_DISP>;
++					};
++
++					pgc_mipi_csi1: power-domain@8 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_MIPI_CSI1>;
++					};
++
++					pgc_mipi_csi2: power-domain@9 {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_MIPI_CSI2>;
++					};
++
++					pgc_pcie2: power-domain@a {
++						#power-domain-cells = <0>;
++						reg = <IMX8M_POWER_DOMAIN_PCIE2>;
++					};
++				};
++			};
++		};
++
++		bus@30400000 { /* AIPS2 */
++			compatible = "fsl,imx8mq-aips-bus", "simple-bus";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0x30400000 0x30400000 0x400000>;
++
++			pwm1: pwm@30660000 {
++				compatible = "fsl,imx8mq-pwm", "fsl,imx27-pwm";
++				reg = <0x30660000 0x10000>;
++				interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_PWM1_ROOT>,
++				         <&clk IMX8MQ_CLK_PWM1_ROOT>;
++				clock-names = "ipg", "per";
++				#pwm-cells = <2>;
++				status = "disabled";
++			};
++
++			pwm2: pwm@30670000 {
++				compatible = "fsl,imx8mq-pwm", "fsl,imx27-pwm";
++				reg = <0x30670000 0x10000>;
++				interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_PWM2_ROOT>,
++				         <&clk IMX8MQ_CLK_PWM2_ROOT>;
++				clock-names = "ipg", "per";
++				#pwm-cells = <2>;
++				status = "disabled";
++			};
++
++			pwm3: pwm@30680000 {
++				compatible = "fsl,imx8mq-pwm", "fsl,imx27-pwm";
++				reg = <0x30680000 0x10000>;
++				interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_PWM3_ROOT>,
++				         <&clk IMX8MQ_CLK_PWM3_ROOT>;
++				clock-names = "ipg", "per";
++				#pwm-cells = <2>;
++				status = "disabled";
++			};
++
++			pwm4: pwm@30690000 {
++				compatible = "fsl,imx8mq-pwm", "fsl,imx27-pwm";
++				reg = <0x30690000 0x10000>;
++				interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_PWM4_ROOT>,
++				         <&clk IMX8MQ_CLK_PWM4_ROOT>;
++				clock-names = "ipg", "per";
++				#pwm-cells = <2>;
++				status = "disabled";
++			};
++
++			system_counter: timer@306a0000 {
++				compatible = "nxp,sysctr-timer";
++				reg = <0x306a0000 0x20000>;
++				interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&osc_25m>;
++				clock-names = "per";
++			};
++		};
++
++		bus@30800000 { /* AIPS3 */
++			compatible = "fsl,imx8mq-aips-bus", "simple-bus";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0x30800000 0x30800000 0x400000>,
++				 <0x08000000 0x08000000 0x10000000>;
++
++			spdif1: spdif@30810000 {
++				compatible = "fsl,imx8mq-spdif", "fsl,imx35-spdif";
++				reg = <0x30810000 0x10000>;
++				interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_IPG_ROOT>, /* core */
++					<&clk IMX8MQ_CLK_25M>, /* rxtx0 */
++					<&clk IMX8MQ_CLK_SPDIF1>, /* rxtx1 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx2 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx3 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx4 */
++					<&clk IMX8MQ_CLK_IPG_ROOT>, /* rxtx5 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx6 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx7 */
++					<&clk IMX8MQ_CLK_DUMMY>; /* spba */
++				clock-names = "core", "rxtx0",
++					      "rxtx1", "rxtx2",
++					      "rxtx3", "rxtx4",
++					      "rxtx5", "rxtx6",
++					      "rxtx7", "spba";
++				dmas = <&sdma1 8 18 0>, <&sdma1 9 18 0>;
++				dma-names = "rx", "tx";
++				status = "disabled";
++			};
++
++			ecspi1: spi@30820000 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,imx8mq-ecspi", "fsl,imx6ul-ecspi";
++				reg = <0x30820000 0x10000>;
++				interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_ECSPI1_ROOT>,
++					 <&clk IMX8MQ_CLK_ECSPI1_ROOT>;
++				clock-names = "ipg", "per";
++				status = "disabled";
++			};
++
++			ecspi2: spi@30830000 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,imx8mq-ecspi", "fsl,imx6ul-ecspi";
++				reg = <0x30830000 0x10000>;
++				interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_ECSPI2_ROOT>,
++					 <&clk IMX8MQ_CLK_ECSPI2_ROOT>;
++				clock-names = "ipg", "per";
++				status = "disabled";
++			};
++
++			ecspi3: spi@30840000 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,imx8mq-ecspi", "fsl,imx6ul-ecspi";
++				reg = <0x30840000 0x10000>;
++				interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_ECSPI3_ROOT>,
++					 <&clk IMX8MQ_CLK_ECSPI3_ROOT>;
++				clock-names = "ipg", "per";
++				status = "disabled";
++			};
++
++			uart1: serial@30860000 {
++				compatible = "fsl,imx8mq-uart",
++				             "fsl,imx6q-uart";
++				reg = <0x30860000 0x10000>;
++				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_UART1_ROOT>,
++				         <&clk IMX8MQ_CLK_UART1_ROOT>;
++				clock-names = "ipg", "per";
++				status = "disabled";
++			};
++
++			uart3: serial@30880000 {
++				compatible = "fsl,imx8mq-uart",
++				             "fsl,imx6q-uart";
++				reg = <0x30880000 0x10000>;
++				interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_UART3_ROOT>,
++				         <&clk IMX8MQ_CLK_UART3_ROOT>;
++				clock-names = "ipg", "per";
++				status = "disabled";
++			};
++
++			uart2: serial@30890000 {
++				compatible = "fsl,imx8mq-uart",
++				             "fsl,imx6q-uart";
++				reg = <0x30890000 0x10000>;
++				interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_UART2_ROOT>,
++				         <&clk IMX8MQ_CLK_UART2_ROOT>;
++				clock-names = "ipg", "per";
++				status = "disabled";
++			};
++
++			spdif2: spdif@308a0000 {
++				compatible = "fsl,imx8mq-spdif", "fsl,imx35-spdif";
++				reg = <0x308a0000 0x10000>;
++				interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_IPG_ROOT>, /* core */
++					<&clk IMX8MQ_CLK_25M>, /* rxtx0 */
++					<&clk IMX8MQ_CLK_SPDIF2>, /* rxtx1 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx2 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx3 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx4 */
++					<&clk IMX8MQ_CLK_IPG_ROOT>, /* rxtx5 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx6 */
++					<&clk IMX8MQ_CLK_DUMMY>, /* rxtx7 */
++					<&clk IMX8MQ_CLK_DUMMY>; /* spba */
++				clock-names = "core", "rxtx0",
++					      "rxtx1", "rxtx2",
++					      "rxtx3", "rxtx4",
++					      "rxtx5", "rxtx6",
++					      "rxtx7", "spba";
++				dmas = <&sdma1 16 18 0>, <&sdma1 17 18 0>;
++				dma-names = "rx", "tx";
++				status = "disabled";
++			};
++
++			sai2: sai@308b0000 {
++				#sound-dai-cells = <0>;
++				compatible = "fsl,imx8mq-sai";
++				reg = <0x308b0000 0x10000>;
++				interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SAI2_IPG>,
++					 <&clk IMX8MQ_CLK_DUMMY>,
++					 <&clk IMX8MQ_CLK_SAI2_ROOT>,
++					 <&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3";
++				dmas = <&sdma1 10 24 0>, <&sdma1 11 24 0>;
++				dma-names = "rx", "tx";
++				status = "disabled";
++			};
++
++			sai3: sai@308c0000 {
++				compatible = "fsl,imx8mq-sai",
++					     "fsl,imx6sx-sai";
++				reg = <0x308c0000 0x10000>;
++				interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SAI3_IPG>,
++					<&clk IMX8MQ_CLK_DUMMY>,
++					<&clk IMX8MQ_CLK_SAI3_ROOT>,
++					<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3";
++				dmas = <&sdma1 12 24 0>, <&sdma1 13 24 0>;
++				dma-names = "rx", "tx";
++				status = "disabled";
++			};
++
++			crypto: crypto@30900000 {
++				compatible = "fsl,sec-v4.0";
++				#address-cells = <1>;
++				#size-cells = <1>;
++				reg = <0x30900000 0x40000>;
++				ranges = <0 0x30900000 0x40000>;
++				interrupts = <GIC_SPI 91 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_AHB>,
++					 <&clk IMX8MQ_CLK_IPG_ROOT>;
++				clock-names = "aclk", "ipg";
++
++				sec_jr0: jr@1000 {
++					compatible = "fsl,sec-v4.0-job-ring";
++					reg = <0x1000 0x1000>;
++					interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
++				};
++
++				sec_jr1: jr@2000 {
++					compatible = "fsl,sec-v4.0-job-ring";
++					reg = <0x2000 0x1000>;
++					interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
++				};
++
++				sec_jr2: jr@3000 {
++					compatible = "fsl,sec-v4.0-job-ring";
++					reg = <0x3000 0x1000>;
++					interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL_HIGH>;
++				};
++			};
++
++			dphy: dphy@30a00300 {
++				compatible = "fsl,imx8mq-mipi-dphy";
++				reg = <0x30a00300 0x100>;
++				clocks = <&clk IMX8MQ_CLK_DSI_PHY_REF>;
++				clock-names = "phy_ref";
++				assigned-clocks = <&clk IMX8MQ_CLK_DSI_PHY_REF>;
++				assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>;
++				assigned-clock-rates = <24000000>;
++				#phy-cells = <0>;
++				power-domains = <&pgc_mipi>;
++				status = "disabled";
++			};
++
++			mipi_dsi: mipi_dsi@30a00000 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,imx8mq-nwl-dsi";
++				reg = <0x30a00000 0x300>;
++				clocks = <&clk IMX8MQ_CLK_DSI_CORE>,
++					 <&clk IMX8MQ_CLK_DSI_AHB>,
++					 <&clk IMX8MQ_CLK_DSI_IPG_DIV>,
++					 <&clk IMX8MQ_CLK_DSI_PHY_REF>,
++					 <&clk IMX8MQ_VIDEO_PLL1>,
++					 <&clk IMX8MQ_CLK_LCDIF_PIXEL>;
++				clock-names = "core",
++					      "rx_esc",
++					      "tx_esc",
++					      "phy_ref",
++					      "video_pll",
++					      "lcdif";
++				assigned-clocks = <&clk IMX8MQ_CLK_DSI_PHY_REF>,
++						  <&clk IMX8MQ_CLK_DSI_CORE>,
++						  <&clk IMX8MQ_CLK_DSI_AHB>,
++						  <&clk IMX8MQ_CLK_DSI_IPG_DIV>;
++				assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
++							 <&clk IMX8MQ_SYS1_PLL_266M>,
++							 <&clk IMX8MQ_SYS1_PLL_80M>;
++				assigned-clock-rates = <27000000>,
++						       <266000000>,
++						       <80000000>,
++						       <20000000>;
++				interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
++				power-domains = <&pgc_mipi>;
++				resets = <&src IMX8MQ_RESET_MIPI_DSI_RESET_BYTE_N>,
++			                 <&src IMX8MQ_RESET_MIPI_DSI_DPI_RESET_N>,
++			                 <&src IMX8MQ_RESET_MIPI_DSI_ESC_RESET_N>,
++				         <&src IMX8MQ_RESET_MIPI_DSI_PCLK_RESET_N>;
++				reset-names = "byte", "dpi", "esc", "pclk";
++				mux-controls = <&mux 0>;
++				phys = <&dphy>;
++				phy-names = "dphy";
++				status = "disabled";
++			};
++
++			i2c1: i2c@30a20000 {
++				compatible = "fsl,imx8mq-i2c", "fsl,imx21-i2c";
++				reg = <0x30a20000 0x10000>;
++				interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_I2C1_ROOT>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				status = "disabled";
++			};
++
++			i2c2: i2c@30a30000 {
++				compatible = "fsl,imx8mq-i2c", "fsl,imx21-i2c";
++				reg = <0x30a30000 0x10000>;
++				interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_I2C2_ROOT>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				status = "disabled";
++			};
++
++			i2c3: i2c@30a40000 {
++				compatible = "fsl,imx8mq-i2c", "fsl,imx21-i2c";
++				reg = <0x30a40000 0x10000>;
++				interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_I2C3_ROOT>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				status = "disabled";
++			};
++
++			i2c4: i2c@30a50000 {
++				compatible = "fsl,imx8mq-i2c", "fsl,imx21-i2c";
++				reg = <0x30a50000 0x10000>;
++				interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_I2C4_ROOT>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				status = "disabled";
++			};
++
++			uart4: serial@30a60000 {
++				compatible = "fsl,imx8mq-uart",
++				             "fsl,imx6q-uart";
++				reg = <0x30a60000 0x10000>;
++				interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_UART4_ROOT>,
++				         <&clk IMX8MQ_CLK_UART4_ROOT>;
++				clock-names = "ipg", "per";
++				status = "disabled";
++			};
++
++			mipi_csi_1: mipi_csi1@30a70000 {
++				compatible = "fsl,mxc-mipi-csi2_yav";
++				reg = <0x30a70000 0x1000>;
++				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_CSI1_CORE>,
++						<&clk IMX8MQ_CLK_CSI1_ESC>,
++						<&clk IMX8MQ_CLK_CSI1_PHY_REF>;
++				clock-names = "clk_core", "clk_esc", "clk_pxl";
++				assigned-clocks = <&clk IMX8MQ_CLK_CSI1_CORE>,
++						  <&clk IMX8MQ_CLK_CSI1_PHY_REF>,
++						  <&clk IMX8MQ_CLK_CSI1_ESC>;
++				assigned-clock-rates = <133000000>, <100000000>, <66000000>;
++				power-domains = <&pgc_mipi_csi1>;
++				csis-phy-reset = <&src 0x4c 7>;
++				phy-gpr = <&iomuxc_gpr 0x88>;
++				status = "disabled";
++			};
++
++			csi1_bridge: csi1_bridge@30a90000 {
++				compatible = "fsl,imx8mq-csi", "fsl,imx6s-csi";
++				reg = <0x30a90000 0x10000>;
++				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_DUMMY>,
++					<&clk IMX8MQ_CLK_CSI1_ROOT>,
++					<&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "disp-axi", "csi_mclk", "disp_dcic";
++				status = "disabled";
++			};
++
++			mu: mu@30aa0000 {
++				compatible = "fsl,imx8mq-mu", "fsl,imx6sx-mu";
++				reg = <0x30aa0000 0x10000>;
++				interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_MU_ROOT>;
++				clock-names = "mu";
++				#mbox-cells = <2>;
++			};
++
++			usdhc1: mmc@30b40000 {
++				compatible = "fsl,imx8mq-usdhc",
++				             "fsl,imx7d-usdhc";
++				reg = <0x30b40000 0x10000>;
++				interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_IPG_ROOT>,
++				         <&clk IMX8MQ_CLK_NAND_USDHC_BUS>,
++				         <&clk IMX8MQ_CLK_USDHC1_ROOT>;
++				clock-names = "ipg", "ahb", "per";
++				assigned-clocks = <&clk IMX8MQ_CLK_USDHC1>;
++				assigned-clock-rates = <400000000>;
++				fsl,tuning-start-tap = <20>;
++				fsl,tuning-step = <2>;
++				bus-width = <4>;
++				status = "disabled";
++			};
++
++			usdhc2: mmc@30b50000 {
++				compatible = "fsl,imx8mq-usdhc",
++				             "fsl,imx7d-usdhc";
++				reg = <0x30b50000 0x10000>;
++				interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_IPG_ROOT>,
++				         <&clk IMX8MQ_CLK_NAND_USDHC_BUS>,
++				         <&clk IMX8MQ_CLK_USDHC2_ROOT>;
++				clock-names = "ipg", "ahb", "per";
++				fsl,tuning-start-tap = <20>;
++				fsl,tuning-step = <2>;
++				bus-width = <4>;
++				status = "disabled";
++			};
++
++			mipi_csi_2: mipi_csi2@30b60000 {
++				compatible = "fsl,mxc-mipi-csi2_yav";
++				reg = <0x30b60000 0x1000>;
++				interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_CSI2_CORE>,
++						<&clk IMX8MQ_CLK_CSI2_ESC>,
++						<&clk IMX8MQ_CLK_CSI2_PHY_REF>;
++				clock-names = "clk_core", "clk_esc", "clk_pxl";
++				assigned-clocks = <&clk IMX8MQ_CLK_CSI2_CORE>,
++						  <&clk IMX8MQ_CLK_CSI2_PHY_REF>,
++						  <&clk IMX8MQ_CLK_CSI2_ESC>;
++				assigned-clock-rates = <133000000>, <100000000>, <66000000>;
++				power-domains = <&pgc_mipi_csi2>;
++				csis-phy-reset = <&src 0x50 7>;
++				phy-gpr = <&iomuxc_gpr 0xa4>;
++				status = "disabled";
++			};
++
++			csi2_bridge: csi2_bridge@30b80000 {
++				compatible = "fsl,imx8mq-csi", "fsl,imx6s-csi";
++				reg = <0x30b80000 0x10000>;
++				interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_DUMMY>,
++					<&clk IMX8MQ_CLK_CSI2_ROOT>,
++					<&clk IMX8MQ_CLK_DUMMY>;
++				clock-names = "disp-axi", "csi_mclk", "disp_dcic";
++				status = "disabled";
++			};
++
++			qspi0: spi@30bb0000 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,imx8mq-qspi", "fsl,imx7d-qspi";
++				reg = <0x30bb0000 0x10000>,
++				      <0x08000000 0x10000000>;
++				reg-names = "QuadSPI", "QuadSPI-memory";
++				interrupts = <GIC_SPI 107 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_QSPI_ROOT>,
++					 <&clk IMX8MQ_CLK_QSPI_ROOT>;
++				clock-names = "qspi_en", "qspi";
++				status = "disabled";
++			};
++
++			sdma1: sdma@30bd0000 {
++				compatible = "fsl,imx8mq-sdma","fsl,imx7d-sdma";
++				reg = <0x30bd0000 0x10000>;
++				interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_SDMA1_ROOT>,
++					 <&clk IMX8MQ_CLK_AHB>;
++				clock-names = "ipg", "ahb";
++				#dma-cells = <3>;
++				fsl,sdma-ram-script-name = "imx/sdma/sdma-imx7d.bin";
++			};
++
++			fec1: ethernet@30be0000 {
++				compatible = "fsl,imx8mq-fec", "fsl,imx6sx-fec";
++				reg = <0x30be0000 0x10000>;
++				interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
++				             <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_ENET1_ROOT>,
++				         <&clk IMX8MQ_CLK_ENET1_ROOT>,
++				         <&clk IMX8MQ_CLK_ENET_TIMER>,
++				         <&clk IMX8MQ_CLK_ENET_REF>,
++				         <&clk IMX8MQ_CLK_ENET_PHY_REF>;
++				clock-names = "ipg", "ahb", "ptp",
++				              "enet_clk_ref", "enet_out";
++				fsl,num-tx-queues = <3>;
++				fsl,num-rx-queues = <3>;
++				nvmem-cells = <&fec_mac_address>;
++				nvmem-cell-names = "mac-address";
++				nvmem_macaddr_swap;
++				stop-mode = <&iomuxc_gpr 0x10 3>;
++				fsl,wakeup_irq = <2>;
++				status = "disabled";
++			};
++		};
++
++		bus@32c00000 { /* AIPS4 */
++			compatible = "fsl,imx8mq-aips-bus", "simple-bus";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0x32c00000 0x32c00000 0x400000>;
++
++			hdmi: hdmi@32c00000 {
++				reg = <0x32c00000 0x100000>,
++					<0x32e40000 0x40000>;
++				interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>,
++							 <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
++				interrupt-names = "plug_in", "plug_out";
++			};
++
++			irqsteer: interrupt-controller@32e2d000 {
++				compatible = "fsl,imx8m-irqsteer", "fsl,imx-irqsteer";
++				reg = <0x32e2d000 0x1000>;
++				interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
++				clocks = <&clk IMX8MQ_CLK_DISP_APB_ROOT>;
++				clock-names = "ipg";
++				fsl,channel = <0>;
++				fsl,num-irqs = <64>;
++				interrupt-controller;
++				#interrupt-cells = <1>;
++			};
++
++			dcss: display-controller@32e00000 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "nxp,imx8mq-dcss";
++				reg = <0x32e00000 0x2d000>, <0x32e2f000 0x1000>;
++				interrupts = <6>, <8>, <9>, <16>, <17>;
++				interrupt-names = "ctx_ld", "ctxld_kick", "vblank",
++								  "dtrc_ch1", "dtrc_ch2";
++				interrupt-parent = <&irqsteer>;
++				clocks = <&clk IMX8MQ_CLK_DISP_APB_ROOT>,
++					 <&clk IMX8MQ_CLK_DISP_AXI_ROOT>,
++					 <&clk IMX8MQ_CLK_DISP_RTRM_ROOT>,
++					 <&clk IMX8MQ_VIDEO2_PLL_OUT>,
++					 <&clk IMX8MQ_CLK_DISP_DTRC>,
++					 <&clk IMX8MQ_VIDEO2_PLL1_REF_SEL>,
++					 <&clk IMX8MQ_CLK_PHY_27MHZ>;
++				clock-names = "apb", "axi", "rtrm", "pix", "dtrc", "pll_src",
++						      "pll_phy_ref";
++				assigned-clocks = <&clk IMX8MQ_CLK_DISP_AXI>,
++						  <&clk IMX8MQ_CLK_DISP_RTRM>,
++						  <&clk IMX8MQ_VIDEO2_PLL1_REF_SEL>;
++				assigned-clock-parents = <&clk IMX8MQ_SYS1_PLL_800M>,
++							 <&clk IMX8MQ_SYS1_PLL_800M>,
++							 <&clk IMX8MQ_CLK_27M>;
++				assigned-clock-rates = <800000000>,
++							   <400000000>;
++				status = "disabled";
++			};
++		};
++
++		gpu: gpu@38000000 {
++			compatible = "vivante,gc";
++			reg = <0x38000000 0x40000>;
++			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&clk IMX8MQ_CLK_GPU_ROOT>,
++			         <&clk IMX8MQ_CLK_GPU_SHADER_DIV>,
++			         <&clk IMX8MQ_CLK_GPU_AXI>,
++			         <&clk IMX8MQ_CLK_GPU_AHB>;
++			clock-names = "core", "shader", "bus", "reg";
++			assigned-clocks = <&clk IMX8MQ_CLK_GPU_CORE_SRC>,
++			                  <&clk IMX8MQ_CLK_GPU_SHADER_SRC>,
++			                  <&clk IMX8MQ_CLK_GPU_AXI>,
++			                  <&clk IMX8MQ_CLK_GPU_AHB>,
++			                  <&clk IMX8MQ_GPU_PLL_BYPASS>;
++			assigned-clock-parents = <&clk IMX8MQ_GPU_PLL_OUT>,
++			                         <&clk IMX8MQ_GPU_PLL_OUT>,
++			                         <&clk IMX8MQ_GPU_PLL_OUT>,
++			                         <&clk IMX8MQ_GPU_PLL_OUT>,
++			                         <&clk IMX8MQ_GPU_PLL>;
++			assigned-clock-rates = <800000000>, <800000000>,
++			                       <800000000>, <800000000>, <0>;
++			power-domains = <&pgc_gpu>;
++			status = "disabled";
++		};
++
++		usb_dwc3_0: usb@38100000 {
++			compatible = "fsl,imx8mq-dwc3", "snps,dwc3";
++			reg = <0x38100000 0x10000>;
++			clocks = <&clk IMX8MQ_CLK_USB1_CTRL_ROOT>,
++			         <&clk IMX8MQ_CLK_USB_CORE_REF>,
++				 <&clk IMX8MQ_CLK_32K>;
++			clock-names = "bus_early", "ref", "suspend";
++			assigned-clocks = <&clk IMX8MQ_CLK_USB_BUS>,
++			                  <&clk IMX8MQ_CLK_USB_CORE_REF>;
++			assigned-clock-parents = <&clk IMX8MQ_SYS2_PLL_500M>,
++			                         <&clk IMX8MQ_SYS1_PLL_100M>;
++			assigned-clock-rates = <500000000>, <100000000>;
++			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
++			phys = <&usb3_phy0>, <&usb3_phy0>;
++			phy-names = "usb2-phy", "usb3-phy";
++			power-domains = <&pgc_otg1>;
++			usb3-resume-missing-cas;
++			snps,power-down-scale = <2>;
++			status = "disabled";
++		};
++
++		usb3_phy0: usb-phy@381f0040 {
++			compatible = "fsl,imx8mq-usb-phy";
++			reg = <0x381f0040 0x40>;
++			clocks = <&clk IMX8MQ_CLK_USB1_PHY_ROOT>;
++			clock-names = "phy";
++			assigned-clocks = <&clk IMX8MQ_CLK_USB_PHY_REF>;
++			assigned-clock-parents = <&clk IMX8MQ_SYS1_PLL_100M>;
++			assigned-clock-rates = <100000000>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		usb_dwc3_1: usb@38200000 {
++			compatible = "fsl,imx8mq-dwc3", "snps,dwc3";
++			reg = <0x38200000 0x10000>;
++			clocks = <&clk IMX8MQ_CLK_USB2_CTRL_ROOT>,
++			         <&clk IMX8MQ_CLK_USB_CORE_REF>,
++				 <&clk IMX8MQ_CLK_32K>;
++			clock-names = "bus_early", "ref", "suspend";
++			assigned-clocks = <&clk IMX8MQ_CLK_USB_BUS>,
++			                  <&clk IMX8MQ_CLK_USB_CORE_REF>;
++			assigned-clock-parents = <&clk IMX8MQ_SYS2_PLL_500M>,
++			                         <&clk IMX8MQ_SYS1_PLL_100M>;
++			assigned-clock-rates = <500000000>, <100000000>;
++			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
++			phys = <&usb3_phy1>, <&usb3_phy1>;
++			phy-names = "usb2-phy", "usb3-phy";
++			power-domains = <&pgc_otg2>;
++			usb3-resume-missing-cas;
++			snps,power-down-scale = <2>;
++			status = "disabled";
++		};
++
++		usb3_phy1: usb-phy@382f0040 {
++			compatible = "fsl,imx8mq-usb-phy";
++			reg = <0x382f0040 0x40>;
++			clocks = <&clk IMX8MQ_CLK_USB2_PHY_ROOT>;
++			clock-names = "phy";
++			assigned-clocks = <&clk IMX8MQ_CLK_USB_PHY_REF>;
++			assigned-clock-parents = <&clk IMX8MQ_SYS1_PLL_100M>;
++			assigned-clock-rates = <100000000>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		dma_apbh: dma-apbh@33000000 {
++			compatible = "fsl,imx7d-dma-apbh", "fsl,imx28-dma-apbh";
++			reg = <0x33000000 0x2000>;
++			interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "gpmi0", "gpmi1", "gpmi2", "gpmi3";
++			#dma-cells = <1>;
++			dma-channels = <4>;
++			clocks = <&clk IMX8MQ_CLK_NAND_USDHC_BUS_RAWNAND_CLK>;
++		};
++
++		gpmi: gpmi-nand@33002000{
++			compatible = "fsl,imx7d-gpmi-nand";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			reg = <0x33002000 0x2000>, <0x33004000 0x4000>;
++			reg-names = "gpmi-nand", "bch";
++			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "bch";
++			clocks = <&clk IMX8MQ_CLK_RAWNAND_ROOT>,
++				<&clk IMX8MQ_CLK_NAND_USDHC_BUS_RAWNAND_CLK>;
++			clock-names = "gpmi_io", "gpmi_bch_apb";
++			dmas = <&dma_apbh 0>;
++			dma-names = "rx-tx";
++			status = "disabled";
++		};
++
++		pcie0: pcie@33800000 {
++			compatible = "fsl,imx8mq-pcie";
++			reg = <0x33800000 0x400000>,
++			      <0x1ff00000 0x80000>;
++			reg-names = "dbi", "config";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			bus-range = <0x00 0xff>;
++			ranges = <0x81000000 0 0x00000000 0x1ff80000 0 0x00010000 /* downstream I/O 64KB */
++			          0x82000000 0 0x18000000 0x18000000 0 0x07f00000>; /* non-prefetchable memory */
++			num-lanes = <1>;
++			num-viewport = <4>;
++			interrupts = <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>; /* eDMA */
++			interrupt-names = "msi", "dma";
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 0x7>;
++			interrupt-map = <0 0 0 1 &gic GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
++			                <0 0 0 2 &gic GIC_SPI 124 IRQ_TYPE_LEVEL_HIGH>,
++			                <0 0 0 3 &gic GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
++			                <0 0 0 4 &gic GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>;
++			fsl,max-link-speed = <2>;
++			power-domains = <&pgc_pcie>;
++			resets = <&src IMX8MQ_RESET_PCIEPHY>,
++			         <&src IMX8MQ_RESET_PCIE_CTRL_APPS_EN>,
++			         <&src IMX8MQ_RESET_PCIE_CTRL_APPS_TURNOFF>;
++			reset-names = "pciephy", "apps", "turnoff";
++			status = "disabled";
++		};
++
++		pcie1: pcie@33c00000 {
++			compatible = "fsl,imx8mq-pcie";
++			reg = <0x33c00000 0x400000>,
++			      <0x27f00000 0x80000>;
++			reg-names = "dbi", "config";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			ranges =  <0x81000000 0 0x00000000 0x27f80000 0 0x00010000 /* downstream I/O 64KB */
++				   0x82000000 0 0x20000000 0x20000000 0 0x07f00000>; /* non-prefetchable memory */
++			num-lanes = <1>;
++			num-viewport = <4>;
++			interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>,
++					<GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>; /* eDMA */
++			interrupt-names = "msi", "dma";
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 0x7>;
++			interrupt-map = <0 0 0 1 &gic GIC_SPI 77 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 2 &gic GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 3 &gic GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>,
++					<0 0 0 4 &gic GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
++			fsl,max-link-speed = <2>;
++			power-domains = <&pgc_pcie>;
++			resets = <&src IMX8MQ_RESET_PCIEPHY2>,
++			         <&src IMX8MQ_RESET_PCIE2_CTRL_APPS_EN>,
++			         <&src IMX8MQ_RESET_PCIE2_CTRL_APPS_TURNOFF>;
++			reset-names = "pciephy", "apps", "turnoff";
++			status = "disabled";
++		};
++
++		gic: interrupt-controller@38800000 {
++			compatible = "arm,gic-v3";
++			reg = <0x38800000 0x10000>,	/* GIC Dist */
++			      <0x38880000 0xc0000>,	/* GICR */
++			      <0x31000000 0x2000>,	/* GICC */
++			      <0x31010000 0x2000>,	/* GICV */
++			      <0x31020000 0x2000>;	/* GICH */
++			#interrupt-cells = <3>;
++			interrupt-controller;
++			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-parent = <&gic>;
++		};
++
++		ddr-pmu@3d800000 {
++			compatible = "fsl,imx8mq-ddr-pmu", "fsl,imx8m-ddr-pmu";
++			reg = <0x3d800000 0x400000>;
++			interrupt-parent = <&gic>;
++			interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		vpu: vpu@38300000 {
++			compatible = "nxp,imx8mq-hantro";
++			reg = <0x38300000 0x200000>;
++			reg-names = "regs_hantro";
++			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 8 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "irq_hantro_g1", "irq_hantro_g2";
++			clocks = <&clk IMX8MQ_CLK_VPU_G1_ROOT>, <&clk IMX8MQ_CLK_VPU_G2_ROOT>, <&clk IMX8MQ_CLK_VPU_DEC_ROOT>;
++			clock-names = "clk_hantro_g1", "clk_hantro_g2", "clk_hantro_bus";
++			assigned-clocks = <&clk IMX8MQ_CLK_VPU_G1>, <&clk IMX8MQ_CLK_VPU_G2>, <&clk IMX8MQ_CLK_VPU_BUS>;
++			assigned-clock-parents = <&clk IMX8MQ_VPU_PLL_OUT>, <&clk IMX8MQ_VPU_PLL_OUT>, <&clk IMX8MQ_SYS1_PLL_800M>;
++			assigned-clock-rates = <600000000>, <600000000>, <800000000>;
++			power-domains = <&pgc_vpu>;
++			status = "disabled";
++		};
++	};
++
++	gpu3d: gpu3d@38000000 {
++		compatible = "fsl,imx8mq-gpu", "fsl,imx6q-gpu";
++		reg = <0x0 0x38000000 0x0 0x40000>, <0x0 0x40000000 0x0 0xC0000000>, <0x0 0x0 0x0 0x10000000>;
++		reg-names = "iobase_3d", "phys_baseaddr", "contiguous_mem";
++		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "irq_3d";
++		clocks = 	<&clk IMX8MQ_CLK_GPU_ROOT>,
++				<&clk IMX8MQ_CLK_GPU_SHADER_DIV>,
++				<&clk IMX8MQ_CLK_GPU_AXI>,
++				<&clk IMX8MQ_CLK_GPU_AHB>;
++		clock-names = "gpu3d_clk", "gpu3d_shader_clk", "gpu3d_axi_clk", "gpu3d_ahb_clk";
++		assigned-clocks = <&clk IMX8MQ_CLK_GPU_CORE_SRC>,
++				<&clk IMX8MQ_CLK_GPU_SHADER_SRC>,
++				<&clk IMX8MQ_CLK_GPU_AXI>,
++				<&clk IMX8MQ_CLK_GPU_AHB>;
++		assigned-clock-parents = <&clk IMX8MQ_GPU_PLL_OUT>,
++				<&clk IMX8MQ_GPU_PLL_OUT>,
++				<&clk IMX8MQ_GPU_PLL_OUT>,
++				<&clk IMX8MQ_GPU_PLL_OUT>;
++		assigned-clock-rates = <800000000>, <800000000>, <800000000>, <800000000>;
++		power-domains = <&pgc_gpu>;
++		status = "disabled";
++	};
++
++	rpmsg: rpmsg{
++		compatible = "fsl,imx8mq-rpmsg";
++		/* up to now, the following channels are used in imx rpmsg
++		 * - tx1/rx1: messages channel.
++		 * - general interrupt1: remote proc finish re-init rpmsg stack
++		 *   when A core is partition reset.
++		 */
++		mbox-names = "tx", "rx", "rxdb";
++		mboxes = <&mu 0 1
++			  &mu 1 1
++			  &mu 3 1>;
++		status = "disabled";
++	};
++};
+diff --git a/arch/arm64/configs/lec_imx8m_defconfig b/arch/arm64/configs/lec_imx8m_defconfig
+index b449e5b56ee4..4b37fe166139 100644
+--- a/arch/arm64/configs/lec_imx8m_defconfig
++++ b/arch/arm64/configs/lec_imx8m_defconfig
+@@ -32,6 +32,7 @@ CONFIG_KALLSYMS_ALL=y
+ CONFIG_PROFILING=y
+ CONFIG_ARCH_LAYERSCAPE=y
+ CONFIG_ARCH_MXC=y
++CONFIG_ARCH_LEC_IMX8M=y
+ CONFIG_ARCH_S32=y
+ CONFIG_SOC_S32V234=y
+ CONFIG_ARM64_VA_BITS_48=y
+-- 
+2.17.1
+

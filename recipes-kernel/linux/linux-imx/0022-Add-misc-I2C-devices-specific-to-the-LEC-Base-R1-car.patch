@@ -1,0 +1,591 @@
+From 7eadbeea387b00d485f7fcc09d0ac4db2177ce98 Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Wed, 5 Aug 2020 13:51:26 +0530
+Subject: [PATCH 22/22] Add misc I2C devices specific to the LEC-Base R1
+ carrier
+
+I2C1:
+- On-module RTC pcf8563
+- Optional PLX PEX8605 makes 3 PCIe x1 lanes from 1 and may be tuned via
+  I2C.
+- pcf8575 GPIO expander on LEC-Base R1 carrier - A PCF8575 controls misc signals of the
+  LEC-Base R1 carrier. Most important probably are the reset lines of the two USB hubs.
+  Unless these are released most USB ports won't work. Fortunately the PCF8575 driver
+  implements a special "lines-initial-states" option which can be used to set
+  working boot-up defaults.
+
+I2C2:
+- Some Freescale PFUZE100 PMIC outputs are used differently
+- Silicon Image SiI9022 HDMI transmitter (driver depends on MXS FB)
+- Freescale MMA7660 accelerometer (no driver)
+- Atmel AT24C08 1KB EEPROM
+- Maxim DS1337 real time clock (driver disabled in defconfig)
+
+I2C3:
+- sema_bmc
+- ltc1760 - Current baseboards use a Linear Technology LTC1760 I2C battery charger
+            instead of the eval-board's Maxim MAX8903, but no driver exists so we can't
+            add a full device tree entry for it.Also we don't have a charger LED; remove it.
+
+- Drop I2C devices our boards don't implement
+	- no Freescale MMA8451 accelerometer
+	- no eGalax I2C touch-screen (twice)
+	- no Maxim MAX11801 I2C touch-screen
+	- no Intersil ISL29023 light sensor
+	- no Xtrinsic MAG3110 3-axis magnetometer
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi  | 295 ++++++++++++-------------------
+ arch/arm/boot/dts/lec-imx6q.dts  |   6 -
+ arch/arm/boot/dts/lec-imx6qp.dts |  10 --
+ arch/arm/boot/dts/lec-imx6s.dts  |   6 -
+ 4 files changed, 111 insertions(+), 206 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 2b57a517129c..464defe5115b 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -22,19 +22,6 @@
+ 		stdout-path = &uart1;
+ 	};
+ 
+-	battery: max8903@0 {
+-		compatible = "fsl,max8903-charger";
+-		pinctrl-names = "default";
+-		dok_input = <&gpio2 24 1>;
+-		uok_input = <&gpio1 27 1>;
+-		chg_input = <&gpio3 23 1>;
+-		flt_input = <&gpio5 2 1>;
+-		fsl,dcm_always_high;
+-		fsl,dc_valid;
+-		fsl,usb_valid;
+-		status = "okay";
+-	};
+-
+ 	memory: memory@10000000 {
+ 		device_type = "memory";
+ 		reg = <0x10000000 0x40000000>;
+@@ -95,24 +82,6 @@
+ 		regulator-boot-on;
+ 	};
+ 
+-	reg_audio: regulator-audio {
+-		compatible = "regulator-fixed";
+-		regulator-name = "wm8962-supply";
+-		gpio = <&gpio4 10 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-	};
+-
+-	reg_sensors: regulator-sensors {
+-		compatible = "regulator-fixed";
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_sensors_reg>;
+-		regulator-name = "sensors-supply";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		gpio = <&gpio2 31 GPIO_ACTIVE_HIGH>;
+-		enable-active-high;
+-	};
+-
+ #if CONFIG_I2S_AUDIO == 2
+ 	/* Power supplies on the LEC-Base R2 carrier. They cannot be
+ 	 * controlled, but the SGTL5000 driver won't work without
+@@ -274,18 +243,15 @@
+ 		status = "okay";
+ 	};
+ 
+-	leds {
+-		compatible = "gpio-leds";
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_gpio_leds>;
+-
+-		charger-led {
+-			gpios = <&gpio1 2 0>;
+-			linux,default-trigger = "max8903-charger-charging";
+-			retain-state-suspended;
+-			default-state = "off";
+-		};
+-	};
++	/* The LEC-Base carriers don't have any LEDs, just show how it's done. */
++	//leds {
++	//	compatible = "gpio-leds";
++	//
++	//	example-led {
++	//		gpios = <&smarc_gpio 5 GPIO_ACTIVE_LOW>; /* SMARC GPIO5/PWM_OUT */
++	//		linux,default-trigger = "mmc1"; /* more triggers in menuconfig */
++	//	};
++	//};
+ 
+ 	v4l2_cap_0 {
+ 		compatible = "fsl,imx6q-v4l2-capture";
+@@ -513,24 +479,20 @@
+ 	status = "okay";
+ };
+ 
+-&i2c1 {
+-	clock-frequency = <100000>;
+-	pinctrl-names = "default", "gpio";
++&i2c1 {		/* RTC, optional PCIe switch, SMARC I2C_CAM */
++	clock-frequency = <100000>; /* 66 MHz / 768 = 86 kHz */
++	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c1>;
+-	pinctrl-1 = <&pinctrl_i2c1_gpio>;
+-	scl-gpios = <&gpio5 27 GPIO_ACTIVE_HIGH>;
+-	sda-gpios = <&gpio5 26 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
+ 
+-	accelerometer@1c {
+-		compatible = "fsl,mma8451";
+-		reg = <0x1c>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_i2c1_mma8451_int>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <18 IRQ_TYPE_LEVEL_LOW>;
+-		vdd-supply = <&reg_sensors>;
+-		vddio-supply = <&reg_sensors>;
++	pcf8563: pcf8563@51 {                           /* Real Time Clock */
++		compatible = "nxp,pcf8563";
++		reg = <0x51>;
++	};
++
++	pex8605@58 {				/* optional PCIe switch */
++		compatible = "plx,pex8605";	/* guessing, no driver found */
++		reg = <0x58>;
+ 	};
+ 
+ #if 0
+@@ -559,6 +521,23 @@
+ 		};
+ 	};
+ #endif
++
++       carrier_misc_control: pcf8575@20 {      /* GPIO expander on LEC-Base R1 carrier */
++               compatible = "nxp,pcf8575";
++               reg = <0x20>;
++               gpio-controller;
++               #gpio-cells = <2>;
++               /* 0: HUB1_RESET         8: 3G1_DISABLE#
++                * 1: CAN1_STB (NC)      9: 3G1_DOWN#
++                * 2: CAN2_STB (NC)     10: 3G2_DISABLE#
++                * 3: LCD_RESET# (NC)   11: 3G2_DOWN#
++                * 4: SUP_RESET# (NC)   12: HDMI_RESET#
++                * 5: LVDS_VDD_EN       13: 3G_PW_EN
++                * 6: CAM_PW_EN (NC)    14: PCAM_LE#
++                * 7: GPS_VDD_EN        15: HUB2_RESET */
++               lines-initial-states = <0xc001>; /* bitmask: 0=high(!)/input, 1=pulled low */
++       };
++
+ 	ov564x: ov564x@3c {
+ 		compatible = "ovti,ov564x";
+ 		reg = <0x3c>;
+@@ -577,7 +556,7 @@
+ 	};
+ };
+ 
+-&i2c2 {
++&i2c2 {		/* PFUZE100 PMIC, SMARC I2C_LCD, SMARC I2C_GP */
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default", "gpio";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+@@ -586,70 +565,12 @@
+ 	sda-gpios = <&gpio4 13 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
+ 
+-	touchscreen@4 {
+-		compatible = "eeti,egalax_ts";
+-		reg = <0x04>;
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_i2c2_egalax_int>;
+-		interrupt-parent = <&gpio6>;
+-		interrupts = <8 IRQ_TYPE_EDGE_FALLING>;
+-		wakeup-gpios = <&gpio6 8 GPIO_ACTIVE_HIGH>;
+-	};
+-
+-	max11801@48 {
+-		compatible = "maxim,max11801";
+-		reg = <0x48>;
+-		interrupt-parent = <&gpio3>;
+-		interrupts = <26 2>;
+-		work-mode = <1>;/*DCM mode*/
+-	};
+-
+-#if 0
+-	ov5640: camera@3c {
+-		compatible = "ovti,ov5640";
+-		pinctrl-names = "default";
+-		pinctrl-0 = <&pinctrl_ov5640>;
+-		reg = <0x3c>;
+-		clocks = <&clks IMX6QDL_CLK_CKO>;
+-		clock-names = "xclk";
+-		DOVDD-supply = <&vgen4_reg>; /* 1.8v */
+-		AVDD-supply = <&vgen3_reg>;  /* 2.8v, rev C board is VGEN3
+-						rev B board is VGEN5 */
+-		DVDD-supply = <&vgen2_reg>;  /* 1.5v*/
+-		powerdown-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+-		reset-gpios = <&gpio1 20 GPIO_ACTIVE_LOW>;
+-
+-		port {
+-			ov5640_to_mipi_csi2: endpoint {
+-				remote-endpoint = <&mipi_csi2_in>;
+-				clock-lanes = <0>;
+-				data-lanes = <1 2>;
+-			};
+-		};
+-	};
+-#endif
+-
+-	ov564x_mipi: ov564x_mipi@3c { /* i2c2 driver */
+-		compatible = "ovti,ov564x_mipi";
+-		reg = <0x3c>;
+-		clocks = <&clks IMX6QDL_CLK_CKO>;
+-		clock-names = "csi_mclk";
+-		DOVDD-supply = <&vgen4_reg>; /* 1.8v */
+-		AVDD-supply = <&vgen3_reg>;  /* 2.8v rev C board is VGEN3 rev B board is VGEN5 */
+-		DVDD-supply = <&vgen2_reg>;  /* 1.5v*/
+-		pwn-gpios = <&gpio1 19 1>;   /* active low: SD1_CLK */
+-		rst-gpios = <&gpio1 20 0>;   /* active high: SD1_DAT2 */
+-		csi_id = <1>;
+-		mclk = <24000000>;
+-		mclk_source = <0>;
+-	};
+-
+ 	pmic: pfuze100@8 {
+ 		compatible = "fsl,pfuze100";
+ 		reg = <0x08>;
+ 
+ 		regulators {
+-			sw1a_reg: sw1ab {
++			sw1a_reg: sw1ab {	/* VDDCORE: VDDARM */
+ 				regulator-min-microvolt = <300000>;
+ 				regulator-max-microvolt = <1875000>;
+ 				regulator-boot-on;
+@@ -657,7 +578,7 @@
+ 				regulator-ramp-delay = <6250>;
+ 			};
+ 
+-			sw1c_reg: sw1c {
++			sw1c_reg: sw1c {	/* VDDSOC */
+ 				regulator-min-microvolt = <300000>;
+ 				regulator-max-microvolt = <1875000>;
+ 				regulator-boot-on;
+@@ -665,7 +586,7 @@
+ 				regulator-ramp-delay = <6250>;
+ 			};
+ 
+-			sw2_reg: sw2 {
++			sw2_reg: sw2 {	/* GEN_3V3: NVCC_ENET (eth mac), eth phy, USB hub, eMMC, lots of misc stuff */
+ 				regulator-min-microvolt = <800000>;
+ 				regulator-max-microvolt = <3300000>;
+ 				regulator-boot-on;
+@@ -673,73 +594,82 @@
+ 				regulator-ramp-delay = <6250>;
+ 			};
+ 
+-			sw3a_reg: sw3a {
++			sw3a_reg: sw3a {	/* DDR_1V5 */
+ 				regulator-min-microvolt = <400000>;
+ 				regulator-max-microvolt = <1975000>;
+ 				regulator-boot-on;
+ 				regulator-always-on;
+ 			};
+ 
+-			sw3b_reg: sw3b {
++			sw3b_reg: sw3b {	/* dito */
+ 				regulator-min-microvolt = <400000>;
+ 				regulator-max-microvolt = <1975000>;
+ 				regulator-boot-on;
+ 				regulator-always-on;
+ 			};
+ 
+-			sw4_reg: sw4 {
++			sw4_reg: sw4 {	/* PMIC_1V8: VDD_IO and lots of stuff everywhere */
+ 				regulator-min-microvolt = <800000>;
+ 				regulator-max-microvolt = <3300000>;
+ 				regulator-always-on;
+ 			};
+ 
+-			swbst_reg: swbst {
++			swbst_reg: swbst {	/* PMIC_5V: USB h1 Vbus (for phy, rest is provided by carrier) */
+ 				regulator-min-microvolt = <5000000>;
+ 				regulator-max-microvolt = <5150000>;
+ 			};
+ 
+-			snvs_reg: vsnvs {
++			snvs_reg: vsnvs {	/* PMIC_VSNVS (3V) */
+ 				regulator-min-microvolt = <1000000>;
+ 				regulator-max-microvolt = <3000000>;
+ 				regulator-boot-on;
+ 				regulator-always-on;
+ 			};
+ 
+-			vref_reg: vrefddr {
++			vref_reg: vrefddr {	/* DDR_VREF */
+ 				regulator-boot-on;
+ 				regulator-always-on;
+ 			};
+ 
+-			vgen1_reg: vgen1 {
++			vgen1_reg: vgen1 {	/* VGEN1_1V5: NVCC_RGMII (i.MX6's I/O to external eth phy) */
+ 				regulator-min-microvolt = <800000>;
+ 				regulator-max-microvolt = <1550000>;
++				regulator-boot-on;
++				regulator-always-on; /* we can't power off phy itself */
+ 			};
+ 
+-			vgen2_reg: vgen2 {
++			vgen2_reg: vgen2 {	/* unused */
+ 				regulator-min-microvolt = <800000>;
+ 				regulator-max-microvolt = <1550000>;
+ 			};
+ 
+-			vgen3_reg: vgen3 {
++			vgen3_reg: vgen3 {	/* VGEN3_2V5: NVCC_LVDS (LVDS, DRAM, RGMII), SPI/I2S mux */
+ 				regulator-min-microvolt = <1800000>;
+ 				regulator-max-microvolt = <3300000>;
++				regulator-boot-on;
++				regulator-always-on; /* despite its name, NVCC_LVDS also supplies DRAM_IO */
+ 			};
+ 
+-			vgen4_reg: vgen4 {
++			vgen4_reg: vgen4 {	/* VDDHIGH_IN (2.8V): SATA, PCIe, HDMI, MIPI, LVDS, USB, PLLs */
+ 				regulator-min-microvolt = <1800000>;
+ 				regulator-max-microvolt = <3300000>;
++				regulator-boot-on;
+ 				regulator-always-on;
+ 			};
+ 
+-			vgen5_reg: vgen5 {
++			vgen5_reg: vgen5 {	/* dito, but unused per default (since LEC-iMX6 rev A4) */
+ 				regulator-min-microvolt = <1800000>;
+ 				regulator-max-microvolt = <3300000>;
+-				regulator-always-on;
++				regulator-boot-on;
++				//regulator-always-on;	/* solder jumper */
+ 			};
+ 
+-			vgen6_reg: vgen6 {
++			vgen6_reg: vgen6 {	/* VGEN6_3V3: PCIe switch, PCIe reset */
+ 				regulator-min-microvolt = <1800000>;
+ 				regulator-max-microvolt = <3300000>;
++				regulator-boot-on;
++				/* no driver for PCIe switch, no regulator in i.MX6 driver and we couldn't
++				   power down carrier devices or host, only PCIe switch in between */
+ 				regulator-always-on;
+ 			};
+ 		};
+@@ -767,9 +697,38 @@
+ 	};
+ #endif
+ 
++	/* Current driver depends on MXS framebuffer not present on i.MX6Q/D/DL/S.
++	 * Also assuming LEC-Base R1 JP3=1-2, JP15=2-3. */
++	sii902x@39 {                    /* HDMI transmitter on LEC-Base R1 carrier */
++		compatible = "SiI,sii902x";
++		reg = <0x39>;
++		interrupt-parent = <&smarc_gpio>;
++		interrupts = <4 IRQ_TYPE_EDGE_FALLING>; /* SMARC GPIO4/HDA_RST# */
++		mode_str = "1280x720M@60";
++		bits-per-pixel = <32>;
++	};
++
++	mma7660@4c {                    /* Accelerometer on LEC-Base R1 carrier */
++		compatible = "fsl,mma7660"; /* guessing, no driver mainlined */
++		reg = <0x4c>;
++		interrupt-parent = <&smarc_gpio>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>; /* SMARC GPIO11 */
++	};
++
++	at24c08@54 {                    /* 1KB EEPROM on LEC-Base R1 carrier */
++		compatible = "atmel,24c08";
++		reg = <0x54>;
++		pagesize = <16>;
++	};
++
++	/* Driver disabled in defconfig, we have an on-module RTC already. */
++	ds1337@68 {                     /* RTC on LEC-Base R1 carrier */
++		compatible = "maxim,ds1337";
++		reg = <0x68>;
++	};
+ };
+ 
+-&i2c3 {
++&i2c3 {		/* GPIO expander, SEMA BMC, SMARC I2C_PM */
+ 	clock-frequency = <100000>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c3>;
+@@ -788,6 +747,16 @@
+ 		interrupt-controller;
+ 		#interrupt-cells = <2>;
+ 	};
++
++	sema_bmc@28 {		/* SEMA Board Management Controller */
++		compatible = "adlink,sema_bmc"; /* no driver needed */
++		reg = <0x28>;
++	};
++
++	ltc1760@a {		/* Battery charger on LEC-Base R1 carrier */
++		compatible = "linear,ltc1760"; /* guessing, no driver found */
++		reg = <0xa>;
++	};
+ };
+ 
+ &iomuxc {
+@@ -918,19 +887,6 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_i2c1_gpio: i2c1_gpio_grp {
+-			fsl,pins = <
+-				MX6QDL_PAD_CSI0_DAT8__GPIO5_IO26	0x1b0b0
+-				MX6QDL_PAD_CSI0_DAT9__GPIO5_IO27	0x1b8b0
+-			>;
+-		};
+-
+-		pinctrl_i2c1_mma8451_int: i2c1mma8451intgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_SD1_CMD__GPIO1_IO18		0xb0b1
+-			>;
+-		};
+-
+ 		pinctrl_i2c2: i2c2grp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_EIM_EB2__I2C2_SCL		0x4001b8b1
+@@ -940,14 +896,8 @@
+ 
+ 		pinctrl_i2c2_gpio: i2c2_gpio_grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_KEY_COL3__GPIO4_IO12		0x1b8b0
+-				MX6QDL_PAD_KEY_ROW3__GPIO4_IO13		0x1b0b0
+-			>;
+-		};
+-
+-		pinctrl_i2c2_egalax_int: i2c2egalaxintgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_NANDF_ALE__GPIO6_IO08	0x1b0b0
++				MX6QDL_PAD_KEY_COL3__GPIO4_IO12         0x1b0b0
++				MX6QDL_PAD_KEY_ROW3__GPIO4_IO13         0x1b0b0
+ 			>;
+ 		};
+ 
+@@ -958,25 +908,6 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_i2c3_gpio: i2c3_gpio_grp {
+-			fsl,pins = <
+-				MX6QDL_PAD_GPIO_3__GPIO1_IO03		0x1b8b0
+-				MX6QDL_PAD_GPIO_6__GPIO1_IO06		0x1b0b0
+-			>;
+-		};
+-
+-		pinctrl_i2c3_isl29023_int: i2c3isl29023intgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_EIM_DA9__GPIO3_IO09		0xb0b1
+-			>;
+-		};
+-
+-		pinctrl_i2c3_mag3110_int: i2c3mag3110intgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_EIM_D16__GPIO3_IO16		0xb0b1
+-			>;
+-		};
+-
+ 		pinctrl_ipu1: ipu1grp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK 0xf1
+@@ -1062,7 +993,8 @@
+ 
+ 		pinctrl_pcie: pciegrp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_GPIO_17__GPIO7_IO12	0x1b0b0
++				MX6QDL_PAD_GPIO_17__GPIO7_IO12		0x1b0b0	/* PCIE_RST_B */
++				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20     0x1b0b0 /* PCIE_WAKE_B */
+ 			>;
+ 		};
+ 
+@@ -1175,14 +1107,6 @@
+ 			>;
+ 		};
+ 	};
+-
+-	gpio_leds {
+-		pinctrl_gpio_leds: gpioledsgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_GPIO_2__GPIO1_IO02 0x1b0b0
+-			>;
+-		};
+-	};
+ };
+ 
+ &ldb {
+@@ -1214,7 +1138,10 @@
+ &pcie {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pcie>;
+-	reset-gpio = <&gpio7 12 GPIO_ACTIVE_LOW>;
++	reset-gpio = <&gpio7 12 GPIO_ACTIVE_LOW>; /* PCIE_RST_B */
++	/*Next line has no effect: half-implemented in older kernels, Freescale
++	 * now removed code completely; gpio-key can serve as workaround. */
++	wake-up-gpio = <&gpio5 20 GPIO_ACTIVE_LOW>; /* PCIE_WAKE_B */
+ 	epdev_on-supply = <&vgen3_reg>;
+ 	status = "okay";
+ };
+diff --git a/arch/arm/boot/dts/lec-imx6q.dts b/arch/arm/boot/dts/lec-imx6q.dts
+index 886444ddfac7..c50c54f4cf78 100644
+--- a/arch/arm/boot/dts/lec-imx6q.dts
++++ b/arch/arm/boot/dts/lec-imx6q.dts
+@@ -13,12 +13,6 @@
+ 	compatible = "adlink,lec-imx6", "fsl,imx6q";
+ };
+ 
+-&battery {
+-	offset-charger = <1900>;
+-	offset-discharger = <1694>;
+-	offset-usb-charger = <1685>;
+-};
+-
+ &ldb {
+ 	lvds-channel@0 {
+ 		crtc = "ipu2-di0";
+diff --git a/arch/arm/boot/dts/lec-imx6qp.dts b/arch/arm/boot/dts/lec-imx6qp.dts
+index 60658261da37..d148684ac461 100644
+--- a/arch/arm/boot/dts/lec-imx6qp.dts
++++ b/arch/arm/boot/dts/lec-imx6qp.dts
+@@ -50,16 +50,6 @@
+ 	};
+ };
+ 
+-&ov564x {
+-	AVDD-supply = <&vgen6_reg>; /* 2.8v */
+-	DOVDD-supply = <&sw4_reg>; /* 1.8v */
+-};
+-
+-&ov564x_mipi {
+-	AVDD-supply = <&vgen6_reg>; /* 2.8v */
+-	DOVDD-supply = <&sw4_reg>; /* 1.8v */
+-};
+-
+ &pcie {
+ 	status = "okay";
+ };
+diff --git a/arch/arm/boot/dts/lec-imx6s.dts b/arch/arm/boot/dts/lec-imx6s.dts
+index 693e1b9968ec..ed3683a2c996 100644
+--- a/arch/arm/boot/dts/lec-imx6s.dts
++++ b/arch/arm/boot/dts/lec-imx6s.dts
+@@ -19,12 +19,6 @@
+ 	compatible = "adlink,lec-imx6", "fsl,imx6dl";
+ };
+ 
+-&battery {
+-	offset-charger = <1485>;
+-	offset-discharger = <1464>;
+-	offset-usb-charger = <1285>;
+-};
+-
+ &ldb {	/* LVDS (see fb in lec-imx6.dtsi) */
+ 	lvds-channel@0 {
+ 		crtc = "ipu1-di0";
+-- 
+2.17.1
+

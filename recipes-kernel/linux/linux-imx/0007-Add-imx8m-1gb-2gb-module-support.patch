@@ -1,0 +1,107 @@
+From 8d862f62c893e13086cdb678f84ec70ee5990bb7 Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Wed, 27 May 2020 18:24:21 +0530
+Subject: [PATCH 7/7] Add-imx8m-1gb-2gb-module-support
+
+- This patch will add support for i.MX8M 1G and 2G modules.
+- pfuze100 sw2 regulator values changed to boot up 1G module.
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/Makefile           |  4 +-
+ .../dts/adlink/adlink-lec-imx8m-1gb-ddr3l.dts | 38 +++++++++++++++++++
+ .../dts/adlink/adlink-lec-imx8m-2gb-ddr3l.dts | 10 +++++
+ .../boot/dts/adlink/adlink-lec-imx8m.dts      |  4 +-
+ 4 files changed, 53 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l.dts
+ create mode 100644 arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l.dts
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index 4414abd5fabc..8a6bd43cd78e 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -1,3 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-dtb-$(CONFIG_ARCH_LEC_IMX8M) += adlink-lec-imx8m.dtb
++dtb-$(CONFIG_ARCH_LEC_IMX8M) += adlink-lec-imx8m.dtb \
++				adlink-lec-imx8m-2gb-ddr3l.dtb \
++				adlink-lec-imx8m-1gb-ddr3l.dtb
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l.dts
+new file mode 100644
+index 000000000000..4bd9245e7525
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l.dts
+@@ -0,0 +1,38 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright 2017 NXP
++ * Copyright (C) 2017-2018 Pengutronix, Lucas Stach <kernel@pengutronix.de>
++ */
++
++#include "adlink-lec-imx8m.dts"
++
++/ {
++       cpus {
++               /delete-node/ cpu@2;
++               /delete-node/ cpu@3;
++       };
++
++       pmu {
++                interrupt-affinity = <&A53_0>, <&A53_1>;
++        };
++
++        thermal-zones {
++                cpu-thermal {
++
++                        cooling-maps {
++                                map0 {
++                                        cooling-device =
++                                                <&A53_0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++                                                <&A53_1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++	};
++
++       resmem: reserved-memory {
++               /* change cma size to 384MB for 1GB DDR3L SKU */
++               linux,cma {
++                       size = <0 0x18000000>;
++               };
++       };
++};
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l.dts
+new file mode 100644
+index 000000000000..990ffc71ef4e
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l.dts
+@@ -0,0 +1,10 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright 2017 NXP
++ * Copyright (C) 2017-2018 Pengutronix, Lucas Stach <kernel@pengutronix.de>
++ */
++
++#include "adlink-lec-imx8m.dts"
++
++/delete-node/ &pgc_vpu;
++/delete-node/ &vpu;
+diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+index 188d21d28bb7..39bcd94be2d7 100755
+--- a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
++++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m.dts
+@@ -427,8 +427,8 @@
+ 			};
+ 
+ 			sw2_reg: sw2 {
+-				regulator-min-microvolt = <1100000>;
+-				regulator-max-microvolt = <1100000>;
++                                regulator-min-microvolt = <800000>;
++                                regulator-max-microvolt = <3300000>;
+ 				regulator-always-on;
+ 			};
+ 
+-- 
+2.17.1
+

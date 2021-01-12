@@ -1,0 +1,71 @@
+From 5a21bf004b106da7aad26e120c1c08f5fb6e0347 Mon Sep 17 00:00:00 2001
+From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+Date: Fri, 21 Aug 2020 19:20:19 +0530
+Subject: [PATCH 36/36] Change SGTL5000 audio codec i2c node and add regualtor
+ for ldb
+
+- Modify i2c node for SGT5000 (0x0a) audio codec (moved from i2c2 to i2c1).
+- Add regulator (reg_smarc_lcd_vdd) for ldb node.
+
+Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 29 +++++++++++++++--------------
+ 1 file changed, 15 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 3e2a608a250b..536df67a4025 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -512,6 +512,19 @@
+ 		reg = <0x58>;
+ 	};
+ 
++#if CONFIG_I2S_AUDIO == 2
++	codec: sgtl5000@0a {            /* Audio codec on LEC-Base R2 carrier */
++		compatible = "fsl,sgtl5000";
++		reg = <0x0a>;
++		clocks = <&clks IMX6QDL_CLK_CKO>; /* SMARC AUDIO_MCK, actually unused on carrier */
++		VDDA-supply = <&reg_base_3v3>;
++		VDDIO-supply = <&reg_base_1v8>;
++		VDDD-supply = <&reg_base_1v8>;
++		micbias-resistor-k-ohms = <4>;
++		micbias-voltage-m-volts = <1250>;
++	};
++#endif
++
+        carrier_misc_control: pcf8575@20 {      /* GPIO expander on LEC-Base R1 carrier */
+                compatible = "nxp,pcf8575";
+                reg = <0x20>;
+@@ -687,19 +700,6 @@
+ 	};
+ #endif
+ 
+-#if CONFIG_I2S_AUDIO == 2
+-	codec: sgtl5000@0a {            /* Audio codec on LEC-Base R2 carrier */
+-		compatible = "fsl,sgtl5000";
+-		reg = <0x0a>;
+-		clocks = <&clks IMX6QDL_CLK_CKO>; /* SMARC AUDIO_MCK, actually unused on carrier */
+-		VDDA-supply = <&reg_base_3v3>;
+-		VDDIO-supply = <&reg_base_1v8>;
+-		VDDD-supply = <&reg_base_1v8>;
+-		micbias-resistor-k-ohms = <4>;
+-		micbias-voltage-m-volts = <1250>;
+-	};
+-#endif
+-
+ 	/* Current driver depends on MXS framebuffer not present on i.MX6Q/D/DL/S.
+ 	 * Also assuming LEC-Base R1 JP3=1-2, JP15=2-3. */
+ 	sii902x@39 {                    /* HDMI transmitter on LEC-Base R1 carrier */
+@@ -1118,7 +1118,8 @@
+ 	};
+ };
+ 
+-&ldb {
++&ldb {		/* LVDS (see fb above) */
++	disp-power-on-supply = <&reg_smarc_lcd_vdd>; /* unsupported by driver */
+ 	status = "okay";
+ 
+ 	lvds-channel@0 {
+-- 
+2.17.1
+
