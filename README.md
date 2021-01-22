@@ -8,7 +8,7 @@
 | :----------------------------------------------------------: | :----------------------------------------------------------- |
 | <img src="https://cdn.adlinktech.com/webupd/products/images/1752/LEC-iMX8M-F_(1)_web.jpg" width="200"/> | **LEC-iMX8M** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8M?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 8M<br /> |
 
-**SD Card image (64bit) for the quick evaluation**
+**SD Card image (64bit) for the quick evaluation (images includes u-boot binary)**
 
 * NXP i.MX8M 4G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [ link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-4G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
 * NXP i.MX8M 2G Memory with Wayland Weston Desktop (carrier board: [LEC-BASE 2.0](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-BASE_2_0?lang=en)): [link](https://hq0epm0west0us0storage.blob.core.windows.net/public/SMARC/LEC-iMX8M/Yocto/LEC-iMX8M-2G-LEC-BASE2.0_weston_sd_3v1_20200717.zip)
@@ -46,7 +46,7 @@
 | :----------------------------------------------------------: | :----------------------------------------------------------- |
 | <img src="https://cdn.adlinktech.com/webupd/products/images/1838/LEC-iMX6R2-F_web.png" alt="img" width="200" /> | **LEC-iMX6R2** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6R2?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 6 Multicore Arm® Cortex®-A9<br /> |
 
-**SD Card image (32bit) for the quick evaluation**
+**SD Card image (32bit) for the quick evaluation (images includes u-boot binary)**
 
 | Module supported                                             |                                                              |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -107,7 +107,7 @@
 | :----------------------------------------------------------: | :----------------------------------------------------------- |
 | <img src="https://cdn.adlinktech.com/webupd/products/images/1344/LEC-iMX6_20171201_v2.jpg" alt="img" width="200" /> | **LEC-iMX6** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en))  <br />    SMARC Short Size Module with Freescale i.MX6 Solo, DualLite, Dual or Quad Core Processor<br /> |
 
-**SD Card image (32bit) for the quick evaluation**
+**SD Card image (32bit) for the quick evaluation (images includes u-boot binary)**
 
 | Module supported                                             |                                                              |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
