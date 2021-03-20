@@ -128,3 +128,19 @@ SRC_URI_append_lec-imx8m += " \
 			    file://0018-Add-dual-display-support.patch \
 			    file://0019-Add-MIPI-DSI-Panel-support.patch \
 "
+
+SRC_URI_append_lec-imx8mp += " \
+			file://0001-LEC-IMX8MP-Copy-from-i.MX8MP-EVK-for-building-LEC-iM.patch \
+			file://0002-LEC-iMX8MP-Modify-Device-Tree-base-on-schematic-desi.patch \
+			file://0003-LEC-IMX8MP-Enable-RTC-NXP-PCF8563-U2101.patch \
+			file://0004-LEC-iMX8MP-Add-device-tree-node-of-Lite-BMC.patch \
+			file://0005-LEC-iMX8MP-HYDIS-HV150UX2-LVDS-panel-support.patch \
+			file://0006-LEC-iMX8MP-Add-support-of-MIPI-DSI-panel-AUO-B101UAN.patch \
+			file://0007-LEC-iMX8MP-Enable-GPIO-expander-SX1509BIULTRT.patch \
+			file://0008-LEC-IMX8MP-Enable-the-audio-function-by-correcting-t.patch \
+			file://0009-LEC-iMX8MP-Add-support-of-TPM-chip-STMicroelectronic.patch \
+			file://0010-LEC-iMX8MP-Add-support-of-Ethernet-PHY-DP83867-and.patch \
+			file://0011-LEC-iMX8MP-Add-PCIe-Gen1-Tx-de-emphasis-for-passing.patch \
+			file://0012-LEC-iMX8MP-Add-device-tree-settings-for-MIPI-CSI.patch \
+			file://0013-LEC-iMX8MP-Adding-OV13850-sensor-support.patch \
+"

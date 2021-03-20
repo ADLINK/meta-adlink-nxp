@@ -1,0 +1,192 @@
+From 332897d547eb0890904d3474fb7719851b95b831 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Wed, 17 Mar 2021 14:34:37 +0530
+Subject: [PATCH 07/13] LEC-iMX8MP: Enable GPIO expander SX1509BIULTRT
+
+Enable GPIO expander (SX1509BIULTRT - U2605, U2606, U1001)
+Patched from Martin DEVERA @ https://lkml.org/lkml/2020/8/5/351
+to fix the NULL pointer bug of Semtech SX150X driver while
+configuring pins.
+>>Martin DEVERA: The problem is that sx150x_pinconf_set uses
+sx150x_gpio_direction_output but gpio is not setup yet.
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/lec-imx8mp.dts | 101 ++++++++++++++++++++++
+ arch/arm64/configs/lec-imx8mp_defconfig   |   1 +
+ drivers/pinctrl/pinctrl-sx150x.c          |  17 +++-
+ 3 files changed, 117 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index 48018b4d9423..d4ec966bfbba 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -327,6 +327,39 @@
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+ 
++	/* SX1509(2) U1001@IPi SMARC Plus */
++	gpio8: i2c2_gpioext0@3e {
++		/* GPIO Expander 2 Mapping :
++		 * - 0: E_GPIO1_0	<=>					IPi SMARC Plus CN101_PIN29: E_GPIO1_0
++		 * - 1: E_GPIO1_1	<=>					IPi SMARC Plus CN101_PIN31: E_GPIO1_1
++		 * - 2: E_GPIO1_2	<=>					IPi SMARC Plus CN101_PIN32: E_GPIO1_2
++		 * - 3: E_GPIO1_3	<=>					IPi SMARC Plus CN101_PIN33: E_GPIO1_3
++		 * - 4: E_GPIO1_4	<=>					IPi SMARC Plus CN101_PIN35: E_GPIO1_4
++		 * - 5: E_GPIO1_5	<=>					IPi SMARC Plus CN101_PIN36: E_GPIO1_5
++		 * - 6: E_GPIO1_6	<=>					IPi SMARC Plus CN101_PIN37: E_GPIO1_6
++		 * - 7: E_GPIO1_7	<=>					IPi SMARC Plus CN101_PIN38: E_GPIO1_7
++		 * - 8: E_GPIO2_8	<=>					IPi SMARC Plus CN101_PIN40: E_GPIO2_8
++		 * - 9: TP1002		<=>					IPi SMARC Plus TP1002 (won't use)
++		 * - 10: TP1003		<=>					IPi SMARC Plus TP1003 (won't use)
++		 * - 11: TP1004		<=>					IPi SMARC Plus TP1004 (won't use)
++		 * - 12: TP1005		<=>					IPi SMARC Plus TP1005 (won't use)
++		 * - 13: TP1006		<=>					IPi SMARC Plus TP1006 (won't use)
++		 * - 14: TP1007		<=>					IPi SMARC Plus TP1007 (won't use)
++		 * - 15: TP1008		<=>					IPi SMARC Plus TP1008 (won't use)
++		 * - 16: OSCIO		<=>					IPi SMARC Plus TP1001 (won't use)
++		 */
++		#gpio-cells = <2>;
++		#interrupt-cells = <2>;
++		compatible = "semtech,sx1509q";
++		reg = <0x3e>;
++
++		semtech,probe-reset;
++		gpio-controller;
++		interrupt-controller;
++
++		interrupt-parent = <&gpio6>;
++		interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
++	};
+ };
+ 
+ &i2c3 {
+@@ -351,6 +384,74 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c6>;
+ 	status = "okay";
++	/* SX1509(0) U2605 */
++	gpio6: i2c6_gpioext0@3f {
++		/* GPIO Expander 0 Mapping :
++		 * - 0: CN_GPIO4		<=>				SMARC GPIO4/HDA_RST_N	<=> IPi SMARC Plus CN1701_PIN02:	HDA_RST_N_3V (in) (won't use)
++		 * - 1: CN_GPIO5		<=>				SMARC GPIO5/PWM_OUT		<=> IPi SMARC Plus U1001:			Semtech_SX1509B: I2C_ALERT_N (in)
++		 * - 2: CN_GPIO6		<=>				SMARC GPIO6/TACHIN		<=> IPi SMARC Plus CN1001_PIN07:	S_GPIO06_3V
++		 * - 3: CN_GPIO7		<=>				SMARC GPIO7				<=> IPi SMARC Plus CN1001_PIN12:	S_GPIO07_3V
++		 * - 4: CN_GPIO8		<=>				SMARC GPIO8				<=> IPi SMARC Plus CN1001_PIN11:	S_GPIO08_3V 
++		 * - 5: CN_GPIO9		<=>				SMARC GPIO9				<=> IPi SMARC Plus CN1001_PIN13:	S_GPIO09_3V
++		 * - 6: CN_GPIO10		<=>				SMARC GPIO10			<=> IPi SMARC Plus CN1001_PIN15:	S_GPIO10_3V
++		 * - 7: CN_GPIO11		<=>				SMARC GPIO11			<=> IPi SMARC Plus CN1001_PIN16:	S_GPIO11_3V
++		 * - 8: CN_GPIO12		<=>				SMARC GPIO12			<=> IPi SMARC Plus CN1001_PIN18:	S_GPIO12_3V (external pull high 3V)
++		 * - 9: CN_GPIO13		<=>				SMARC GPIO13			<=> IPi SMARC Plus CN1001_PIN22:	S_GPIO13_3V (external pull high 3V)
++		 * - 10: BT_DEV_WAKE	<= R2214(NI) => U2201	AazureWave AW-CM276NF ATEST0
++		 * - 11: TPM_RST_N		<=>				U2301	ST ST33HTPH2X32AHD5 RESET_N (out low / pull-high)
++		 * - 12: WIFI_BT_3V3_EN	<= PR2201 =>	PU2201	TI TPS82085SILR EN(out high)
++		 * - 13: M2_BT_WAKE_DEV	<=>				U2201	AazureWave AW-CM276NF GPIO12/UART_Host_Wake_BT#
++		 * - 14: REBOOT_COUNT	<= R1130 =>		U1101	ST STM32L071RBH6TR REBOOT_COUNT_BMC (out high)
++		 * - 15: BT_REG_ON		<= R2215(NC) =>	U2201	AazureWave AW-CM276NF GPIO22/PCIE_W_DISABLE#
++		 * - 16: OSCIO			<=>				TP2601 (won't use)
++		 */
++		#gpio-cells = <2>;
++		#interrupt-cells = <2>;
++		compatible = "semtech,sx1509q";
++		reg = <0x3f>;
++
++		semtech,probe-reset;
++		gpio-controller;
++		interrupt-controller;
++
++		interrupt-parent = <&gpio1>;
++		interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
++	};
++
++	/* SX1509(1) U2606 */
++	gpio7: i2c6_gpioext1@70 {
++		/* GPIO Expander 1 Mapping :
++		 * - 0: SLEEP-L			<=				SMARC SLEEP# (won't use)
++		 * - 1: CHARGING-L		<=				SMARC CHARGING# (won't use)
++		 * - 2: CHARGER_PRSNT-L	<=				SMARC CHARGER_PRSNT# (won't use)
++		 * - 3: BATLOW-L		<=				SMARC BATLOW# (won't use)
++		 * - 4: HWID-3			<= R2640 		GND (in)
++		 * - 5: GPIOE_1			<= R2638 		GND (in)
++		 * - 6: TPM_PP			 =>				U2301	ST ST33HTPH2X32AHD5 GPIO_PP (out high)
++		 * - 7: TPM_LP			 =>				U2301	ST ST33HTPH2X32AHD5 GPIO_LP (out high)
++		 * - 8: HWID_1			<= R2629 		GND (in)
++		 * - 9: HWID_2			<= R2628 		GND (in)
++		 * - 10: BOMID_1		<= R2632 		GND (in)
++		 * - 11: BOMID_2		<= R2631 		GND (in)
++		 * - 12: BOMID_3		<= R2630 		GND (in)
++		 * - 13: TEST-L			<= R1146(NI) =>	U1101	ST STM32L071RBH6TR TEST-L_BMC (won't use)
++		 * - 14: SMB_ALERT_N	<=				SMARC SMB_ALERT_1V8# (won't use)
++		 * - 15: VDD_2V5_ENT_EN	   PR910 =>		PU901 TI TPS74801DRCR EN (out active high to turn on U1501 DP83867IRRGZR)
++		 * - 16: OSCIO			<=>				TP2602 (won't use)
++		 */
++		#gpio-cells = <2>;
++		#interrupt-cells = <2>;
++		compatible = "semtech,sx1509q";
++		reg = <0x70>;
++
++		semtech,probe-reset;
++		gpio-controller;
++		interrupt-controller;
++
++		interrupt-parent = <&gpio4>;
++		interrupts = <19 IRQ_TYPE_EDGE_FALLING>;
++	};
++
+ 	/* RTC U2607 */
+ 	pcf8563: rtc@51 {
+ 		compatible = "nxp,pcf8563";
+diff --git a/arch/arm64/configs/lec-imx8mp_defconfig b/arch/arm64/configs/lec-imx8mp_defconfig
+index 8adb3fb40861..40d5d06fc98e 100644
+--- a/arch/arm64/configs/lec-imx8mp_defconfig
++++ b/arch/arm64/configs/lec-imx8mp_defconfig
+@@ -392,6 +392,7 @@ CONFIG_SPI_SLAVE_TIME=y
+ CONFIG_SPI_SLAVE_SYSTEM_CONTROL=y
+ CONFIG_SPMI=y
+ CONFIG_PINCTRL_SINGLE=y
++CONFIG_PINCTRL_SX150X=y
+ CONFIG_PINCTRL_MAX77620=y
+ CONFIG_PINCTRL_IMX8MM=y
+ CONFIG_PINCTRL_IMX8MN=y
+diff --git a/drivers/pinctrl/pinctrl-sx150x.c b/drivers/pinctrl/pinctrl-sx150x.c
+index 566665931a04..a5eee30fd6fc 100644
+--- a/drivers/pinctrl/pinctrl-sx150x.c
++++ b/drivers/pinctrl/pinctrl-sx150x.c
+@@ -1151,11 +1151,15 @@ static int sx150x_probe(struct i2c_client *client,
+ 		return ret;
+ 	}
+ 
+-	ret = pinctrl_enable(pctl->pctldev);
++	/* Patched from Martin DEVERA @ https://lkml.org/lkml/2020/8/5/351
++	 * to fix the NULL pointer bug of Semtech SX150X driver while configuring pins.
++	 */
++	/*ret = pinctrl_enable(pctl->pctldev);
+ 	if (ret) {
+ 		dev_err(dev, "Failed to enable pinctrl device\n");
+ 		return ret;
+-	}
++	}*/
++
+ 
+ 	/* Register GPIO controller */
+ 	pctl->gpio.base = -1;
+@@ -1188,6 +1192,15 @@ static int sx150x_probe(struct i2c_client *client,
+ 	if (ret)
+ 		return ret;
+ 
++	/* Patched from Martin DEVERA @ https://lkml.org/lkml/2020/8/5/351
++	 * to fix the NULL pointer bug of Semtech SX150X driver while configuring pins.
++	 */
++	ret = pinctrl_enable(pctl->pctldev);
++	if (ret) {
++		dev_err(dev, "Failed to enable pinctrl device\n");
++		return ret;
++	}
++
+ 	ret = gpiochip_add_pin_range(&pctl->gpio, dev_name(dev),
+ 				     0, 0, pctl->data->npins);
+ 	if (ret)
+-- 
+2.17.1
+

@@ -1,0 +1,200 @@
+From 9b83c14723c3d906b914f7cd38e23fddc48354c1 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Fri, 19 Mar 2021 10:54:37 +0530
+Subject: [PATCH 10/13] LEC-iMX8MP: Add support of Ethernet PHY DP83867 and 
+ apply the LED configuration to fit ADLINK's guideline
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/lec-imx8mp.dts | 69 ++++++++++++++++++++---
+ arch/arm64/configs/lec-imx8mp_defconfig   |  1 +
+ drivers/net/phy/dp83867.c                 | 34 +++++++++++
+ 3 files changed, 95 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index a6c96cf0d3da..14902a722017 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -6,6 +6,7 @@
+ /dts-v1/;
+ 
+ #include <dt-bindings/usb/pd.h>
++#include <dt-bindings/net/ti-dp83867.h>
+ #include "imx8mp.dtsi"
+ 
+ / {
+@@ -133,6 +134,26 @@
+ 				    100>;
+ 		default-brightness-level = <80>;
+ 	};
++
++	fixed-regulators {
++		compatible = "simple-bus";
++		device_type = "fixed-regulators";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		dp83867_2v5: regulator-enet {
++			compatible = "regulator-fixed";
++			//reg = <13>;
++			regulator-name = "enet-2v5";
++			regulator-min-microvolt = <1800000>;
++			regulator-max-microvolt = <1800000>;
++			gpio = <&gpio7 15 GPIO_ACTIVE_HIGH>;
++			regulator-boot-on;
++			regulator-always-on;
++			enable-active-high;
++		};
++	};
++
+ };
+ 
+ &aud2htx {
+@@ -192,31 +213,49 @@
+ 	};
+ };
+ 
++/* eth1 */
+ &eqos {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_eqos>;
+ 	phy-mode = "rgmii-id";
+-	phy-handle = <&ethphy0>;
++	phy-handle = <&dp83867_1>;
++	//phy-supply = <&dp83867_2v5>;
+ 	status = "okay";
+ 
+ 	mdio {
+ 		compatible = "snps,dwmac-mdio";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		/* TODO : RESET needed
++		 * TODO : IRQ   needed
++		 */
++		dp83867_1: ethernet-phy@0 {
++			/* RGMII-1 */
++			compatible = "ethernet-phy-id2000.a231"; 
++			reg = <0>;
+ 
+-		ethphy0: ethernet-phy@1 {
+-			compatible = "ethernet-phy-ieee802.3-c22";
+-			reg = <1>;
+-			eee-broken-1000t;
++			ti,rx-internal-delay = <DP83867_RGMIIDCTL_1_75_NS>;
++			ti,tx-internal-delay = <DP83867_RGMIIDCTL_1_75_NS>;
++			ti,fifo-depth = <DP83867_PHYCR_FIFO_DEPTH_4_B_NIB>;
++
++			ti,min-output-impedance;
++			ti,dp83867-rxctrl-strap-quirk;
++
++			interrupt-parent = <&gpio4>;
++			interrupts = <21 IRQ_TYPE_EDGE_FALLING>;
++			reset-gpio = <&gpio4 22 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
+ };
+ 
++/* eth0 */
+ &fec {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_fec>;
+ 	phy-mode = "rgmii-id";
+-	phy-handle = <&ethphy1>;
++	//phy-supply = <&dp83867_2v5>;
++	phy-handle = <&dp83867_0>;
++
+ 	fsl,magic-packet;
+ 	status = "okay";
+ 
+@@ -224,10 +263,22 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		ethphy1: ethernet-phy@1 {
+-			compatible = "ethernet-phy-ieee802.3-c22";
++		dp83867_0: ethernet-phy@1 {
++			/* RGMII-1 */
++			compatible = "ethernet-phy-id2000.a231";
++
+ 			reg = <1>;
+-			eee-broken-1000t;
++
++			interrupt-parent = <&gpio4>;
++			interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
++			reset-gpio = <&gpio4 4 GPIO_ACTIVE_LOW>;
++
++			ti,rx-internal-delay = <DP83867_RGMIIDCTL_1_75_NS>;
++			ti,tx-internal-delay = <DP83867_RGMIIDCTL_1_75_NS>;
++			ti,fifo-depth = <DP83867_PHYCR_FIFO_DEPTH_4_B_NIB>;
++
++			ti,min-output-impedance;
++			ti,dp83867-rxctrl-strap-quirk;
+ 		};
+ 	};
+ };
+diff --git a/arch/arm64/configs/lec-imx8mp_defconfig b/arch/arm64/configs/lec-imx8mp_defconfig
+index d0ef8965eb7c..83e81ffac8fa 100644
+--- a/arch/arm64/configs/lec-imx8mp_defconfig
++++ b/arch/arm64/configs/lec-imx8mp_defconfig
+@@ -882,4 +882,5 @@ CONFIG_MEMTEST=y
+ CONFIG_CORESIGHT=y
+ CONFIG_CORESIGHT_LINK_AND_SINK_TMC=y
+ CONFIG_CORESIGHT_SOURCE_ETM4X=y
++CONFIG_DP83867_PHY=y
+ CONFIG_CRC_CCITT=y
+diff --git a/drivers/net/phy/dp83867.c b/drivers/net/phy/dp83867.c
+index 31a559513362..17f44d55ca0a 100644
+--- a/drivers/net/phy/dp83867.c
++++ b/drivers/net/phy/dp83867.c
+@@ -21,6 +21,9 @@
+ #define MII_DP83867_PHYCTRL	0x10
+ #define MII_DP83867_MICR	0x12
+ #define MII_DP83867_ISR		0x13
++/* Extended LED Registers */
++#define DP83867_LEDCR1		0x0018
++#define DP83867_LEDCR2		0x0019
+ #define DP83867_CTRL		0x1f
+ #define DP83867_CFG3		0x1e
+ 
+@@ -461,6 +464,37 @@ static int dp83867_config_init(struct phy_device *phydev)
+ 			       mask, val);
+ 	}
+ 
++	/* LED Configuration for SMARC series boards */
++	/* Set LED pins' function - set LED_0 1011, LED_1 0110, LED_2 0101, LED_GPIO 1111 */
++	/* LED_0    1011: Link established, blink for transmit or receive activity */
++	/* LED_1    0110: 100 BTX link established */
++	/* LED_2    0101: 1000BT link established */
++	/* LED_GPIO 1111: Reserved */
++	val = phy_read(phydev, DP83867_LEDCR1);
++	if (val < 0)
++		return val;
++
++	if ((val & 0xFFFF) != 0xF56B) {
++		val &= ~0xFFFF;
++		val |= 0xF56B;
++		ret = phy_write(phydev, DP83867_LEDCR1, val);
++		if (ret)
++			return ret;
++	}
++
++	/* Control LED outputs' ability - set LED_0, LED_1, LED_2 active low, LED_GPIO reserve */
++	val = phy_read(phydev, DP83867_LEDCR2);
++	if (val < 0)
++		return val;
++
++	if ((val & 0xFFFF) != 0x0000) {
++		val &= ~0xFFFF;
++		val |= 0x0000;
++		ret = phy_write(phydev, DP83867_LEDCR2, val);
++		if (ret)
++			return ret;
++	}
++
+ 	return 0;
+ }
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,52 @@
+From 8a1042d23c713d1162212b5fee101d6446391cbf Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Wed, 17 Mar 2021 14:13:13 +0530
+Subject: [PATCH 04/13] LEC-iMX8MP: Add device tree node of Lite-BMC
+
+Add device tree node of Lite-BMC for SEMA4.0 (U2101)
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/lec-imx8mp.dts | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index 6443ff9cd9c1..48018b4d9423 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -344,6 +344,7 @@
+ 	pinctrl-0 = <&pinctrl_i2c5>;
+ 	status = "okay";
+ };
++
+ &i2c6{
+ 	#address-cells = <1>;
+ 	clock-frequency = <100000>;
+@@ -356,6 +357,15 @@
+ 		reg = <0x51>;
+ 		#clock-cells = <0>;
+ 	};
++
++	/* Lite-BMC U1101*/
++	adl-bmc@28 {
++		compatible = "adl-bmc";
++		reg = <0x28>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&pcf8563>;
++	};
+ };
+ 
+ &irqsteer_hdmi {
+@@ -1070,7 +1080,6 @@
+ 			MX8MP_IOMUXC_SAI5_RXD2__GPIO3_IO23		0xd6
+ 		>;
+ 	};
+-
+ };
+ 
+ &vpu_g1 {
+-- 
+2.17.1
+

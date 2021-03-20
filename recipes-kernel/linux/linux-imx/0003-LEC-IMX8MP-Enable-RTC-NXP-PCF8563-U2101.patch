@@ -1,0 +1,59 @@
+From 247df58f02c6eaa46658299a5820bf2d9161226d Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Wed, 17 Mar 2021 13:04:43 +0530
+Subject: [PATCH 03/13] LEC-IMX8MP: Enable RTC NXP PCF8563 (U2101)
+
+Enable RTC NXP PCF8563 and disable unused NXP i.MX8MP internal
+SNVS RTC for its power consumption and deviation is worse than
+the external RTC chip NXP PCF8563. The deviation of SNVS RTC is
+1.728 s/day. The deviation of external RTC chip NXP PCF8563 is
+0.864 s/day.
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/lec-imx8mp.dts | 6 ++++++
+ arch/arm64/configs/lec-imx8mp_defconfig   | 3 ++-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index 1a627be2672b..6443ff9cd9c1 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -350,6 +350,12 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c6>;
+ 	status = "okay";
++	/* RTC U2607 */
++	pcf8563: rtc@51 {
++		compatible = "nxp,pcf8563";
++		reg = <0x51>;
++		#clock-cells = <0>;
++	};
+ };
+ 
+ &irqsteer_hdmi {
+diff --git a/arch/arm64/configs/lec-imx8mp_defconfig b/arch/arm64/configs/lec-imx8mp_defconfig
+index 1de0c72442d4..8adb3fb40861 100644
+--- a/arch/arm64/configs/lec-imx8mp_defconfig
++++ b/arch/arm64/configs/lec-imx8mp_defconfig
+@@ -686,6 +686,7 @@ CONFIG_RTC_DRV_DS1307=y
+ CONFIG_RTC_DRV_MAX77686=y
+ CONFIG_RTC_DRV_RK808=m
+ CONFIG_RTC_DRV_PCF85363=y
++CONFIG_RTC_DRV_PCF8563=y
+ CONFIG_RTC_DRV_RX8581=m
+ CONFIG_RTC_DRV_S5M=y
+ CONFIG_RTC_DRV_DS3232=y
+@@ -693,7 +694,7 @@ CONFIG_RTC_DRV_PCF2127=y
+ CONFIG_RTC_DRV_EFI=y
+ CONFIG_RTC_DRV_CROS_EC=y
+ CONFIG_RTC_DRV_PL031=y
+-CONFIG_RTC_DRV_SNVS=y
++# CONFIG_RTC_DRV_SNVS is not set
+ CONFIG_RTC_DRV_IMX_SC=y
+ CONFIG_DMADEVICES=y
+ CONFIG_BCM_SBA_RAID=m
+-- 
+2.17.1
+

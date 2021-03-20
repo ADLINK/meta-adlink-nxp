@@ -1,0 +1,72 @@
+From 4d1b10f9cc0201ca3bf16bafcbb93ecfdde890c0 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Wed, 17 Mar 2021 14:41:25 +0530
+Subject: [PATCH 08/13] LEC-IMX8MP: Enable the audio function by correcting the
+ audio codec device tree
+
+ - Correct the settings of headphone detection pin
+   and its polarity
+ - Remove unsupported external speaker controll pads
+ - Remove incorrect microphone jack control pads
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/lec-imx8mp.dts | 34 +++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index d4ec966bfbba..860fe546e825 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -78,6 +78,31 @@
+ 		status = "okay";
+ 	};
+ 
++	sound-wm8960 {
++		compatible = "fsl,imx7d-evk-wm8960", "fsl,imx-audio-wm8960";
++		model = "wm8960-audio";
++		cpu-dai = <&sai3>;
++		audio-codec = <&codec>;
++		asrc-controller = <&easrc>;
++		codec-master;
++		/*
++		 * hp-det = <hp-det-pin hp-det-polarity>;
++		 * hp-det-pin: JD1 JD2 or JD3
++		 * hp-det-polarity = 0: hp detect high for headphone
++		 * hp-det-polarity = 1: hp detect high for speaker
++		 */
++		hp-det = <2 1>;
++		audio-routing =
++			"Headphone Jack", "HP_L",
++			"Headphone Jack", "HP_R",
++			"LINPUT1", "Mic Jack",
++			"Mic Jack", "MICB",
++			"CPU-Playback", "ASRC-Playback",
++			"Playback", "CPU-Playback",
++			"ASRC-Capture", "CPU-Capture",
++			"CPU-Capture", "Capture";
++	};
++
+ 	sound-micfil {
+ 		compatible = "fsl,imx-audio-micfil";
+ 		model = "imx-audio-micfil";
+@@ -327,6 +352,15 @@
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+ 
++	/* TODO : Audio Cocde */
++	codec: wm8960@1a {
++		compatible = "wlf,wm8960";
++		reg = <0x1a>;
++		clocks = <&audiomix_clk IMX8MP_CLK_AUDIOMIX_SAI3_MCLK1>;
++		clock-names = "mclk";
++		wlf,shared-lrclk;
++	};
++
+ 	/* SX1509(2) U1001@IPi SMARC Plus */
+ 	gpio8: i2c2_gpioext0@3e {
+ 		/* GPIO Expander 2 Mapping :
+-- 
+2.17.1
+

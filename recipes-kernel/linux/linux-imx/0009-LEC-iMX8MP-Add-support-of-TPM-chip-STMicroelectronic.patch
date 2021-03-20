@@ -1,0 +1,926 @@
+From 376c565ff9bf1d86d7a086e695093d660810b390 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Fri, 19 Mar 2021 10:43:40 +0530
+Subject: [PATCH 09/13] LEC-iMX8MP: Add support of TPM chip STMicroelectronics 
+ ST33TPHF2XI2C (Ordering code: ST33HTPH2X32AHD5)
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/lec-imx8mp.dts |  22 +
+ arch/arm64/configs/lec-imx8mp_defconfig   |   2 +
+ drivers/char/tpm/Kconfig                  |  13 +
+ drivers/char/tpm/Makefile                 |   1 +
+ drivers/char/tpm/tpm.h                    |  26 +-
+ drivers/char/tpm/tpm_tis_core.c           |  53 ++-
+ drivers/char/tpm/tpm_tis_core.h           |  15 +
+ drivers/char/tpm/tpm_tis_i2c.c            | 502 ++++++++++++++++++++++
+ drivers/char/tpm/tpm_tis_spi.c            |  11 +
+ 9 files changed, 639 insertions(+), 6 deletions(-)
+ create mode 100644 drivers/char/tpm/tpm_tis_i2c.c
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index 860fe546e825..a6c96cf0d3da 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -418,6 +418,23 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c6>;
+ 	status = "okay";
++
++	/* TPM - ST33TPHF2XI2C U2301 */
++	st33tphf2xi2c@2e {
++		#gpio-cells = <2>;
++		#interrupt-cells = <2>;
++		compatible = "st,st33htpm-i2c";
++		reg = <0x2e>;
++
++		label = "tpm";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_i2c6_tpm_irq &pinctrl_tpm>;
++		interrupt-parent = <&gpio3>;
++		interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
++		reset-gpio = <&gpio6 11 GPIO_ACTIVE_LOW>;
++		status = "okay";
++	};
++
+ 	/* SX1509(0) U2605 */
+ 	gpio6: i2c6_gpioext0@3f {
+ 		/* GPIO Expander 0 Mapping :
+@@ -484,6 +501,11 @@
+ 
+ 		interrupt-parent = <&gpio4>;
+ 		interrupts = <19 IRQ_TYPE_EDGE_FALLING>;
++
++		pinctrl_tpm: tpmgrp {
++			pins = "gpio6","gpio7"; // TPM_PP, TPM_LP
++			output-high;
++		};
+ 	};
+ 
+ 	/* RTC U2607 */
+diff --git a/arch/arm64/configs/lec-imx8mp_defconfig b/arch/arm64/configs/lec-imx8mp_defconfig
+index 40d5d06fc98e..d0ef8965eb7c 100644
+--- a/arch/arm64/configs/lec-imx8mp_defconfig
++++ b/arch/arm64/configs/lec-imx8mp_defconfig
+@@ -365,6 +365,7 @@ CONFIG_IPMI_HANDLER=m
+ CONFIG_IPMI_DEVICE_INTERFACE=m
+ CONFIG_IPMI_SI=m
+ CONFIG_TCG_TPM=y
++CONFIG_TCG_TIS_I2C=y
+ CONFIG_TCG_TIS_I2C_INFINEON=y
+ CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_MUX=y
+@@ -881,3 +882,4 @@ CONFIG_MEMTEST=y
+ CONFIG_CORESIGHT=y
+ CONFIG_CORESIGHT_LINK_AND_SINK_TMC=y
+ CONFIG_CORESIGHT_SOURCE_ETM4X=y
++CONFIG_CRC_CCITT=y
+diff --git a/drivers/char/tpm/Kconfig b/drivers/char/tpm/Kconfig
+index 9c37047f4b56..441de059e483 100644
+--- a/drivers/char/tpm/Kconfig
++++ b/drivers/char/tpm/Kconfig
+@@ -67,6 +67,19 @@ config TCG_TIS_SPI
+ 	  within Linux. To compile this driver as a module, choose  M here;
+ 	  the module will be called tpm_tis_spi.
+ 
++config TCG_TIS_I2C
++	tristate "TPM Interface Specification 1.3 Interface / TPM 2.0 FIFO Interface - (I2C)"
++	depends on I2C
++	depends on CRC_CCITT
++	select TCG_TIS_CORE
++	---help---
++	  If you have a TPM security chip which is connected to a regular,
++	  non-tcg I2C master (i.e. most embedded platforms) that is compliant with the
++	  TCG TIS 1.3 TPM specification (TPM1.2) or the TCG PTP FIFO
++	  specification (TPM2.0) say Yes and it will be accessible from
++	  within Linux. To compile this driver as a module, choose  M here;
++	  the module will be called tpm_tis_i2c.
++
+ config TCG_TIS_I2C_ATMEL
+ 	tristate "TPM Interface Specification 1.2 Interface (I2C - Atmel)"
+ 	depends on I2C
+diff --git a/drivers/char/tpm/Makefile b/drivers/char/tpm/Makefile
+index c354cdff9c62..c969e4250a1d 100644
+--- a/drivers/char/tpm/Makefile
++++ b/drivers/char/tpm/Makefile
+@@ -22,6 +22,7 @@ tpm-$(CONFIG_OF) += eventlog/of.o
+ obj-$(CONFIG_TCG_TIS_CORE) += tpm_tis_core.o
+ obj-$(CONFIG_TCG_TIS) += tpm_tis.o
+ obj-$(CONFIG_TCG_TIS_SPI) += tpm_tis_spi.o
++obj-$(CONFIG_TCG_TIS_I2C) += tpm_tis_i2c.o
+ obj-$(CONFIG_TCG_TIS_I2C_ATMEL) += tpm_i2c_atmel.o
+ obj-$(CONFIG_TCG_TIS_I2C_INFINEON) += tpm_i2c_infineon.o
+ obj-$(CONFIG_TCG_TIS_I2C_NUVOTON) += tpm_i2c_nuvoton.o
+diff --git a/drivers/char/tpm/tpm.h b/drivers/char/tpm/tpm.h
+index 37f010421a36..6af730d2dc3f 100644
+--- a/drivers/char/tpm/tpm.h
++++ b/drivers/char/tpm/tpm.h
+@@ -38,9 +38,15 @@
+ #define TPM_RETRY		50
+ 
+ enum tpm_timeout {
++#ifdef CONFIG_TCG_TIS_I2C
++	TPM_TIMEOUT = 1,	/* msecs */
++	TPM_TIMEOUT_RETRY = 2, /* msecs */
++	TPM_TIMEOUT_RANGE_US = 20,	/* usecs */
++#else
+ 	TPM_TIMEOUT = 5,	/* msecs */
+ 	TPM_TIMEOUT_RETRY = 100, /* msecs */
+ 	TPM_TIMEOUT_RANGE_US = 300,	/* usecs */
++#endif
+ 	TPM_TIMEOUT_POLL = 1,	/* msecs */
+ 	TPM_TIMEOUT_USECS_MIN = 100,      /* usecs */
+ 	TPM_TIMEOUT_USECS_MAX = 500      /* usecs */
+@@ -72,7 +78,11 @@ enum tpm2_timeouts {
+ 	TPM2_TIMEOUT_D          =     30,
+ 	TPM2_DURATION_SHORT     =     20,
+ 	TPM2_DURATION_MEDIUM    =    750,
++#ifdef CONFIG_TCG_TIS_I2C
++	TPM2_DURATION_LONG      =  30000,
++#else
+ 	TPM2_DURATION_LONG      =   2000,
++#endif
+ 	TPM2_DURATION_LONG_LONG = 300000,
+ 	TPM2_DURATION_DEFAULT   = 120000,
+ };
+@@ -93,6 +103,9 @@ enum tpm2_return_codes {
+ 	TPM2_RC_INITIALIZE	= 0x0100, /* RC_VER1 */
+ 	TPM2_RC_FAILURE		= 0x0101,
+ 	TPM2_RC_DISABLED	= 0x0120,
++#ifdef CONFIG_TCG_TIS_I2C
++	TPM2_RC_UPGRADE		= 0x012D,
++#endif
+ 	TPM2_RC_COMMAND_CODE    = 0x0143,
+ 	TPM2_RC_TESTING		= 0x090A, /* RC_WARN */
+ 	TPM2_RC_REFERENCE_H0	= 0x0910,
+@@ -404,10 +417,21 @@ int tpm_pm_resume(struct device *dev);
+ 
+ static inline void tpm_msleep(unsigned int delay_msec)
+ {
++#ifdef CONFIG_TCG_TIS_I2C
++	usleep_range(delay_msec * 1000,
++			(delay_msec * 1000) + TPM_TIMEOUT_RANGE_US);
++#else
+ 	usleep_range((delay_msec * 1000) - TPM_TIMEOUT_RANGE_US,
+ 		     delay_msec * 1000);
++#endif
+ };
+-
++#ifdef CONFIG_TCG_TIS_I2C
++static inline void tpm_msleep_opt(unsigned int delay_msec)
++{
++	usleep_range(delay_msec * 1000,
++			(delay_msec * 1000) + TPM_TIMEOUT_RANGE_US);
++};
++#endif
+ int tpm_chip_start(struct tpm_chip *chip);
+ void tpm_chip_stop(struct tpm_chip *chip);
+ struct tpm_chip *tpm_find_get_ops(struct tpm_chip *chip);
+diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
+index 63f6bed78d89..7edac6ac13c9 100644
+--- a/drivers/char/tpm/tpm_tis_core.c
++++ b/drivers/char/tpm/tpm_tis_core.c
+@@ -223,7 +223,11 @@ static int request_locality(struct tpm_chip *chip, int l)
+ 		do {
+ 			if (check_locality(chip, l))
+ 				return l;
++#ifdef CONFIG_TCG_TIS_I2C
++			tpm_msleep_opt(TPM_TIMEOUT);
++#else
+ 			tpm_msleep(TPM_TIMEOUT);
++#endif
+ 		} while (time_before(jiffies, stop));
+ 	}
+ 	return -1;
+@@ -281,6 +285,13 @@ static int recv_data(struct tpm_chip *chip, u8 *buf, size_t count)
+ 	int size = 0, burstcnt, rc;
+ 
+ 	while (size < count) {
++#ifdef CONFIG_TCG_TIS_I2C
++		if (priv->interface_id) {
++			burstcnt = 1280;
++		} else {
++			burstcnt = 32;
++		}
++#else
+ 		rc = wait_for_tpm_stat(chip,
+ 				 TPM_STS_DATA_AVAIL | TPM_STS_VALID,
+ 				 chip->timeout_c,
+@@ -292,6 +303,7 @@ static int recv_data(struct tpm_chip *chip, u8 *buf, size_t count)
+ 			dev_err(&chip->dev, "Unable to read burstcount\n");
+ 			return burstcnt;
+ 		}
++#endif
+ 		burstcnt = min_t(int, burstcnt, count - size);
+ 
+ 		rc = tpm_tis_read_bytes(priv, TPM_DATA_FIFO(priv->locality),
+@@ -306,9 +318,13 @@ static int recv_data(struct tpm_chip *chip, u8 *buf, size_t count)
+ 
+ static int tpm_tis_recv(struct tpm_chip *chip, u8 *buf, size_t count)
+ {
++#ifndef CONFIG_TCG_TIS_I2C
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
++#endif
+ 	int size = 0;
++#ifndef CONFIG_TCG_TIS_I2C
+ 	int status;
++#endif
+ 	u32 expected;
+ 
+ 	if (count < TPM_HEADER_SIZE) {
+@@ -336,7 +352,7 @@ static int tpm_tis_recv(struct tpm_chip *chip, u8 *buf, size_t count)
+ 		size = -ETIME;
+ 		goto out;
+ 	}
+-
++#ifndef CONFIG_TCG_TIS_I2C
+ 	if (wait_for_tpm_stat(chip, TPM_STS_VALID, chip->timeout_c,
+ 				&priv->int_queue, false) < 0) {
+ 		size = -ETIME;
+@@ -348,7 +364,7 @@ static int tpm_tis_recv(struct tpm_chip *chip, u8 *buf, size_t count)
+ 		size = -EIO;
+ 		goto out;
+ 	}
+-
++#endif
+ out:
+ 	tpm_tis_ready(chip);
+ 	return size;
+@@ -364,7 +380,9 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+ 	int rc, status, burstcnt;
+ 	size_t count = 0;
++#ifndef CONFIG_TCG_TIS_I2C
+ 	bool itpm = priv->flags & TPM_TIS_ITPM_WORKAROUND;
++#endif
+ 
+ 	status = tpm_tis_status(chip);
+ 	if ((status & TPM_STS_COMMAND_READY) == 0) {
+@@ -377,6 +395,16 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 		}
+ 	}
+ 
++#ifdef CONFIG_TCG_TIS_I2C
++	while (count < len) {
++		if (priv->interface_id) {
++			burstcnt = 1280;
++		} else {
++			burstcnt = 32;
++		}
++
++		burstcnt = min_t(int, burstcnt, len - count);
++#else
+ 	while (count < len - 1) {
+ 		burstcnt = get_burstcount(chip);
+ 		if (burstcnt < 0) {
+@@ -385,13 +413,14 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 			goto out_err;
+ 		}
+ 		burstcnt = min_t(int, burstcnt, len - count - 1);
++#endif
+ 		rc = tpm_tis_write_bytes(priv, TPM_DATA_FIFO(priv->locality),
+ 					 burstcnt, buf + count);
+ 		if (rc < 0)
+ 			goto out_err;
+ 
+ 		count += burstcnt;
+-
++#ifndef CONFIG_TCG_TIS_I2C
+ 		if (wait_for_tpm_stat(chip, TPM_STS_VALID, chip->timeout_c,
+ 					&priv->int_queue, false) < 0) {
+ 			rc = -ETIME;
+@@ -402,8 +431,9 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 			rc = -EIO;
+ 			goto out_err;
+ 		}
++#endif
+ 	}
+-
++#ifndef CONFIG_TCG_TIS_I2C
+ 	/* write last byte */
+ 	rc = tpm_tis_write8(priv, TPM_DATA_FIFO(priv->locality), buf[count]);
+ 	if (rc < 0)
+@@ -419,7 +449,7 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 		rc = -EIO;
+ 		goto out_err;
+ 	}
+-
++#endif
+ 	return 0;
+ 
+ out_err:
+@@ -860,6 +890,9 @@ int tpm_tis_core_init(struct device *dev, struct tpm_tis_data *priv, int irq,
+ 	u32 vendor;
+ 	u32 intfcaps;
+ 	u32 intmask;
++#ifdef CONFIG_TCG_TIS_I2C
++	u32 BusInterface;
++#endif
+ 	u32 clkrun_val;
+ 	u8 rid;
+ 	int rc, probe;
+@@ -936,7 +969,17 @@ int tpm_tis_core_init(struct device *dev, struct tpm_tis_data *priv, int irq,
+ 	dev_info(dev, "%s TPM (device-id 0x%X, rev-id %d)\n",
+ 		 (chip->flags & TPM_CHIP_FLAG_TPM2) ? "2.0" : "1.2",
+ 		 vendor >> 16, rid);
++#ifdef CONFIG_TCG_TIS_I2C
++	rc = tpm_tis_read32(priv, TPM_INTF_CAPABILITY(0), &BusInterface);
++	if (rc < 0)
++		goto out_err;
++
++	priv->interface_id = BusInterface;
+ 
++	dev_info(dev, " TPM %s / Interface : %s)\n",
++		(chip->flags & TPM_CHIP_FLAG_TPM2) ? "2.0" : "1.2",
++		(priv->interface_id) ? "I2C" : "SPI" );
++#endif
+ 	probe = probe_itpm(chip);
+ 	if (probe < 0) {
+ 		rc = -ENODEV;
+diff --git a/drivers/char/tpm/tpm_tis_core.h b/drivers/char/tpm/tpm_tis_core.h
+index 7337819f5d7b..71b15801ac27 100644
+--- a/drivers/char/tpm/tpm_tis_core.h
++++ b/drivers/char/tpm/tpm_tis_core.h
+@@ -71,6 +71,11 @@ enum tis_defaults {
+ #define	TPM_STS(l)			(0x0018 | ((l) << 12))
+ #define	TPM_STS3(l)			(0x001b | ((l) << 12))
+ #define	TPM_DATA_FIFO(l)		(0x0024 | ((l) << 12))
++#ifdef CONFIG_TCG_TIS_I2C
++/* fix BHO I2C implementation */
++#define	TPM_INTF_CAPABILITY(l)		(0x0030 | ((l) << 12))
++/* fix BHO I2C implementation */
++#endif
+ 
+ #define	TPM_DID_VID(l)			(0x0F00 | ((l) << 12))
+ #define	TPM_RID(l)			(0x0F04 | ((l) << 12))
+@@ -86,6 +91,11 @@ enum tpm_tis_flags {
+ 
+ struct tpm_tis_data {
+ 	u16 manufacturer_id;
++#ifdef CONFIG_TCG_TIS_I2C
++	/* fix BHO I2C implementation */
++	u8 interface_id;
++	/* fix BHO I2C implementation */
++#endif
+ 	int locality;
+ 	int irq;
+ 	bool irq_tested;
+@@ -106,6 +116,11 @@ struct tpm_tis_phy_ops {
+ 	int (*read16)(struct tpm_tis_data *data, u32 addr, u16 *result);
+ 	int (*read32)(struct tpm_tis_data *data, u32 addr, u32 *result);
+ 	int (*write32)(struct tpm_tis_data *data, u32 addr, u32 src);
++#ifdef CONFIG_TCG_TIS_I2C
++	/* fix BHO I2C implementation */
++	bool (*check_data)(struct tpm_tis_data *data, u8 *buf, size_t len);
++	/* fix BHO I2C implementation */
++#endif
+ };
+ 
+ static inline int tpm_tis_read_bytes(struct tpm_tis_data *data, u32 addr,
+diff --git a/drivers/char/tpm/tpm_tis_i2c.c b/drivers/char/tpm/tpm_tis_i2c.c
+new file mode 100644
+index 000000000000..af649f2df39a
+--- /dev/null
++++ b/drivers/char/tpm/tpm_tis_i2c.c
+@@ -0,0 +1,502 @@
++/*
++ * STMicroelectronics TCG TPM I2C Linux driver
++ * Copyright (C) 2018 STMicroelectronics
++ *
++ * Authors:
++ *
++ * Christophe Ricard <christophe-h.ricard@st.com>
++ * Benoit Houyère	<benoit.houyere@st.com>
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/slab.h>
++#include <linux/interrupt.h>
++#include <linux/wait.h>
++#include <linux/acpi.h>
++#include <linux/freezer.h>
++#include <linux/crc-ccitt.h>
++#include <linux/uaccess.h>
++#include <linux/version.h>
++#include <linux/module.h>
++#include <linux/i2c.h>
++#include <linux/gpio.h>
++#include <linux/of_irq.h>
++#include <linux/of_gpio.h>
++#include <linux/tpm.h>
++#include <linux/timer.h>
++#include "tpm.h"
++#include "tpm_tis_core.h"
++
++#define TPM_LOC_SEL						0x04
++#define TPM_I2C_INTERFACE_CAPABILITY	0x30
++#define TPM_I2C_DEVICE_ADDRESS			0x38
++#define TPM_DATA_CSUM_ENABLE			0x40
++#define TPM_DATA_CSUM					0x44
++#define TPM_I2C_DID_VID					0x48
++#define TPM_I2C_RID						0x4C
++
++#define TPM_I2C_DEFAULT_GUARD_TIME	0xFA
++
++enum tpm_tis_i2c_operation {
++	TPM_I2C_NONE,
++	TPM_I2C_RECV,
++	TPM_I2C_SEND,
++};
++
++#define TPM_I2C_DEVADRCHANGE(x)		((0x18000000 & x) >> 27)
++#define TPM_I2C_READ_READ(x)		((0x00100000 & x) >> 20)
++#define TPM_I2C_READ_WRITE(x)		((0x00080000 & x) >> 19)
++#define TPM_I2C_WRITE_READ(x)		((0x00040000 & x) >> 18)
++#define TPM_I2C_WRITE_WRITE(x)		((0x00020000 & x) >> 17)
++#define TPM_I2C_GUARD_TIME(x)		((0x0001FE00 & x) >> 9)
++
++struct tpm_tis_i2c_phy {
++	struct i2c_client *client;
++	struct tpm_tis_data priv;
++	u8 buf[TPM_BUFSIZE +1];
++	u8 last_i2c_ops;
++
++	struct timer_list guard_timer;
++	struct mutex phy_lock;
++
++	u8 data_csum;
++	bool devadrchange;
++	bool read_read;
++	bool read_write;
++	bool write_read;
++	bool write_write;
++	u8 guard_time;
++};
++
++static inline struct tpm_tis_i2c_phy *to_tpm_tis_i2c_phy(struct tpm_tis_data *data)
++{
++	return container_of(data, struct tpm_tis_i2c_phy, priv);
++}
++
++static int tpm_tis_i2c_ptp_register_mapper(u32 addr, u8 *i2c_reg)
++{
++	*i2c_reg = (u8)(0x000000ff & addr);
++
++	switch (addr) {
++	case TPM_ACCESS(0):
++		*i2c_reg = TPM_LOC_SEL;
++		break;
++	case TPM_LOC_SEL:
++		*i2c_reg = TPM_ACCESS(0);
++		break;
++	case TPM_DID_VID(0):
++		*i2c_reg = TPM_I2C_DID_VID;
++		break;
++	case TPM_RID(0):
++		*i2c_reg = TPM_I2C_RID;
++		break;
++	case TPM_INTF_CAPABILITY(0):
++		*i2c_reg = TPM_I2C_INTERFACE_CAPABILITY;
++		break;
++	case TPM_INT_VECTOR(0):
++		return -1;
++	}
++
++	return 0;
++}
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
++static void tpm_tis_i2c_guard_time_timeout(struct timer_list *data)
++{
++	struct tpm_tis_i2c_phy *phy = from_timer(phy, data, guard_timer);
++#else
++static void tpm_tis_i2c_guard_time_timeout(unsigned long data)
++{
++	struct tpm_tis_i2c_phy *phy = (struct tpm_tis_i2c_phy *)data;
++#endif
++
++	/* GUARD_TIME expired */
++	phy->last_i2c_ops = TPM_I2C_NONE;
++}
++
++static void tpm_tis_i2c_sleep_guard_time(struct tpm_tis_i2c_phy *phy,
++					 u8 i2c_operation)
++{
++	del_timer_sync(&phy->guard_timer);
++	switch (i2c_operation) {
++	case TPM_I2C_RECV:
++		switch (phy->last_i2c_ops) {
++		case TPM_I2C_RECV:
++		if (phy->read_read)
++			udelay(phy->guard_time);
++		break;
++		case TPM_I2C_SEND:
++		if (phy->write_read)
++			udelay(phy->guard_time);
++		break;
++		}
++	break;
++	case TPM_I2C_SEND:
++		switch (phy->last_i2c_ops) {
++		case TPM_I2C_RECV:
++		if (phy->read_write)
++			udelay(phy->guard_time);
++		break;
++		case TPM_I2C_SEND:
++		if (phy->write_write)
++			udelay(phy->guard_time);
++		break;
++		}
++	break;
++	}
++	phy->last_i2c_ops = i2c_operation;
++
++}
++
++static int tpm_tis_i2c_read_bytes(struct tpm_tis_data *data, u32 addr,
++				  u16 size, u8 *result)
++{
++	struct tpm_tis_i2c_phy *phy = to_tpm_tis_i2c_phy(data);
++	int i=0;
++	int ret = 0;
++	u8 i2c_reg;
++	mutex_lock(&phy->phy_lock);
++	ret = tpm_tis_i2c_ptp_register_mapper(addr, &i2c_reg);
++	if (ret < 0) {
++		/* If we don't have any register equivalence in i2c
++		 * ignore the sequence.
++		 */
++		ret = size;
++		goto exit;
++	}
++	ret = -1;
++
++	for (i = 0; (i < TPM_RETRY) && (ret < 0); i++) {
++		tpm_tis_i2c_sleep_guard_time(phy, TPM_I2C_SEND);
++		ret = i2c_master_send(phy->client, &i2c_reg, 1);
++		mod_timer(&phy->guard_timer, phy->guard_time);
++	}
++
++	if (ret < 0)
++	{
++		sprintf(phy->buf, " read 1 %x\n", phy->guard_time);
++		goto exit;
++	}
++	ret = -1;
++	for (i = 0; (i < TPM_RETRY) && (ret < 0); i++) {
++		tpm_tis_i2c_sleep_guard_time(phy, TPM_I2C_RECV);
++		ret = i2c_master_recv(phy->client, result, size);
++		mod_timer(&phy->guard_timer, phy->guard_time);
++	}
++	if (ret < 0)
++	{
++		sprintf(phy->buf, " read 2 %x\n", phy->guard_time);
++		goto exit;
++	}
++exit:
++	mutex_unlock(&phy->phy_lock);
++	return ret;
++}
++
++static int tpm_tis_i2c_write_bytes(struct tpm_tis_data *data, u32 addr,
++				   u16 size, const u8 *value)
++{
++	struct tpm_tis_i2c_phy *phy = to_tpm_tis_i2c_phy(data);
++	int ret = 0;
++	int i;
++	u8 i2c_reg;
++
++	mutex_lock(&phy->phy_lock);
++	ret = tpm_tis_i2c_ptp_register_mapper(addr, &i2c_reg);
++	if (ret < 0) {
++		/* If we don't have any register equivalence in i2c
++		 * ignore the sequence.
++		 */
++		ret = size;
++		goto exit;
++	}
++
++	ret = -1;
++	phy->buf[0] = i2c_reg;
++	memcpy(phy->buf + 1, value, size);
++
++	for (i = 0; (i < TPM_RETRY) && ((ret < 0 || ret < size + 1)); i++) {
++		tpm_tis_i2c_sleep_guard_time(phy, TPM_I2C_SEND);
++		ret = i2c_master_send(phy->client, phy->buf, size + 1);
++		mod_timer(&phy->guard_timer, phy->guard_time);
++	}
++		if (ret < 0)
++	{
++		sprintf(phy->buf, " WRITE 1 %x\n", phy->guard_time);
++		goto exit;
++	}
++exit:
++	mutex_unlock(&phy->phy_lock);
++	return ret;
++}
++
++static int tpm_tis_i2c_read16(struct tpm_tis_data *data, u32 addr, u16 *result)
++{
++	int rc;
++
++	rc = data->phy_ops->read_bytes(data, addr, sizeof(u16), (u8 *)result);
++	if (!rc)
++		*result = le16_to_cpu(*result);
++	return rc;
++}
++
++static int tpm_tis_i2c_read32(struct tpm_tis_data *data, u32 addr, u32 *result)
++{
++	int rc;
++
++	rc = data->phy_ops->read_bytes(data, addr, sizeof(u32), (u8 *)result);
++	if (!rc)
++		*result = le32_to_cpu(*result);
++	return rc;
++}
++
++static int tpm_tis_i2c_write32(struct tpm_tis_data *data, u32 addr, u32 value)
++{
++	value = cpu_to_le32(value);
++	return data->phy_ops->write_bytes(data, addr, sizeof(u32),
++					   (u8 *)&value);
++}
++
++static bool tpm_tis_i2c_check_data(struct tpm_tis_data *data, u8 *buf, size_t len)
++{
++	struct tpm_tis_i2c_phy *phy = to_tpm_tis_i2c_phy(data);
++	u16 crc, crc_tpm;
++	if (phy->data_csum==1) {
++		crc = crc_ccitt(0x0000, buf, len);
++
++		crc_tpm = tpm_tis_read16(data, TPM_DATA_CSUM, &crc_tpm);
++		crc_tpm = be16_to_cpu(crc_tpm);
++
++		return crc == crc_tpm;
++	}
++	return true;
++}
++
++static const struct tpm_tis_phy_ops tpm_tis = {
++	.read_bytes = tpm_tis_i2c_read_bytes,
++	.write_bytes = tpm_tis_i2c_write_bytes,
++	.read16 = tpm_tis_i2c_read16,
++	.read32 = tpm_tis_i2c_read32,
++	.write32 = tpm_tis_i2c_write32,
++};
++
++static SIMPLE_DEV_PM_OPS(tpm_tis_i2c_pm, tpm_pm_suspend, tpm_tis_resume);
++
++static ssize_t i2c_addr_show(struct device *dev,
++			     struct device_attribute *attr,
++			     char *buf)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	if (client)
++		return sprintf(buf, "0x%.2x\n", client->addr);
++
++	return 0;
++}
++
++static ssize_t i2c_addr_store(struct device *dev,
++			      struct device_attribute *attr,
++			      const char *buf, size_t count)
++{
++	struct tpm_tis_data *data = dev_get_drvdata(dev);
++	struct tpm_tis_i2c_phy *phy;
++	long new_addr;
++	u16 cur_addr;
++	int ret = 0;
++	if (!data)
++		goto exit;
++
++	phy = to_tpm_tis_i2c_phy(data);
++	if (!phy || !phy->client || !phy->devadrchange)
++		goto exit;
++
++	/* Base string automatically detected */
++	ret = kstrtol(buf, 0, &new_addr);
++	if (ret < 0)
++		goto exit;
++
++	ret = tpm_tis_i2c_write32(data, TPM_I2C_DEVICE_ADDRESS,(u32) new_addr);
++	if (ret < 0)
++		goto exit;
++
++	tpm_tis_i2c_read16(data, TPM_I2C_DEVICE_ADDRESS,&cur_addr);
++	if (cur_addr == new_addr) {
++		phy->client->addr = new_addr & 0x00ff;
++		return count;
++	}
++
++	return -EINVAL;
++exit:
++	return ret;
++}
++static DEVICE_ATTR_RW(i2c_addr);
++
++static ssize_t csum_state_show(struct device *dev,
++			       struct device_attribute *attr,
++			       char *buf)
++{
++	struct tpm_tis_data *data = dev_get_drvdata(dev);
++	struct tpm_tis_i2c_phy *phy;
++
++	if (!data)
++		goto exit;
++
++	phy = to_tpm_tis_i2c_phy(data);
++	if (!phy || !phy->client)
++		goto exit;
++
++	return sprintf(buf, "%x\n", phy->data_csum);
++exit:
++	return 0;
++}
++
++static ssize_t csum_state_store(struct device *dev,
++				struct device_attribute *attr,
++				const char *buf, size_t count)
++{
++	struct tpm_tis_data *data = dev_get_drvdata(dev);
++	struct tpm_tis_i2c_phy *phy;
++	long new_state;
++	u8 cur_state;
++	int ret = 0;
++
++	if (!data)
++		goto exit;
++
++	phy = to_tpm_tis_i2c_phy(data);
++	if (!phy || !phy->client)
++		goto exit;
++
++	ret = kstrtol(buf, 2, &new_state);
++	if (ret < 0)
++		goto exit;
++
++	ret = tpm_tis_i2c_write32(data, TPM_DATA_CSUM_ENABLE, new_state);
++	if (ret < 0)
++		goto exit;
++
++	tpm_tis_read_bytes(data, TPM_DATA_CSUM_ENABLE,sizeof(u16),&cur_state);
++	if (new_state == cur_state) {
++		phy->data_csum = cur_state;
++		return count;
++	}
++
++	return -EINVAL;
++exit:
++	return ret;
++}
++static DEVICE_ATTR_RW(csum_state);
++
++static struct attribute *tpm_tis_i2c_attrs[] = {
++	&dev_attr_i2c_addr.attr,
++	&dev_attr_csum_state.attr,
++	NULL,
++};
++
++static struct attribute_group tpm_tis_i2c_attr_group = {
++	.attrs = tpm_tis_i2c_attrs,
++};
++
++static int tpm_tis_i2c_probe(struct i2c_client *client,
++			     const struct i2c_device_id *id)
++{
++	struct tpm_tis_i2c_phy *phy;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++		dev_err(&client->dev, "client not i2c capable\n");
++		return -ENODEV;
++	}
++
++	phy = devm_kzalloc(&client->dev, sizeof(struct tpm_tis_i2c_phy),
++			   GFP_KERNEL);
++
++	if (!phy)
++		{ dev_err(&client->dev,"%s:devm_kzalloc failed.\n",
++				__func__);
++		return -ENOMEM;
++		}
++
++	phy->client = client;
++
++	mutex_init(&phy->phy_lock);
++
++	phy->guard_time = TPM_I2C_DEFAULT_GUARD_TIME;
++
++	phy->read_read = false;
++	phy->read_write = false;
++	phy->write_read = false;
++	phy->write_write = false;
++
++	/* initialize timer */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,15,0)
++	timer_setup(&phy->guard_timer, tpm_tis_i2c_guard_time_timeout, 0);
++#else
++	init_timer(&phy->guard_timer);
++	phy->guard_timer.data = (unsigned long)phy;
++#endif
++	phy->guard_timer.function = tpm_tis_i2c_guard_time_timeout;
++
++
++	return tpm_tis_core_init(&client->dev, &phy->priv, -1, &tpm_tis,
++				 NULL);
++
++
++}
++
++static int tpm_tis_i2c_remove(struct i2c_client *client)
++{
++
++	struct tpm_chip *data = i2c_get_clientdata(client);
++	tpm_chip_unregister(data);
++	return 0;
++}
++
++static const struct i2c_device_id tpm_tis_i2c_id[] = {
++	{"tpm_tis_i2c", 0},
++	{}
++};
++MODULE_DEVICE_TABLE(i2c, tpm_tis_i2c_id);
++
++static const struct of_device_id of_tis_i2c_match[] = {
++	{ .compatible = "st,st33htpm-i2c", },
++	{ .compatible = "tcg,tpm_tis-i2c", },
++	{}
++};
++MODULE_DEVICE_TABLE(of, of_tis_i2c_match);
++
++static const struct acpi_device_id acpi_tis_i2c_match[] = {
++	{"SMO0768", 0},
++	{}
++};
++MODULE_DEVICE_TABLE(acpi, acpi_tis_i2c_match);
++
++static struct i2c_driver tpm_tis_i2c_driver = {
++	.driver = {
++		.owner = THIS_MODULE,
++		.name = "tpm_tis_i2c",
++		.pm = &tpm_tis_i2c_pm,
++		.of_match_table = of_match_ptr(of_tis_i2c_match),
++		.acpi_match_table = ACPI_PTR(acpi_tis_i2c_match),
++	},
++	.probe = tpm_tis_i2c_probe,
++	.remove = tpm_tis_i2c_remove,
++	.id_table = tpm_tis_i2c_id,
++};
++
++module_i2c_driver(tpm_tis_i2c_driver);
++
++MODULE_DESCRIPTION("TPM Driver for native I2C access");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/char/tpm/tpm_tis_spi.c b/drivers/char/tpm/tpm_tis_spi.c
+index 19513e622053..cabfb4d49874 100644
+--- a/drivers/char/tpm/tpm_tis_spi.c
++++ b/drivers/char/tpm/tpm_tis_spi.c
+@@ -69,11 +69,18 @@ static int tpm_tis_spi_transfer(struct tpm_tis_data *data, u32 addr, u16 len,
+ 		phy->iobuf[1] = 0xd4;
+ 		phy->iobuf[2] = addr >> 8;
+ 		phy->iobuf[3] = addr;
++#ifdef CONFIG_TCG_TIS_I2C
++		phy->iobuf[4] = 0x00;
++#endif
+ 
+ 		memset(&spi_xfer, 0, sizeof(spi_xfer));
+ 		spi_xfer.tx_buf = phy->iobuf;
+ 		spi_xfer.rx_buf = phy->iobuf;
++#ifdef CONFIG_TCG_TIS_I2C
++		spi_xfer.len = 5;
++#else
+ 		spi_xfer.len = 4;
++#endif
+ 		spi_xfer.cs_change = 1;
+ 
+ 		spi_message_init(&m);
+@@ -82,7 +89,11 @@ static int tpm_tis_spi_transfer(struct tpm_tis_data *data, u32 addr, u16 len,
+ 		if (ret < 0)
+ 			goto exit;
+ 
++#ifdef CONFIG_TCG_TIS_I2C
++		if ((phy->iobuf[4] & 0x01) == 0) {
++#else
+ 		if ((phy->iobuf[3] & 0x01) == 0) {
++#endif
+ 			// handle SPI wait states
+ 			phy->iobuf[0] = 0;
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,27 @@
+From fc4fa985e13fa75c039bd6491b15a8a1512a41e1 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Fri, 19 Mar 2021 11:03:16 +0530
+Subject: [PATCH 11/13] LEC-iMX8MP: Add PCIe Gen1 Tx de-emphasis for passing 
+ PCIe compliance test.
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/lec-imx8mp.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index 14902a722017..d02e303c5877 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -663,6 +663,7 @@
+ 	assigned-clock-parents = <&clk IMX8MP_SYS_PLL2_500M>,
+ 				 <&clk IMX8MP_SYS_PLL2_50M>;
+ 	reserved-region = <&rpmsg_reserved>;
++	fsl,tx-deemph-gen1 = <0x1f>;
+ 	status = "okay";
+ };
+ 
+-- 
+2.17.1
+

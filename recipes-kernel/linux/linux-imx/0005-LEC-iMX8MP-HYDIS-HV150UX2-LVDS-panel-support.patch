@@ -1,0 +1,152 @@
+From 55cc405eef32d6d4a8714ea4127cbdd51dccd6a6 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Wed, 17 Mar 2021 14:23:53 +0530
+Subject: [PATCH 05/13] LEC-iMX8MP: HYDIS HV150UX2 LVDS panel support
+
+Add support of dual channel LVDS panel, HYDIS HV150UX2
+via DRM simple panel driver
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ arch/arm64/boot/dts/adlink/Makefile           |  3 +-
+ .../dts/adlink/lec-imx8mp-hydis-hv150ux2.dts  | 64 +++++++++++++++++++
+ drivers/gpu/drm/panel/panel-simple.c          | 34 ++++++++++
+ 3 files changed, 100 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/adlink/lec-imx8mp-hydis-hv150ux2.dts
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index aef64e29a394..01160ec7bf6f 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -1,3 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-dtb-$(CONFIG_ARCH_MXC) += lec-imx8mp.dtb
++dtb-$(CONFIG_ARCH_MXC) += lec-imx8mp.dtb \
++			lec-imx8mp-hydis-hv150ux2.dtb
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp-hydis-hv150ux2.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp-hydis-hv150ux2.dts
+new file mode 100644
+index 000000000000..b3257c1b6665
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp-hydis-hv150ux2.dts
+@@ -0,0 +1,64 @@
++/*
++ * Copyright 2020 NXP
++ */
++
++#include "lec-imx8mp.dts"
++
++/ {
++	lvds0_panel {
++		status = "okay";
++		compatible = "hydis,hv150ux2-100";
++		backlight = <&lvds_backlight>;
++
++		enable-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
++
++		port {
++			panel_lvds_in: endpoint {
++				remote-endpoint = <&lvds_out>;
++			};
++		};
++	};
++
++	lvds_backlight {
++		enable-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
++	};
++
++	// gpio3_IO23 on lec-imx8mp is display mux
++	reg_mipi_lvds_select: regulator-mipi-lvds {
++		compatible = "regulator-fixed";
++		regulator-name = "mipi_lvds_select_vbus";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_disp_select>;
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		gpio = <&gpio3 23 GPIO_ACTIVE_HIGH>;
++		enable-active-low;
++		regulator-always-on;
++	};
++};
++
++&ldb {
++	status = "okay";
++	fsl,dual-channel;
++
++	lvds-channel@0 {
++		fsl,data-mapping = "jeida";
++		fsl,data-width = <24>;
++		status = "okay";
++
++		/delete-node/ port@1;
++
++		port@1 {
++			reg = <1>;
++
++			lvds_out: endpoint {
++				remote-endpoint = <&panel_lvds_in>;
++			};
++		};
++	};
++
++};
++
++&ldb_phy {
++	status = "okay";
++};
+diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
+index c34a36d3dd0f..8deb9c8aeed5 100644
+--- a/drivers/gpu/drm/panel/panel-simple.c
++++ b/drivers/gpu/drm/panel/panel-simple.c
+@@ -1554,6 +1554,37 @@ static const struct panel_desc hitachi_tx23d38vm0caa = {
+ 	},
+ };
+ 
++static const struct display_timing hydis_hv150ux2_100_timings = {
++	.pixelclock = { 162000000, 162000000, 162000000 },
++	.hactive = { 1600, 1600, 1600 },
++	.hfront_porch = { 180, 180, 180 },
++	.hback_porch = { 180, 180, 180 },
++	.hsync_len = { 200, 200, 200 },
++	.vactive = { 1200, 1200, 1200 },
++	.vfront_porch = { 15, 15, 15 },
++	.vback_porch = { 15, 15, 15 },
++	.vsync_len = { 20, 20, 20 },
++};
++
++
++static const struct panel_desc hydis_hv150ux2_100 = {
++	.timings = &hydis_hv150ux2_100_timings,
++	.num_timings = 1,
++	.bpc = 8,
++	.size = {
++		.width = 304,
++		.height = 228,
++	},
++	.delay = {
++		.prepare = 10,
++		.enable = 50,
++		.disable = 50,
++		.unprepare = 200,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++
+ static const struct drm_display_mode innolux_at043tn24_mode = {
+ 	.clock = 9000,
+ 	.hdisplay = 480,
+@@ -3278,6 +3309,9 @@ static const struct of_device_id platform_of_match[] = {
+ 		.compatible = "hit,tx23d38vm0caa",
+ 		.data = &hitachi_tx23d38vm0caa
+ 	}, {
++		.compatible = "hydis,hv150ux2-100",
++		.data = &hydis_hv150ux2_100,
++	},  {
+ 		.compatible = "innolux,at043tn24",
+ 		.data = &innolux_at043tn24,
+ 	}, {
+-- 
+2.17.1
+
