@@ -3,12 +3,18 @@ LICENSE = "CLOSED"
 
 SRC_URI = "\
     file://version.c \
+    file://lec-imx8mp_1v1.c \
 "
 
 S = "${WORKDIR}"
 
 do_compile() {
+
+if ${@bb.utils.contains('MACHINE', 'lec-imx8mp', 'true', 'false', d)}; then # LEC-i.MX8mp
+	${CC} ${WORKDIR}/lec-imx8mp_1v1.c -o ${WORKDIR}/version
+else
 	${CC} ${WORKDIR}/version.c -o ${WORKDIR}/version
+fi
 }
 
 do_install() {
