@@ -23,6 +23,7 @@
   * [How to boot the image (includes u-boot) from SD Card - LEC-iMX8M Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#12-please-run-with-the-below-command-to-flash-to-sd-card)
   * [How to boot the image (includes u-boot) from SD Card - LEC-iMX6R2 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#12-please-run-with-the-below-command-to-flash-to-sd-card-1)
   * [How to boot the image (includes u-boot) from SD Card - LEC-iMX6 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#12-run-with-the-below-command-to-flash-to-sd-card)
+  * [How to boot the image (includes u-boot) from SD Card - LEC-iMX8M/LEC-iMX6R2/LEC-iMX6 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/03.-How-to-install-Yocto-Image-into-eMMC)
   
  
  
