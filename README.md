@@ -18,7 +18,7 @@
 
 * see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01.-Build-Yocto-Image) for more details.
 
-#### How to flash image to your storage**
+#### How to flash image to your storage
 
   * [How to boot Yocto Linux from SD Card - LEC-iMX8M Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx8m-supported)
   * [How to boot Yocto Linux from SD Card - LEC-iMX6R2 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx6r2-supported)
