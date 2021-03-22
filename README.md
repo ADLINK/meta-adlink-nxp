@@ -167,6 +167,7 @@
 **How to flash image to your storage**
 
 * [Boot from SD card](https://github.com/ADLINK/meta-adlink-nxp/wiki/03.-How-to-install-Yocto-Image-into-SD-Card)
+* [Boot from eMMC](https://github.com/ADLINK/meta-adlink-nxp/wiki/03.-How-to-install-Yocto-Image-into-eMMC)
 
  
 
