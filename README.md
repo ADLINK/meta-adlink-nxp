@@ -34,9 +34,17 @@ Supports the following SMARC products:
 <br>
   
 
+#### How to build Yocto Image
 
-Please refer to [Guideline](https://github.com/ADLINK/meta-adlink-nxp/wiki) for Yocto BSP building
-----
+* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01.-Build-Yocto-Image) for more details.
+
+#### How to flash image to your storage
+
+  * [How to boot the image (includes u-boot) from SD Card - LEC-iMX8M Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx8m-supported)
+  * [How to boot the image (includes u-boot) from SD Card - LEC-iMX6R2 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx6r2-supported)
+  * [How to boot the image (includes u-boot) from SD Card - LEC-iMX6 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx6-supported)
+  * [How to boot the image (includes u-boot) from eMMC - LEC-iMX8M/LEC-iMX6R2/LEC-iMX6 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/03.-How-to-install-Yocto-Image-into-eMMC)
+  
 
 <br>
 <br>
