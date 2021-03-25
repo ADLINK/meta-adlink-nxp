@@ -14,9 +14,11 @@ do_install_append() {
 
 if ${@bb.utils.contains('TARGET_ARCH', 'arm', 'true', 'false', d)}; then # LEC-i.MX6
    install ${WORKDIR}/weston-adlink-imx6.ini ${D}${sysconfdir}/xdg/weston/weston.ini
-fi
 
-if ${@bb.utils.contains('TARGET_ARCH', 'aarch64', 'true', 'false', d)}; then # LEC-i.MX8m
+elif ${@bb.utils.contains('MACHINE', 'lec-imx8mp', 'true', 'false', d)}; then # LEC-i.MX8mp
+   echo "skipping this for now"
+
+elif ${@bb.utils.contains('TARGET_ARCH', 'aarch64', 'true', 'false', d)}; then # LEC-i.MX8m
    install ${WORKDIR}/weston-adlink-imx8m.ini ${D}${sysconfdir}/xdg/weston/weston.ini
 fi
 
