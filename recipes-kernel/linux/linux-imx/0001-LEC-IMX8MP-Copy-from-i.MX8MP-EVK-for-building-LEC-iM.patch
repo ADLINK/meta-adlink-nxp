@@ -1,7 +1,7 @@
-From 7952a30a43be2347075280236bb1a36ba311c140 Mon Sep 17 00:00:00 2001
+From 478f6312416469578c56e0ff17ef64aa5cf32a27 Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 17 Mar 2021 12:26:01 +0530
-Subject: [PATCH 01/13] LEC-IMX8MP: Copy from i.MX8MP EVK for building
+Subject: [PATCH 01/14] LEC-IMX8MP: Copy from i.MX8MP EVK for building
  LEC-iMX8MP platfrom
 
 Copy iMX8MP EVK dts and config files for LEC-iMX8MP platform

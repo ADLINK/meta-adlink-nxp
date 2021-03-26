@@ -1,7 +1,7 @@
-From 376c565ff9bf1d86d7a086e695093d660810b390 Mon Sep 17 00:00:00 2001
+From 54ed39c6602e8bb7e0431de0715949c4b8e97458 Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Fri, 19 Mar 2021 10:43:40 +0530
-Subject: [PATCH 09/13] LEC-iMX8MP: Add support of TPM chip STMicroelectronics 
+Subject: [PATCH 09/14] LEC-iMX8MP: Add support of TPM chip STMicroelectronics
  ST33TPHF2XI2C (Ordering code: ST33HTPH2X32AHD5)
 
 Signed-off-by: hicker <hicker.liu@adlinktech.com>
@@ -60,7 +60,7 @@ index 860fe546e825..a6c96cf0d3da 100644
  
  	/* RTC U2607 */
 diff --git a/arch/arm64/configs/lec-imx8mp_defconfig b/arch/arm64/configs/lec-imx8mp_defconfig
-index 40d5d06fc98e..d0ef8965eb7c 100644
+index 0faa4d8505da..6cf65a9aae2f 100644
 --- a/arch/arm64/configs/lec-imx8mp_defconfig
 +++ b/arch/arm64/configs/lec-imx8mp_defconfig
 @@ -365,6 +365,7 @@ CONFIG_IPMI_HANDLER=m
@@ -71,7 +71,7 @@ index 40d5d06fc98e..d0ef8965eb7c 100644
  CONFIG_TCG_TIS_I2C_INFINEON=y
  CONFIG_I2C_CHARDEV=y
  CONFIG_I2C_MUX=y
-@@ -881,3 +882,4 @@ CONFIG_MEMTEST=y
+@@ -882,3 +883,4 @@ CONFIG_MEMTEST=y
  CONFIG_CORESIGHT=y
  CONFIG_CORESIGHT_LINK_AND_SINK_TMC=y
  CONFIG_CORESIGHT_SOURCE_ETM4X=y
@@ -380,7 +380,7 @@ index 7337819f5d7b..71b15801ac27 100644
  static inline int tpm_tis_read_bytes(struct tpm_tis_data *data, u32 addr,
 diff --git a/drivers/char/tpm/tpm_tis_i2c.c b/drivers/char/tpm/tpm_tis_i2c.c
 new file mode 100644
-index 000000000000..af649f2df39a
+index 000000000000..24d71bf304ca
 --- /dev/null
 +++ b/drivers/char/tpm/tpm_tis_i2c.c
 @@ -0,0 +1,502 @@

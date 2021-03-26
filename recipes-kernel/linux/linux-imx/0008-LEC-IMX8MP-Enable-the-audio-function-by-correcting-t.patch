@@ -1,7 +1,7 @@
-From 4d1b10f9cc0201ca3bf16bafcbb93ecfdde890c0 Mon Sep 17 00:00:00 2001
+From 1d7fa5d707124db388ca696087206dd0d5f80c7f Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 17 Mar 2021 14:41:25 +0530
-Subject: [PATCH 08/13] LEC-IMX8MP: Enable the audio function by correcting the
+Subject: [PATCH 08/14] LEC-IMX8MP: Enable the audio function by correcting the
  audio codec device tree
 
  - Correct the settings of headphone detection pin

@@ -145,4 +145,5 @@ SRC_URI_append_lec-imx8mp += " \
 			file://0011-LEC-iMX8MP-Add-PCIe-Gen1-Tx-de-emphasis-for-passing.patch \
 			file://0012-LEC-iMX8MP-Add-device-tree-settings-for-MIPI-CSI.patch \
 			file://0013-LEC-iMX8MP-Adding-OV13850-sensor-support.patch \
+			file://0014-LEC-iMX8MP-Use-CPU-temperatrue-grade-settings-for-th.patch \
 "

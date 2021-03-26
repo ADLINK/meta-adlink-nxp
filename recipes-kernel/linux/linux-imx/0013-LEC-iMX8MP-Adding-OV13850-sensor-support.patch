@@ -1,7 +1,7 @@
-From ae1e4858633472ef2d92482d627e24ff34e763dc Mon Sep 17 00:00:00 2001
+From 5732d9e985448d0dc9603ad8ab6ffe67a642c3bc Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 3 Mar 2021 14:39:09 +0530
-Subject: [PATCH 13/13] LEC-iMX8MP: Adding OV13850 sensor support.
+Subject: [PATCH 13/14] LEC-iMX8MP: Adding OV13850 sensor support.
 
  * Add sensor driver code for ov13850
  * Add BGGR format in isi capture driver
@@ -117,7 +117,7 @@ index 54ab7d9cb8b6..8d862b515154 100644
  
  &dsp {
 diff --git a/arch/arm64/configs/lec-imx8mp_defconfig b/arch/arm64/configs/lec-imx8mp_defconfig
-index 83e81ffac8fa..93e93f3c7f83 100644
+index ef62e31ced38..6a36172edccb 100644
 --- a/arch/arm64/configs/lec-imx8mp_defconfig
 +++ b/arch/arm64/configs/lec-imx8mp_defconfig
 @@ -500,6 +500,7 @@ CONFIG_MXC_MIPI_CSI=y
@@ -128,7 +128,7 @@ index 83e81ffac8fa..93e93f3c7f83 100644
  CONFIG_IMX_DPU_CORE=y
  CONFIG_IMX_LCDIF_CORE=y
  CONFIG_IMX_LCDIFV3_CORE=y
-@@ -723,7 +724,7 @@ CONFIG_XEN_GRANT_DEV_ALLOC=y
+@@ -724,7 +725,7 @@ CONFIG_XEN_GRANT_DEV_ALLOC=y
  CONFIG_STAGING=y
  CONFIG_STAGING_MEDIA=y
  CONFIG_VIDEO_IMX_CAPTURE=y

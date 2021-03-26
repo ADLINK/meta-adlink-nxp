@@ -1,7 +1,7 @@
-From 332897d547eb0890904d3474fb7719851b95b831 Mon Sep 17 00:00:00 2001
+From 9fb26484bf494790e5bfb12f8177d6664d20c9c1 Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 17 Mar 2021 14:34:37 +0530
-Subject: [PATCH 07/13] LEC-iMX8MP: Enable GPIO expander SX1509BIULTRT
+Subject: [PATCH 07/14] LEC-iMX8MP: Enable GPIO expander SX1509BIULTRT
 
 Enable GPIO expander (SX1509BIULTRT - U2605, U2606, U1001)
 Patched from Martin DEVERA @ https://lkml.org/lkml/2020/8/5/351
@@ -138,7 +138,7 @@ index 48018b4d9423..d4ec966bfbba 100644
  	pcf8563: rtc@51 {
  		compatible = "nxp,pcf8563";
 diff --git a/arch/arm64/configs/lec-imx8mp_defconfig b/arch/arm64/configs/lec-imx8mp_defconfig
-index 8adb3fb40861..40d5d06fc98e 100644
+index 225943978ec6..0faa4d8505da 100644
 --- a/arch/arm64/configs/lec-imx8mp_defconfig
 +++ b/arch/arm64/configs/lec-imx8mp_defconfig
 @@ -392,6 +392,7 @@ CONFIG_SPI_SLAVE_TIME=y

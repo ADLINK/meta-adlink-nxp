@@ -1,7 +1,7 @@
-From 247df58f02c6eaa46658299a5820bf2d9161226d Mon Sep 17 00:00:00 2001
+From 35ec817a746c98c7b0ecf9d4cfadd394c54f8a2a Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 17 Mar 2021 13:04:43 +0530
-Subject: [PATCH 03/13] LEC-IMX8MP: Enable RTC NXP PCF8563 (U2101)
+Subject: [PATCH 03/14] LEC-IMX8MP: Enable RTC NXP PCF8563 (U2101)
 
 Enable RTC NXP PCF8563 and disable unused NXP i.MX8MP internal
 SNVS RTC for its power consumption and deviation is worse than

@@ -1,7 +1,7 @@
-From 55cc405eef32d6d4a8714ea4127cbdd51dccd6a6 Mon Sep 17 00:00:00 2001
+From 3954477ac58dd0e381a3cceb800f173fb71b239a Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 17 Mar 2021 14:23:53 +0530
-Subject: [PATCH 05/13] LEC-iMX8MP: HYDIS HV150UX2 LVDS panel support
+Subject: [PATCH 05/14] LEC-iMX8MP: HYDIS HV150UX2 LVDS panel support
 
 Add support of dual channel LVDS panel, HYDIS HV150UX2
 via DRM simple panel driver

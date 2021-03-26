@@ -1,0 +1,248 @@
+From f8094049bd91b73208bfb7125e5a640a8549c4c4 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Fri, 26 Mar 2021 11:45:25 +0530
+Subject: [PATCH 14/14] =?UTF-8?q?LEC-iMX8MP:=20Use=20CPU=20temperatrue=20g?=
+ =?UTF-8?q?rade=20settings=20for=20the=20critical=20trip=20point=20and=20t?=
+ =?UTF-8?q?he=20passive=20trip=20point(critical=20trip=20point=20-=2010?=
+ =?UTF-8?q?=C2=B0C)=20instead=20of=20using=20the=20hard-coded=20passive=20?=
+ =?UTF-8?q?trip=20point(85=20=C2=B0C)=20and=20critical=20trip=20point(95?=
+ =?UTF-8?q?=20=C2=B0C)=20from=20device=20tree=20for=20all=20CPU=20grade.?=
+ =?UTF-8?q?=20Modify=20temperatrue=20trip=20point=20settings=20in=20both?=
+ =?UTF-8?q?=20TMU=20driver=20and=20thermal=20framework.?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+                Commercial (0 to 95 째C)
+                Extended Commercial (-20 째C to 105 째C)
+                Industrial (-40 째C to 105 째C)
+                Automotive (-40 째C to 125 째C)
+
+Signed-off-by: hicker <hicker.liu@adlinktech.com>
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+---
+ drivers/thermal/imx8mm_thermal.c | 85 ++++++++++++++++++++++++++++++
+ drivers/thermal/of-thermal.c     | 88 +++++++++++++++++++++++++++++++-
+ 2 files changed, 172 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thermal/imx8mm_thermal.c b/drivers/thermal/imx8mm_thermal.c
+index 0626ae2de291..29e352d265ac 100644
+--- a/drivers/thermal/imx8mm_thermal.c
++++ b/drivers/thermal/imx8mm_thermal.c
+@@ -68,6 +68,86 @@ enum imx_thermal_trip {
+ 	IMX_TRIP_NUM,
+ };
+ 
++#define OCOTP_BASE_ADDR 0x30350000
++struct ocotp_regs {
++	u32	ctrl;
++	u32	ctrl_set;
++	u32     ctrl_clr;
++	u32	ctrl_tog;
++	u32	timing;
++	u32     rsvd0[3];
++	u32     data;
++	u32     rsvd1[3];
++	u32     read_ctrl;
++	u32     rsvd2[3];
++	u32	read_fuse_data;
++	u32     rsvd3[3];
++	u32	sw_sticky;
++	u32     rsvd4[3];
++	u32     scs;
++	u32     scs_set;
++	u32     scs_clr;
++	u32     scs_tog;
++	u32     crc_addr;
++	u32     rsvd5[3];
++	u32     crc_value;
++	u32     rsvd6[3];
++	u32     version;
++	u32     rsvd7[0xdb];
++
++	/* fuse banks */
++	struct fuse_bank {
++		u32	fuse_regs[0x10];
++	} bank[0];
++};
++
++struct fuse_bank1_regs {
++	u32 tester3;
++	u32 rsvd0[3];
++	u32 tester4;
++	u32 rsvd1[3];
++	u32 tester5;
++	u32 rsvd2[3];
++	u32 cfg0;
++	u32 rsvd3[3];
++};
++
++static int get_cpu_temp_grade_maxc(void)
++{
++	unsigned int val = 0;
++	int minc = 0, maxc = 0;
++
++	if (of_machine_is_compatible("fsl,imx8mp")) {
++		struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
++		struct fuse_bank *bank = &ocotp->bank[1];
++		struct fuse_bank1_regs *fuse = (struct fuse_bank1_regs *)bank->fuse_regs;
++		void __iomem *tmpp = ioremap_cache((phys_addr_t)fuse, sizeof(struct fuse_bank1_regs));
++		if (!tmpp)
++			return -ENOMEM;
++
++		fuse = (struct fuse_bank1_regs *)tmpp;
++		val = fuse->tester3;
++		switch ((val >> 5) & 0x3) {
++		case 0: // Commercial (0 to 95 줩C)
++			minc = 0;
++			maxc = 95;
++			break;
++		case 1: // Extended Commercial (-20 줩C to 105 줩C)
++			minc = -20;
++			maxc = 105;
++			break;
++		case 2: // Industrial (-40 줩C to 105 줩C)
++			minc = -40;
++			maxc = 105;
++			break;
++		case 3: // Automotive (-40 줩C to 125 줩C)
++			minc = -40;
++			maxc = 125;
++			break;
++		}
++	}
++	return maxc;
++}
+ 
+ static int tmu_get_temp(void *data, int *temp)
+ {
+@@ -189,8 +269,13 @@ static int imx8mm_tmu_probe(struct platform_device *pdev)
+ 		trips = of_thermal_get_trip_points(tmu->sensors[i].tzd);
+ 
+ 		/* get the thermal trip temp */
++		if (of_machine_is_compatible("fsl,imx8mp")) {
++			tmu->sensors[i].temp_passive = ((get_cpu_temp_grade_maxc() - 10) * 1000);
++			tmu->sensors[i].temp_critical = (get_cpu_temp_grade_maxc() * 1000);
++		} else {
+ 		tmu->sensors[i].temp_passive = trips[0].temperature;
+ 		tmu->sensors[i].temp_critical = trips[1].temperature;
++		}
+ 
+ 		tmu->sensors[i].cdev = devfreq_cooling_register();
+ 		if (IS_ERR(tmu->sensors[i].cdev)) {
+diff --git a/drivers/thermal/of-thermal.c b/drivers/thermal/of-thermal.c
+index dc5093be553e..75bbae302f83 100644
+--- a/drivers/thermal/of-thermal.c
++++ b/drivers/thermal/of-thermal.c
+@@ -14,6 +14,7 @@
+ #include <linux/of_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/err.h>
++#include <linux/io.h>
+ #include <linux/export.h>
+ #include <linux/string.h>
+ 
+@@ -84,6 +85,86 @@ struct __thermal_zone {
+ 	const struct thermal_zone_of_device_ops *ops;
+ };
+ 
++#define OCOTP_BASE_ADDR 0x30350000
++struct ocotp_regs {
++	u32	ctrl;
++	u32	ctrl_set;
++	u32     ctrl_clr;
++	u32	ctrl_tog;
++	u32	timing;
++	u32     rsvd0[3];
++	u32     data;
++	u32     rsvd1[3];
++	u32     read_ctrl;
++	u32     rsvd2[3];
++	u32	read_fuse_data;
++	u32     rsvd3[3];
++	u32	sw_sticky;
++	u32     rsvd4[3];
++	u32     scs;
++	u32     scs_set;
++	u32     scs_clr;
++	u32     scs_tog;
++	u32     crc_addr;
++	u32     rsvd5[3];
++	u32     crc_value;
++	u32     rsvd6[3];
++	u32     version;
++	u32     rsvd7[0xdb];
++
++	/* fuse banks */
++	struct fuse_bank {
++		u32	fuse_regs[0x10];
++	} bank[0];
++};
++
++struct fuse_bank1_regs {
++	u32 tester3;
++	u32 rsvd0[3];
++	u32 tester4;
++	u32 rsvd1[3];
++	u32 tester5;
++	u32 rsvd2[3];
++	u32 cfg0;
++	u32 rsvd3[3];
++};
++
++static int get_cpu_temp_grade_maxc(void)
++{
++	unsigned int val = 0;
++	int minc = 0, maxc = 0;
++
++	if (of_machine_is_compatible("fsl,imx8mp")) {
++		struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
++		struct fuse_bank *bank = &ocotp->bank[1];
++		struct fuse_bank1_regs *fuse = (struct fuse_bank1_regs *)bank->fuse_regs;
++		void __iomem *tmpp = ioremap_cache((phys_addr_t)fuse, sizeof(struct fuse_bank1_regs));
++		if (!tmpp)
++			return -ENOMEM;
++
++		fuse = (struct fuse_bank1_regs *)tmpp;
++		val = fuse->tester3;
++		switch ((val >> 5) & 0x3) {
++		case 0: // Commercial (0 to 95 줩C)
++			minc = 0;
++			maxc = 95;
++			break;
++		case 1: // Extended Commercial (-20 줩C to 105 줩C)
++			minc = -20;
++			maxc = 105;
++			break;
++		case 2: // Industrial (-40 줩C to 105 줩C)
++			minc = -40;
++			maxc = 105;
++			break;
++		case 3: // Automotive (-40 줩C to 125 줩C)
++			minc = -40;
++			maxc = 125;
++			break;
++		}
++	}
++	return maxc;
++}
+ /***   DT thermal zone device callbacks   ***/
+ 
+ static int of_thermal_get_temp(struct thermal_zone_device *tz,
+@@ -829,7 +910,12 @@ static int thermal_of_populate_trip(struct device_node *np,
+ 		pr_err("wrong trip type property\n");
+ 		return ret;
+ 	}
+-
++	if (of_machine_is_compatible("fsl,imx8mp")) {
++		if(trip->type == THERMAL_TRIP_PASSIVE)
++			trip->temperature = ((get_cpu_temp_grade_maxc() - 10) * 1000);
++		if(trip->type == THERMAL_TRIP_CRITICAL)
++			trip->temperature = (get_cpu_temp_grade_maxc() * 1000);
++	}
+ 	/* Required for cooling map matching */
+ 	trip->np = np;
+ 	of_node_get(np);
+-- 
+2.17.1
+

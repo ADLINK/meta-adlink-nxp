@@ -1,7 +1,7 @@
-From 8a1042d23c713d1162212b5fee101d6446391cbf Mon Sep 17 00:00:00 2001
+From 20361007aebbfdb9da86da447216993e0e996911 Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 17 Mar 2021 14:13:13 +0530
-Subject: [PATCH 04/13] LEC-iMX8MP: Add device tree node of Lite-BMC
+Subject: [PATCH 04/14] LEC-iMX8MP: Add device tree node of Lite-BMC
 
 Add device tree node of Lite-BMC for SEMA4.0 (U2101)
 

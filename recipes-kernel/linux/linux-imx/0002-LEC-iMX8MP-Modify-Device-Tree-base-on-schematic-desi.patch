@@ -1,7 +1,7 @@
-From ceaeac95bf4d3a9aa9f47fa3906395599ab6b09b Mon Sep 17 00:00:00 2001
+From 8453162a288042d18d795397ec83800958c0b6d7 Mon Sep 17 00:00:00 2001
 From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
 Date: Wed, 17 Mar 2021 12:41:11 +0530
-Subject: [PATCH 02/13] LEC-iMX8MP: Modify Device Tree base on schematic design
+Subject: [PATCH 02/14] LEC-iMX8MP: Modify Device Tree base on schematic design
 
 Disable digital microphones with PDM (MICFIL) (Pulse Density Modulated) and remove pin control "pinctrl_pdm"
 Remove I2C2 : ov5640_0
