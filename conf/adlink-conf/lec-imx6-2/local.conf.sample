@@ -29,3 +29,7 @@ IMAGE_BOOT_FILES ?= " \
 	${KERNEL_IMAGETYPE} \
 	${@make_dtb_boot_files(d)} \
 "
+
+#Remove unwanted bbappend here
+BBMASK += " weston_9.0.0.imx"
+BBMASK += " imx-vpu-hantro-vc_1.3.0"

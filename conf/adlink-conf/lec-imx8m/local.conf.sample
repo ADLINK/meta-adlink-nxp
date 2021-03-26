@@ -20,3 +20,7 @@ DL_DIR ?= "${BSPDIR}/downloads/"
 ACCEPT_FSL_EULA = "1"
 
 CORE_IMAGE_EXTRA_INSTALL += "kernel-devicetree ssh"
+
+#Remove unwanted bbappend here
+BBMASK += " weston_9.0.0.imx"
+BBMASK += " imx-vpu-hantro-vc_1.3.0"
