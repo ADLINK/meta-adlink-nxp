@@ -2,6 +2,22 @@
 <br>
 
 
+
+### LEC-iMX8M Plus SMARC Module
+
+|                         SMARC Module                         | Description                                                  |
+| :----------------------------------------------------------: | :----------------------------------------------------------- |
+| <img src="https://cdn.adlinktech.com/webupd/products/images/1899/LEC-IMX8MP-F_web.jpg" width="200"/> | **LEC-iMX8M Plsu**  ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8MP?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 8M Plus<br /> |
+
+**SD Card image (64bit) for the quick evaluation (images includes u-boot)**
+
+* NXP i.MX8M Plus 4G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [ link](https://hq0epm0west0us0storage.blob.core.windows.net/development/LEC-iMX8MP/imx-image-multimedia-lec-imx8mp-weston_4G_1v1.wic.bz2)
+* NXP i.MX8M Plus 2G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [link](https://hq0epm0west0us0storage.blob.core.windows.net/development/LEC-iMX8MP/imx-image-multimedia-lec-imx8mp-weston_2G_1v1.wic.bz2)
+
+<br>
+
+
+
 ### LEC-iMX8M SMARC Module
 
 |                         SMARC Module                         | Description                                                  |
