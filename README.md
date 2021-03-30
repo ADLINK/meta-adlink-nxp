@@ -19,7 +19,7 @@
 
 * see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01-1.-Build-Yocto-Image_imx8mp) for LEC-iMX8M Plus
 
-* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01.-Build-Yocto-Image) for LEC-iMX8M, LEC-iMX6R2, LEC-iMX6
+* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01-2.-Build-Yocto-Image) for LEC-iMX8M, LEC-iMX6R2, LEC-iMX6
 
 #### How to flash image to your storage
 
