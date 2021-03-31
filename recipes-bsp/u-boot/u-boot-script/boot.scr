@@ -1,0 +1,3 @@
+# set boot script for running emmc as usb mass storage
+mmc rescan
+ums 0 mmc 2
