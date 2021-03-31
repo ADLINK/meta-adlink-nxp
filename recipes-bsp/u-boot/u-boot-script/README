@@ -1,0 +1,3 @@
+# Copyright (C) 2021 Adlink Technology Inc.
+
+boot.scr.uimg is the booting process flow to boot a bootable disk image.
