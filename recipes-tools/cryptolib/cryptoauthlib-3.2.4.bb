@@ -17,13 +17,16 @@ do_install() {
 	cp -R --no-preserve=ownership ${WORKDIR}/var/lib/cryptoauthlib/* ${D}${localstatedir}/lib/cryptoauthlib/
 
 	install -d -m 0755 ${D}${libdir_native}
-	cp --no-preserve=ownership ${WORKDIR}/usr/lib/libcryptoauth.so ${D}${libdir_native}
+	install -m 0755 ${WORKDIR}/usr/lib/libcryptoauth.so ${D}${libdir_native}
 
 	install -d -m 0655 ${D}${includedir}/cryptoauthlib
 	cp -R --no-preserve=ownership ${WORKDIR}/usr/include/cryptoauthlib/* ${D}/${includedir}/cryptoauthlib/
 
 	install -d -m 0755 ${D}${sysconfdir}/cryptoauthlib
 	cp -R --no-preserve=ownership ${WORKDIR}/etc/cryptoauthlib/* ${D}${sysconfdir}/cryptoauthlib
+}
+
+do_package_qa() {
 }
 
 FILES_${PN}-dev += " ${includedir}/cryptoauthlib/"
