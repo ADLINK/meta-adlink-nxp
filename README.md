@@ -7,7 +7,7 @@
 
 |                         SMARC Module                         | Description                                                  |
 | :----------------------------------------------------------: | :----------------------------------------------------------- |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1899/LEC-IMX8MP-F_web.jpg" width="200"/> | **LEC-iMX8M Plsu**  ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8MP?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 8M Plus<br /> |
+| <img src="https://cdn.adlinktech.com/webupd/products/images/1899/LEC-IMX8MP-F_web.jpg" width="200"/> | **LEC-iMX8M Plus**  ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8MP?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 8M Plus<br /> |
 
 **SD Card image (64bit) for the quick evaluation (images includes u-boot) - beta version**
 
