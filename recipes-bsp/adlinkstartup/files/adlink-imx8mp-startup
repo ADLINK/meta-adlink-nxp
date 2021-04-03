@@ -1,0 +1,15 @@
+
+
+#Set system time from RTC
+hwclock -s
+
+
+#Load sema drivers
+modprobe adl_bmc
+modprobe adl_bmc_bklight
+modprobe adl_bmc_boardinfo
+modprobe adl_bmc_i2c
+modprobe adl_bmc_nvmem
+modprobe adl_bmc_wdt
+modprobe adl_bmc_hwmon
+modprobe adl_bmc_vm
