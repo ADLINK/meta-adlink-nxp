@@ -1,0 +1,25 @@
+From 1a535de1f47b9661f7139a95262a48dc407ae82f Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Thu, 15 Apr 2021 16:46:24 +0530
+Subject: [PATCH 2/2] LEC-iMX8MP: Change USB 2 default mode
+
+CHange USB2.0 default mode to host
+
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+
+diff --git a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+index 2a7fb51ac..2ccea970c 100644
+--- a/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
++++ b/arch/arm64/boot/dts/adlink/lec-imx8mp.dts
+@@ -851,7 +851,7 @@
+ };
+ 
+ &usb_dwc3_0 {
+-	dr_mode = "otg";
++	dr_mode = "host";
+ 	hnp-disable;
+ 	srp-disable;
+ 	adp-disable;
+-- 
+2.17.1
+

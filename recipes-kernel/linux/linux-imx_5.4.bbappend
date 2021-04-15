@@ -147,4 +147,6 @@ SRC_URI_append_lec-imx8mp += " \
 			file://0013-LEC-iMX8MP-Adding-OV13850-sensor-support.patch \
 			file://0014-LEC-iMX8MP-Use-CPU-temperatrue-grade-settings-for-th.patch \
 			file://0015-LEC-iMX8MP-Add-Changes-for-new-camera-add-on-card.patch \
+			file://0016-LEC-iMX8MP-Removing-pm_runtime-routines-from-hantro.patch \
+			file://0017-LEC-iMX8MP-Change-USB-2-default-mode.patch \
 "

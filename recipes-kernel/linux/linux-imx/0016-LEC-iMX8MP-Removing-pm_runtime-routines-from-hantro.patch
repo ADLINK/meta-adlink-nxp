@@ -1,0 +1,99 @@
+From e003f1d66cdcf37670284f1e8f09fe4209734f77 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Tue, 13 Apr 2021 10:35:28 +0530
+Subject: [PATCH 1/2] LEC-iMX8MP: Removing pm_runtime routines from hantro
+
+Removing pm_runtime routines from hantrodec_845s driver code.
+This is a workaround, system seems to freeze once video playing
+is completed. Although while playing video no issue is observed
+
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+
+diff --git a/drivers/mxc/hantro_845/hantrodec_845s.c b/drivers/mxc/hantro_845/hantrodec_845s.c
+index c6e7c7d1b..083f99f87 100755
+--- a/drivers/mxc/hantro_845/hantrodec_845s.c
++++ b/drivers/mxc/hantro_845/hantrodec_845s.c
+@@ -313,7 +313,7 @@ static int hantro_power_on_disirq(hantrodec_t *hantrodev)
+ 	//spin_lock_irq(&owner_lock);
+ 	mutex_lock(&hantrodev->dev_mutex);
+ 	disable_irq(hantrodev->irq);
+-	pm_runtime_get_sync(hantrodev->dev);
++	//pm_runtime_get_sync(hantrodev->dev);
+ 	enable_irq(hantrodev->irq);
+ 	mutex_unlock(&hantrodev->dev_mutex);
+ 	//spin_unlock_irq(&owner_lock);
+@@ -1349,12 +1349,12 @@ static long hantrodec_ioctl(struct file *filp, unsigned int cmd, unsigned long a
+ 			if (id == 0) {
+ 				ctx->core_id = 1; //g1
+ 				/*power off g2*/
+-				pm_runtime_put_sync(hantrodec_data[1].dev);
++				//pm_runtime_put_sync(hantrodec_data[1].dev);
+ 				hantro_clk_disable(&hantrodec_data[1].clk);
+ 			} else if (id == 1) {
+ 				ctx->core_id = 2; //g2
+ 				/*power off g1*/
+-				pm_runtime_put_sync(hantrodec_data[0].dev);
++				//pm_runtime_put_sync(hantrodec_data[0].dev);
+ 				hantro_clk_disable(&hantrodec_data[0].clk);
+ 			}
+ 		}
+@@ -1536,11 +1536,11 @@ static int hantrodec_release(struct inode *inode, struct file *filp)
+ 	}
+ 
+ 	if (ctx->core_id & 0x1) {
+-		pm_runtime_put_sync(hantrodec_data[0].dev);
++		//pm_runtime_put_sync(hantrodec_data[0].dev);
+ 		hantro_clk_disable(&hantrodec_data[0].clk);
+ 	}
+ 	if (ctx->core_id & 0x2) {
+-		pm_runtime_put_sync(hantrodec_data[1].dev);
++		//pm_runtime_put_sync(hantrodec_data[1].dev);
+ 		hantro_clk_disable(&hantrodec_data[1].clk);
+ 	}
+ 	hantro_free_instance(ctx->inst_id);
+@@ -1956,8 +1956,8 @@ static int hantro_dev_probe(struct platform_device *pdev)
+ 				clk_get_rate(hantrodec_data[id].clk.bus));
+ 
+ 	hantro_clk_enable(&hantrodec_data[id].clk);
+-	pm_runtime_enable(&pdev->dev);
+-	pm_runtime_get_sync(&pdev->dev);
++	//pm_runtime_enable(&pdev->dev);
++	//pm_runtime_get_sync(&pdev->dev);
+ 	hantro_ctrlblk_reset(&hantrodec_data[id]);
+ 
+ 	err = hantrodec_init(pdev, id);
+@@ -1981,7 +1981,7 @@ static int hantro_dev_probe(struct platform_device *pdev)
+ error:
+ 	pr_err("hantro probe failed\n");
+ out:
+-	pm_runtime_put_sync(&pdev->dev);
++	//pm_runtime_put_sync(&pdev->dev);
+ 	hantro_clk_disable(&hantrodec_data[id].clk);
+ 	return err;
+ }
+@@ -1991,10 +1991,10 @@ static int hantro_dev_remove(struct platform_device *pdev)
+ 	hantrodec_t *dev = platform_get_drvdata(pdev);
+ 
+ 	hantro_clk_enable(&dev->clk);
+-	pm_runtime_get_sync(&pdev->dev);
++	//pm_runtime_get_sync(&pdev->dev);
+ 	hantrodec_cleanup(dev->core_id);
+-	pm_runtime_put_sync(&pdev->dev);
+-	pm_runtime_disable(&pdev->dev);
++	//pm_runtime_put_sync(&pdev->dev);
++	//pm_runtime_disable(&pdev->dev);
+ 	hantro_clk_disable(&dev->clk);
+ 	if (!IS_ERR(dev->clk.dec))
+ 		clk_put(dev->clk.dec);
+@@ -2023,7 +2023,7 @@ static int __maybe_unused hantro_suspend(struct device *dev)
+ 		DecStoreRegs(hantrodev);
+ 	}
+ 
+-	pm_runtime_put_sync_suspend(dev);   //power off
++	//pm_runtime_put_sync_suspend(dev);   //power off
+ 	return 0;
+ }
+ static int __maybe_unused hantro_resume(struct device *dev)
+-- 
+2.17.1
+
