@@ -1457,8 +1457,8 @@ state.wm8960audio {
 	control.1 {
 		iface MIXER
 		name 'Capture Volume'
-		value.0 35
-		value.1 35
+		value.0 63
+		value.1 63
 		comment {
 			access 'read write'
 			type INTEGER
@@ -1466,8 +1466,8 @@ state.wm8960audio {
 			range '0 - 63'
 			dbmin -1725
 			dbmax 3000
-			dbvalue.0 900
-			dbvalue.1 900
+			dbvalue.0 3000
+			dbvalue.1 3000
 		}
 	}
 	control.2 {
@@ -1580,8 +1580,8 @@ state.wm8960audio {
 	control.10 {
 		iface MIXER
 		name 'Playback Volume'
-		value.0 235
-		value.1 235
+		value.0 255
+		value.1 255
 		comment {
 			access 'read write'
 			type INTEGER
@@ -1589,15 +1589,15 @@ state.wm8960audio {
 			range '0 - 255'
 			dbmin -9999999
 			dbmax 0
-			dbvalue.0 -1000
-			dbvalue.1 -1000
+			dbvalue.0 0
+			dbvalue.1 0
 		}
 	}
 	control.11 {
 		iface MIXER
 		name 'Headphone Playback Volume'
-		value.0 101
-		value.1 101
+		value.0 121
+		value.1 121
 		comment {
 			access 'read write'
 			type INTEGER
@@ -1605,8 +1605,8 @@ state.wm8960audio {
 			range '0 - 127'
 			dbmin -9999999
 			dbmax 600
-			dbvalue.0 -2000
-			dbvalue.1 -2000
+			dbvalue.0 0
+			dbvalue.1 0
 		}
 	}
 	control.12 {
@@ -9843,6 +9843,170 @@ state.wm8960audio4 {
 			access read
 			type BOOLEAN
 			count 1
+		}
+	}
+}
+state.imxaudioxcvr {
+	control.1 {
+		iface MIXER
+		name 'XCVR Mode'
+		value SPDIF
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 SPDIF
+			item.1 'ARC RX'
+			item.2 eARC
+		}
+	}
+	control.2 {
+		iface MIXER
+		name 'ARC Mode'
+		value 'Single Ended'
+		comment {
+			access 'read write'
+			type ENUMERATED
+			count 1
+			item.0 'Single Ended'
+			item.1 Common
+		}
+	}
+	control.3 {
+		iface PCM
+		name 'Capabilities Data Structure'
+		value '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read write'
+			type BYTES
+			count 256
+		}
+	}
+	control.4 {
+		iface PCM
+		name 'IEC958 Playback Default'
+		value '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read write'
+			type IEC958
+			count 1
+		}
+	}
+	control.5 {
+		iface PCM
+		name 'Playback Channel Status'
+		value '000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read write'
+			type BYTES
+			count 24
+		}
+	}
+	control.6 {
+		iface PCM
+		name 'IEC958 Capture Default'
+		value '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type IEC958
+			count 1
+		}
+	}
+	control.7 {
+		iface PCM
+		name 'Capture Channel Status'
+		value '000000000000000000000000000000000000000000000000'
+		comment {
+			access read
+			type BYTES
+			count 24
+		}
+	}
+}
+state.audiohdmi {
+	control.1 {
+		iface CARD
+		name 'HDMI Jack'
+		value true
+		comment {
+			access read
+			type BOOLEAN
+			count 1
+		}
+	}
+	control.2 {
+		iface PCM
+		name 'Playback Channel Map'
+		value.0 0
+		value.1 0
+		value.2 0
+		value.3 0
+		value.4 0
+		value.5 0
+		value.6 0
+		value.7 0
+		comment {
+			access read
+			type INTEGER
+			count 8
+			range '0 - 36'
+		}
+	}
+	control.3 {
+		iface PCM
+		name 'IEC958 Playback Default'
+		value '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read write'
+			type IEC958
+			count 1
+		}
+	}
+	control.4 {
+		iface PCM
+		name ELD
+		value '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+		comment {
+			access 'read volatile'
+			type BYTES
+			count 128
+		}
+	}
+	control.5 {
+		iface MIXER
+		name 'HDMI Support Channels'
+		value 2
+		comment {
+			access 'read volatile'
+			type INTEGER
+			count 1
+			range '0 - 0'
+		}
+	}
+	control.6 {
+		iface MIXER
+		name 'HDMI Support Rates'
+		value.0 32000
+		value.1 44100
+		value.2 48000
+		comment {
+			access 'read volatile'
+			type INTEGER
+			count 3
+			range '0 - 0'
+		}
+	}
+	control.7 {
+		iface MIXER
+		name 'HDMI Support Formats'
+		value.0 16
+		value.1 24
+		value.2 32
+		comment {
+			access 'read volatile'
+			type INTEGER
+			count 3
+			range '0 - 0'
 		}
 	}
 }
