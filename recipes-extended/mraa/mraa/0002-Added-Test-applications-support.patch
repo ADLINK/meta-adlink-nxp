@@ -1,0 +1,1117 @@
+From 1bdffeb8141b9735fdb921e0ac5d85553479201f Mon Sep 17 00:00:00 2001
+From: "gowtham.r" <gowtham.r@adlinktech.com>
+Date: Tue, 7 Jul 2020 15:25:03 +0000
+Subject: [PATCH 2/2] Added-Test-applications-support
+
+
+diff --git a/examples/c/CMakeLists.txt b/examples/c/CMakeLists.txt
+index 0821810e..7d3b8fff 100644
+--- a/examples/c/CMakeLists.txt
++++ b/examples/c/CMakeLists.txt
+@@ -9,6 +9,14 @@ add_executable(pwm pwm.c)
+ add_executable(spi spi.c)
+ add_executable(uart uart.c)
+ add_executable(uart_advanced uart_advanced.c)
++add_executable(adlink_mraa adlink_mraa.c)
++add_executable(adlink_gpio adlink_gpio.c)
++add_executable(adlink_gpio_advanced adlink_gpio_advanced.c)
++add_executable(adlink_i2c adlink_i2c.c)
++add_executable(adlink_spi adlink_spi.c)
++add_executable(adlink_uart adlink_uart.c)
++add_executable(adlink_pwm adlink_pwm.c)
++add_executable(adlink_spi_eeprom adlink_spi_eeprom.c)
+ if (NOT ANDROID_TOOLCHAIN)
+   add_executable(iio iio.c)
+ endif()
+@@ -27,6 +35,14 @@ target_link_libraries(pwm mraa)
+ target_link_libraries(spi mraa)
+ target_link_libraries(uart mraa)
+ target_link_libraries(uart_advanced mraa)
++target_link_libraries(adlink_mraa mraa)
++target_link_libraries(adlink_gpio mraa)
++target_link_libraries(adlink_gpio_advanced mraa)
++target_link_libraries(adlink_i2c mraa)
++target_link_libraries(adlink_spi mraa)
++target_link_libraries(adlink_uart mraa)
++target_link_libraries(adlink_pwm mraa)
++target_link_libraries(adlink_spi_eeprom mraa)
+ if (NOT ANDROID_TOOLCHAIN)
+   target_link_libraries(iio mraa)
+ endif()
+diff --git a/examples/c/adlink_gpio.c b/examples/c/adlink_gpio.c
+new file mode 100644
+index 00000000..60ea05da
+--- /dev/null
++++ b/examples/c/adlink_gpio.c
+@@ -0,0 +1,72 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <syslog.h>
++#include "mraa.h"
++#include <signal.h>
++#include <unistd.h>
++
++volatile sig_atomic_t flag = 1;
++
++void
++sig_handler(int signum)
++{
++    if (signum == SIGINT) {
++        fprintf(stdout, "Exiting...\n");
++        flag = 0;
++    }
++}
++
++
++
++int main(int argc, char** argv)
++{
++	if(argc < 2) {
++		fprintf(stderr, "Invalid arguments!!!\n");
++		return EXIT_FAILURE;
++	}
++
++	int gpio_pin;
++	const char* board_name = mraa_get_platform_name();
++	gpio_pin = atoi(argv[1]);		
++	fprintf(stdout, "MRAA!!!\n Version: %s\n Running on %s\n", mraa_get_version(), board_name);
++
++	//GPIO
++	mraa_gpio_context gpio;
++	mraa_result_t status;
++
++    /* install signal handler */
++    signal(SIGINT, sig_handler);
++
++	/* initialize GPIO pin */
++	gpio = mraa_gpio_init(gpio_pin);
++	if (gpio == NULL) {
++		fprintf(stderr, "Failed to initialize GPIO %d\n", gpio_pin);
++		mraa_deinit();
++		return;
++	}
++
++	status = mraa_gpio_dir(gpio, MRAA_GPIO_OUT);
++	if (status != MRAA_SUCCESS) {
++		fprintf(stderr, "GPIO direction setup failed%d\n", gpio_pin);
++	}
++
++	while(flag)
++	{
++		status = mraa_gpio_write(gpio, 1);
++		if (status != MRAA_SUCCESS) {
++			fprintf(stderr, "GPIO write failed%d\n", gpio_pin);
++		}
++		sleep(1);
++
++		status = mraa_gpio_write(gpio, 0);
++		if (status != MRAA_SUCCESS) {
++			fprintf(stderr, "GPIO write failed%d\n", gpio_pin);
++		}
++		sleep(1);
++	}
++
++	mraa_deinit();
++
++	return MRAA_SUCCESS;
++}
+diff --git a/examples/c/adlink_gpio_advanced.c b/examples/c/adlink_gpio_advanced.c
+new file mode 100644
+index 00000000..4ff886e3
+--- /dev/null
++++ b/examples/c/adlink_gpio_advanced.c
+@@ -0,0 +1,126 @@
++/*
++ * Author: Brendan Le Foll
++ * Contributors: Alex Tereschenko <alext.mkrs@gmail.com>
++ * Contributors: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
++ * Copyright (c) 2014 Intel Corporation.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining
++ * a copy of this software and associated documentation files (the
++ * "Software"), to deal in the Software without restriction, including
++ * without limitation the rights to use, copy, modify, merge, publish,
++ * distribute, sublicense, and/or sell copies of the Software, and to
++ * permit persons to whom the Software is furnished to do so, subject to
++ * the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be
++ * included in all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
++ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
++ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++ *
++ * Example usage: Configures GPIO pin for interrupt and waits 30 seconds for the isr to trigger
++ *
++ */
++
++/* standard headers */
++#include <signal.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++
++
++/* mraa header */
++#include "mraa/gpio.h"
++
++//#define GPIO_PIN 16
++
++volatile sig_atomic_t flag = 1;
++
++void
++sig_handler(int signum)
++{
++    if (signum == SIGINT) {
++        fprintf(stdout, "Exiting...\n");
++        flag = 0;
++    }
++}
++
++
++
++void
++int_handler(void* args)
++{
++    fprintf(stdout, "ISR triggered\n");
++}
++
++int
++main(int argc, char *argv[])
++{
++	if(argc != 2) {
++		fprintf(stderr, "Invalid arguments!!!\n");
++		return EXIT_FAILURE;
++	}
++
++	int gpio_pin;
++	gpio_pin = atoi(argv[1]);
++
++	if (gpio_pin < 1 || gpio_pin > 40)
++	{
++		fprintf(stderr, "Invalid pin number. Valid pins are 1-40 !!\n");
++		return EXIT_FAILURE;
++	}
++    /* install signal handler */
++    signal(SIGINT, sig_handler);
++ 
++    mraa_result_t status = MRAA_SUCCESS;
++    mraa_gpio_context gpio;
++
++    /* initialize mraa for the platform (not needed most of the times) */
++    mraa_init();
++
++    //! [Interesting]
++    /* initialize GPIO pin */
++    gpio = mraa_gpio_init(gpio_pin);
++    if (gpio == NULL) {
++        fprintf(stderr, "Failed to initialize GPIO %d\n", gpio_pin);
++        mraa_deinit();
++        return EXIT_FAILURE;
++    }
++
++    /* set GPIO to input */
++    status = mraa_gpio_dir(gpio, MRAA_GPIO_IN);
++    if (status != MRAA_SUCCESS) {
++        goto err_exit;
++    }
++
++    /* configure ISR for GPIO */
++    status = mraa_gpio_isr(gpio, MRAA_GPIO_EDGE_BOTH, &int_handler, NULL);
++    if (status != MRAA_SUCCESS) {
++        goto err_exit;
++    }
++
++    /* wait 30 seconds isr trigger */
++    sleep(30);
++
++    /* close GPIO */
++    mraa_gpio_close(gpio);
++
++    //! [Interesting]
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_SUCCESS;
++
++err_exit:
++    mraa_result_print(status);
++
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_FAILURE;
++}
+diff --git a/examples/c/adlink_i2c.c b/examples/c/adlink_i2c.c
+new file mode 100644
+index 00000000..cb066f55
+--- /dev/null
++++ b/examples/c/adlink_i2c.c
+@@ -0,0 +1,66 @@
++/* standard headers */
++#include <endian.h>
++#include <signal.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++
++/* mraa header */
++#include "mraa/i2c.h"
++
++/* I2C bus */
++#define I2C_BUS 0
++
++/* register definitions */
++#define I2C_ADDR 0x68
++
++int main (void)
++{
++    mraa_result_t status = MRAA_SUCCESS;
++    mraa_i2c_context i2c;
++    uint8_t data;
++    int ret;
++
++    /* initialize mraa for the platform (not needed most of the times) */
++    mraa_init();
++
++    /* initialize I2C bus */
++    i2c = mraa_i2c_init(I2C_BUS);
++    if (i2c == NULL) {
++        fprintf(stderr, "Failed to initialize I2C\n");
++        mraa_deinit();
++        return EXIT_FAILURE;
++    }
++
++    /* set slave address */
++    status = mraa_i2c_address(i2c, I2C_ADDR);
++    if (status != MRAA_SUCCESS) {
++        goto err_exit;
++    }
++
++    /* reset the sensor */
++    status = mraa_i2c_write_byte_data(i2c, 0x12, 0x34);
++    if (status != MRAA_SUCCESS) {
++        goto err_exit;
++    }
++
++    /* stop i2c */
++    mraa_i2c_stop(i2c);
++
++    //! [Interesting]
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_SUCCESS;
++
++err_exit:
++    mraa_result_print(status);
++
++    /* stop i2c */
++    mraa_i2c_stop(i2c);
++
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_FAILURE;
++}
+diff --git a/examples/c/adlink_mraa.c b/examples/c/adlink_mraa.c
+new file mode 100644
+index 00000000..8e6432c1
+--- /dev/null
++++ b/examples/c/adlink_mraa.c
+@@ -0,0 +1,22 @@
++#include <stdio.h>
++#include <string.h>
++#include <syslog.h>
++#include "mraa.h"
++
++int main(int argc, char** argv)
++{
++	int i;
++	int pin_count = mraa_get_pin_count();
++	const char* board_name = mraa_get_platform_name();
++
++	fprintf(stdout, "MRAA!!!\n Version: %s\n Running on %s\n", mraa_get_version(), board_name);
++	fprintf(stdout, "pin count = %d\n", pin_count);
++
++	for(i=0; i<pin_count; i++) {
++		fprintf(stdout, "%2d -> %s\n", i, mraa_get_pin_name(i));
++	}
++
++	mraa_deinit();
++
++	return MRAA_SUCCESS;
++}
+diff --git a/examples/c/adlink_pwm.c b/examples/c/adlink_pwm.c
+new file mode 100644
+index 00000000..d1b891ed
+--- /dev/null
++++ b/examples/c/adlink_pwm.c
+@@ -0,0 +1,71 @@
++/* standard headers */
++#include <stdlib.h>
++#include <unistd.h>
++
++/* mraa header */
++#include "mraa/pwm.h"
++
++int main(int argc, char** argv)
++{
++    if(argc < 4) {
++        fprintf(stderr, "Invalid arguments!!!\n");
++        return EXIT_FAILURE;
++    }
++
++    mraa_result_t status = MRAA_SUCCESS;
++    mraa_pwm_context pwm;
++    int pwm_pin = atoi(argv[1]);
++    int freq = atoi(argv[2]);
++    int duty_cycle = atoi(argv[3]);
++
++    /* initialize mraa for the platform (not needed most of the times) */
++    mraa_init();
++
++    //! [Interesting]
++    pwm = mraa_pwm_init(pwm_pin);
++    if (pwm == NULL) {
++        fprintf(stderr, "Failed to initialize PWM\n");
++        mraa_deinit();
++        return EXIT_FAILURE;
++    }
++
++    /* set PWM period */
++    status = mraa_pwm_period_us(pwm, freq);
++    if (status != MRAA_SUCCESS) {
++        goto err_exit;
++    }
++
++    /* set PWM duty cycle */
++    status = mraa_pwm_pulsewidth_us(pwm, duty_cycle);
++    if (status != MRAA_SUCCESS) {
++        goto err_exit;
++    }
++
++    /* enable PWM */
++    status = mraa_pwm_enable(pwm, 1);
++    if (status != MRAA_SUCCESS) {
++        goto err_exit;
++    }
++
++    while(1);
++
++    /* close PWM */
++    mraa_pwm_close(pwm);
++
++    //! [Interesting]
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_SUCCESS;
++
++err_exit:
++    mraa_result_print(status);
++
++    /* close PWM */
++    mraa_pwm_close(pwm);
++
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_FAILURE;
++}
+diff --git a/examples/c/adlink_spi.c b/examples/c/adlink_spi.c
+new file mode 100644
+index 00000000..281d5b0c
+--- /dev/null
++++ b/examples/c/adlink_spi.c
+@@ -0,0 +1,66 @@
++#include <stdio.h>
++#include <string.h>
++#include <syslog.h>
++#include "mraa.h"
++
++/* SPI declaration */
++#define SPI_BUS 0
++
++/* SPI frequency in Hz */
++#define SPI_FREQ 100000
++
++int main(int argc, char** argv)
++{
++	const char* board_name = mraa_get_platform_name();
++
++	fprintf(stdout, "MRAA!!!\n Version: %s\n Running on %s\n", mraa_get_version(), board_name);
++
++	mraa_result_t status = MRAA_SUCCESS;
++	mraa_spi_context spi;
++	int i, j;
++
++	/* initialize mraa for the platform (not needed most of the times) */
++	mraa_init();
++
++	/* initialize SPI bus */
++	spi = mraa_spi_init(SPI_BUS);
++	if (spi == NULL) {
++		fprintf(stderr, "Failed to initialize SPI\n");
++		mraa_deinit();
++		return EXIT_FAILURE;
++	}
++
++	/* set SPI frequency */
++	status = mraa_spi_frequency(spi, SPI_FREQ);
++	if (status != MRAA_SUCCESS)
++		goto err_exit;
++
++	while (1) {
++		for (i = 1; i <= 8; i++) {
++			for (j = 0; j < 8; j++) {
++				mraa_spi_write_word(spi, (i << 8) + (1 << j));
++				sleep(1);
++			}
++			mraa_spi_write_word(spi, i << 8);
++		}
++	}
++
++	/* stop spi */
++	mraa_spi_stop(spi);
++
++	mraa_deinit();
++
++	return MRAA_SUCCESS;
++
++
++err_exit:
++	mraa_result_print(status);
++
++	/* stop spi */
++	mraa_spi_stop(spi);
++
++	/* deinitialize mraa for the platform (not needed most of the times) */
++	mraa_deinit();
++
++	exit(EXIT_FAILURE);
++}
+diff --git a/examples/c/adlink_spi_eeprom.c b/examples/c/adlink_spi_eeprom.c
+new file mode 100644
+index 00000000..16751b3a
+--- /dev/null
++++ b/examples/c/adlink_spi_eeprom.c
+@@ -0,0 +1,556 @@
++#include <stdio.h>
++#include <stdint.h>
++#include <stdbool.h>
++#include <string.h>
++#include <stdlib.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <mraa/spi.h>
++
++#define MAX_BLOCKSIZE        128
++#define MAX_SECTORSIZE       2048
++
++#define CMD_WRIRE_ENABLE      0x06
++#define CMD_WRITE_DISABLE     0x04
++#define CMD_READ_STATUS_R1    0x05
++#define CMD_READ_STATUS_R2    0x35
++#define CMD_WRITE_STATUS_R    0x01
++#define CMD_PAGE_PROGRAM      0x02
++#define CMD_QUAD_PAGE_PROGRAM 0x32
++#define CMD_BLOCK_ERASE64KB   0xd8
++#define CMD_BLOCK_ERASE32KB   0x52
++#define CMD_SECTOR_ERASE      0x20
++#define CMD_CHIP_ERASE        0xC7
++#define CMD_ERASE_SUPPEND     0x75
++#define CMD_ERASE_RESUME      0x7A
++#define CMD_POWER_DOWN        0xB9
++#define CMD_HIGH_PERFORM_MODE 0xA3
++#define CMD_CNT_READ_MODE_RST 0xFF
++#define CMD_RELEASE_PDOWN_ID  0xAB
++#define CMD_MANUFACURER_ID    0x90
++#define CMD_READ_UNIQUE_ID    0x4B
++#define CMD_JEDEC_ID          0x9f
++
++#define CMD_READ_DATA         0x03
++#define CMD_FAST_READ         0x0B
++#define CMD_READ_DUAL_OUTPUT  0x3B
++#define CMD_READ_DUAL_IO      0xBB
++#define CMD_READ_QUAD_OUTPUT  0x6B
++#define CMD_READ_QUAD_IO      0xEB
++#define CMD_WORD_READ         0xE3
++
++#define SR1_BUSY_MASK	0x01
++#define SR1_WEN_MASK	0x02
++
++
++#define UNUSED(a) ((void)(a))
++
++static uint8_t _spich;
++static mraa_spi_context spi[5];
++
++int wiringPiSPISetup(int mraa_spi_bus_no, int speed, int mode)
++{
++	int bps = 8;
++	mraa_result_t status = MRAA_SUCCESS;
++
++	mraa_init();
++
++	spi[_spich] = mraa_spi_init(mraa_spi_bus_no);
++	if (spi == NULL) {
++		fprintf(stderr, "Failed to initialize SPI\n");
++		mraa_deinit();
++		return -1;
++	}
++
++	/* set SPI frequency */
++	status = mraa_spi_mode(spi[_spich], speed);
++	if (status != MRAA_SUCCESS)
++		return -1;
++
++	/* set SPI frequency */
++	status = mraa_spi_frequency(spi[_spich], speed);
++	if (status != MRAA_SUCCESS)
++		return -1;
++
++	status = mraa_spi_bit_per_word(spi[_spich], bps);
++	if (status != MRAA_SUCCESS) {
++		fprintf(stdout, "Failed to set SPI Device to 16Bit mode\n");
++		mraa_spi_stop(spi[_spich]);
++		mraa_deinit();
++		return -1;
++	}
++
++	return _spich;
++}
++
++int wiringPiSPIEnd(int channel)
++{
++	mraa_spi_stop(spi[channel]);
++	mraa_deinit();
++}
++
++int wiringPiSPIDataRW(int channel, unsigned char *data, int len)
++{
++	return mraa_spi_transfer_buf(spi[channel], data, data, len);
++}
++
++void spcDump(char *id,int rc, uint8_t *data,int len) {
++    int i;
++    printf("[%s] = %d\n",id,rc);
++    for(i=0;i<len;i++) {
++      printf("%0x ",data[i]);
++      if ( (i % 10) == 9) printf("\n");
++    }
++    printf("\n");
++}
++
++uint8_t W25Q64_readStatusReg1(void) {
++  unsigned char data[2];
++  int rc;
++  UNUSED(rc);
++  data[0] = CMD_READ_STATUS_R1;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("readStatusReg1",rc,data,2);
++  return data[1];
++}
++
++uint8_t W25Q64_readStatusReg2(void) {
++  unsigned char data[2];
++  int rc;
++  UNUSED(rc);
++  data[0] = CMD_READ_STATUS_R2;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("readStatusReg2",rc,data,2);
++  return data[1];
++}
++
++void W25Q64_readManufacturer(uint8_t* d) {
++  unsigned char data[4];
++  int rc;
++  UNUSED(rc);
++  memset(data,0,sizeof(data));
++  data[0] = CMD_JEDEC_ID;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("readManufacturer",rc,data,4);
++  memcpy(d,&data[1],3);
++}
++
++void W25Q64_readUniqieID(uint8_t* d) {
++  unsigned char data[12];
++  int rc;
++  UNUSED(rc);
++  memset(data,0,sizeof(data));
++  data[0] = CMD_READ_UNIQUE_ID;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("readUniqieID",rc,data,12);
++  memcpy(d,&data[5],7);
++}
++
++bool W25Q64_IsBusy(void) {
++  unsigned char data[2];
++  int rc;
++  UNUSED(rc);
++  data[0] = CMD_READ_STATUS_R1;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("IsBusy",rc,data,2);
++  uint8_t r1;
++  r1 = data[1];
++  if(r1 & SR1_BUSY_MASK) return true;
++  return false;
++}
++
++void W25Q64_powerDown(void) {
++  unsigned char data[1];
++  int rc;
++  UNUSED(rc);
++  data[0] = CMD_POWER_DOWN;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("powerDown",rc,data,1);
++}
++
++void W25Q64_WriteEnable(void) {
++  unsigned char data[1];
++  int rc;
++  UNUSED(rc);
++  data[0] = CMD_WRIRE_ENABLE;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("WriteEnable",rc,data,1);
++}
++
++void W25Q64_WriteDisable(void) {
++  unsigned char data[1];
++  int rc;
++  UNUSED(rc);
++  data[0] = CMD_WRITE_DISABLE;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++  //spcDump("WriteDisable",rc,data,1);
++}
++
++uint16_t W25Q64_read(uint32_t addr,uint8_t *buf,uint16_t n){ 
++  unsigned char *data;
++  int rc;
++
++  data = (unsigned char*)malloc(n+4);
++  data[0] = CMD_READ_DATA;
++  data[1] = (addr>>16) & 0xFF;     // A23-A16
++  data[2] = (addr>>8) & 0xFF;      // A15-A08
++  data[3] = addr & 0xFF;           // A07-A00
++  rc = wiringPiSPIDataRW (_spich,data,n+4);
++  //spcDump("read",rc,data,rc);
++  memcpy(buf,&data[4],n);
++  free(data);
++  return rc-4;
++}
++
++uint16_t W25Q64_fastread(uint32_t addr,uint8_t *buf,uint16_t n) {
++  unsigned char *data;
++  int rc;
++
++  data = (unsigned char*)malloc(n+5);
++  data[0] = CMD_FAST_READ;
++  data[1] = (addr>>16) & 0xFF;     // A23-A16
++  data[2] = (addr>>8) & 0xFF;      // A15-A08
++  data[3] = addr & 0xFF;           // A07-A00
++  data[4] = 0;
++  rc = wiringPiSPIDataRW (_spich,data,n+5);
++  //spcDump("fastread",rc,data,rc);
++  memcpy(buf,&data[5],n);
++  free(data);
++  return rc-5;
++}
++
++bool W25Q64_eraseSector(uint16_t sect_no, bool flgwait) {
++  unsigned char data[4];
++  int rc;
++  UNUSED(rc);
++  uint32_t addr = sect_no;
++  addr<<=12;
++
++  W25Q64_WriteEnable();
++  data[0] = CMD_SECTOR_ERASE;
++  data[1] = (addr>>16) & 0xff;
++  data[2] = (addr>>8) & 0xff;
++  data[3] = addr & 0xff;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++ 
++  while(W25Q64_IsBusy() & flgwait) {
++    sleep(1);
++  }
++  return true;
++}
++
++bool W25Q64_erase64Block(uint16_t blk_no, bool flgwait) {
++  unsigned char data[4];
++  int rc;
++  UNUSED(rc);
++  uint32_t addr = blk_no;
++  addr<<=16;
++
++  W25Q64_WriteEnable();
++
++  data[0] = CMD_BLOCK_ERASE64KB;
++  data[1] = (addr>>16) & 0xff;
++  data[2] = (addr>>8) & 0xff;
++  data[3] = addr & 0xff;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++ 
++  while(W25Q64_IsBusy() & flgwait) {
++    sleep(1);
++  }
++  return true;
++}
++
++bool W25Q64_erase32Block(uint16_t blk_no, bool flgwait) {
++  unsigned char data[4];
++  int rc;
++  UNUSED(rc);
++  uint32_t addr = blk_no;
++  addr<<=15;
++
++  W25Q64_WriteEnable();  
++
++  data[0] = CMD_BLOCK_ERASE32KB;
++  data[1] = (addr>>16) & 0xff;
++  data[2] = (addr>>8) & 0xff;
++  data[3] = addr & 0xff;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++ 
++  while(W25Q64_IsBusy() & flgwait) {
++    sleep(1);
++  }
++  return true;
++}
++
++bool W25Q64_eraseAll(bool flgwait) {
++  unsigned char data[1];
++  int rc;
++  UNUSED(rc);
++
++  W25Q64_WriteEnable();  
++
++  data[0] = CMD_CHIP_ERASE;
++  rc = wiringPiSPIDataRW (_spich,data,sizeof(data));
++
++  while(W25Q64_IsBusy() & flgwait) {
++    sleep(1);
++  }
++  return true;
++}
++
++uint16_t W25Q64_pageWrite(uint16_t sect_no, uint16_t inaddr, uint8_t* buf, uint16_t n) {
++  if (n > 256) return 0;
++  unsigned char *data;
++  int rc;
++
++  uint32_t addr = sect_no;
++  addr<<=12;
++  addr += inaddr;
++
++  W25Q64_WriteEnable();  
++  if (W25Q64_IsBusy()) return 0;  
++
++  data = (unsigned char*)malloc(n+4);
++  data[0] = CMD_PAGE_PROGRAM;
++  data[1] = (addr>>16) & 0xff;
++  data[2] = (addr>>8) & 0xff;
++  data[3] = addr & 0xFF;
++  memcpy(&data[4],buf,n);
++  rc = wiringPiSPIDataRW (_spich,data,n+4);
++  //spcDump("pageWrite",rc,buf,n);
++
++  while(W25Q64_IsBusy()) ;
++  free(data);
++  return rc;
++}
++
++void dump(uint8_t *dt, uint32_t n) {
++  uint16_t clm = 0;
++  uint8_t data;
++  uint8_t sum;
++  uint8_t vsum[16];
++  uint8_t total =0;
++  uint32_t saddr =0;
++  uint32_t eaddr =n-1;
++  
++  printf("---------------------------------------------------------------\n");
++  uint16_t i;
++  for(i = 1; i < n + 1; i++)
++  {
++	  printf("%02x  ",dt[i -1]);
++	  if(i % 16 == 0)
++	  {
++		  printf("\n");
++	  }
++  }
++  if(i % 17 != 0)
++	  printf("\n");
++  printf("---------------------------------------------------------------\n");
++}
++
++
++int main(int argc, char *argv[]) {
++	uint8_t buf[256];  
++
++	char *device;
++	int speed, mode;
++	int i, option;
++	int sector, address, size;
++
++	uint16_t n;      
++
++	if(argc != 2)
++	{
++		printf("Usage : adlink_spi_tool <mraa spi bus no>\n");
++		return -1;
++	}
++
++	if (wiringPiSPISetup(atoi(argv[1]), 2000000, 0) < 0) {
++		printf("SPISetup failed:\n");
++		return 0;
++	}
++
++	// JEDEC ID Get
++	W25Q64_readManufacturer(buf);
++	printf("JEDEC ID : ");
++	for (i=0; i< 3; i++) {
++		printf("%x ",buf[i]);
++	}
++	printf("\n");
++
++	// Unique ID Get
++	W25Q64_readUniqieID(buf);
++	printf("Unique ID : ");
++	for (i=0; i< 7; i++) {
++		printf("%x ",buf[i]);
++	}
++	printf("\n");
++
++	printf("Enter your option:\n");
++	printf("1. Read data\n");
++	printf("2. Read data using fast read command\n");
++	printf("3. Write data\n");
++	printf("4. Erase data by sector\n");
++	printf("5. Erase all\n");
++	printf("6. Print status register status\n");
++	printf("1 - 6 : ");
++	scanf("%d",&option);
++
++	// Read 256 byte data from Address=0
++	if(option == 1)
++	{
++
++		printf("Enter sector no: ");
++		scanf("%d", &sector);
++
++		if(sector < 0 || sector > 2048)
++		{
++			printf("Valid sector is 0 - 2048\n");
++			return -1;
++		}
++
++		printf("Enter address : ");
++		scanf("%d", &address);
++
++		printf("Enter the read size : ");
++		scanf("%d", &size);
++
++		if(size < 0 || size > 256)
++		{
++			printf("Valid size is 0 - 256\n");
++			return -1;
++		}
++
++		memset(buf,0,size);
++		uint32_t addr = sector;
++		addr<<=12;
++		addr += address;
++		n =  W25Q64_read(addr, buf, size);
++		printf("Read Data: n=%d\n",n);
++		dump(buf, size);
++	}
++
++	// First read 256 byte data from Address=0
++	else if(option == 2)
++	{
++		printf("Enter sector no: ");
++		scanf("%d", &sector);
++
++		if(sector < 0 || sector > 2048)
++		{
++			printf("Valid sector is 0 - 2048\n");
++			return -1;
++		}
++
++		printf("Enter address : ");
++		scanf("%d", &address);
++
++		printf("Enter the read size : ");
++		scanf("%d", &size);
++
++		if(size < 0 || size > 64)
++		{
++			printf("Valid fast read size is 0 - 64\n");
++			return -1;
++		}
++
++		memset(buf,0, size);
++		uint32_t addr = sector;
++		addr<<=12;
++		addr += address;
++		n =  W25Q64_fastread(addr, buf, size);
++		printf("Fast Read Data: n=%d\n",n);
++		dump(buf,size);
++	}
++
++	// Erase data by Sector
++	else if(option == 4)
++	{
++		int sector;
++
++		printf("Enter the sector : ");
++		scanf("%d",&sector);
++
++		if(sector < 0 || sector > 2048)
++		{
++			printf("Valid sector is 0 - 2048\n");
++			return -1;
++		}
++
++		n = W25Q64_eraseSector(sector, true);
++
++		printf("Erase Sector(%d):", sector);
++		memset(buf,0,256);
++		n =  W25Q64_read (0, buf, 256);
++		dump(buf,256);
++	}
++
++	else if(option == 3)
++	{
++		printf("Note This tool will erace the sectors which is going to written\n");
++
++		printf("Enter sector no: ");
++		scanf("%d", &sector);
++
++		if(sector < 0 || sector > 2048)
++		{
++			printf("Valid sector is 0 - 2048\n");
++			return -1;
++		}
++
++
++		printf("Enter addtess : ");
++		scanf("%d", &address);
++
++		printf("Enter the write size : ");
++		scanf("%d", &size);
++
++		unsigned char wdata[size];
++		int data;
++
++		printf("Enter write data : \n");
++
++		for (i=0; i < size;i++) {
++			printf("%d -> ", i);
++			scanf("%x",&data);
++			wdata[i]= data & 0xFF;
++		}  
++
++		n = W25Q64_eraseSector(sector,true);
++
++		n =  W25Q64_pageWrite(sector, address, wdata, size);
++
++		memset(buf,0,size);
++		uint32_t addr = sector;
++		addr<<=12;
++		addr += address;
++		n =  W25Q64_read(addr, buf, size);
++		printf("Read Data: n=%d\n",n);
++		dump(buf, size);
++	}
++
++	else if(option == 5)
++	{
++		printf("Erasing all sectors\n");
++		W25Q64_eraseAll(1);
++		printf("Done\n");
++	}
++	else if (option == 6)
++	{
++
++		// Get fron Status Register1
++		buf[0] = W25Q64_readStatusReg1();
++		printf("Status Register-1: %x\n",buf[0]);
++
++		// Get fron Status Register2
++		buf[0] = W25Q64_readStatusReg2();
++		printf("Status Register-2: %x\n",buf[0]);
++	}
++	else
++	{
++		printf("Invalid option\n");
++	}
++
++	wiringPiSPIEnd(0);
++
++	return 0;
++}
+diff --git a/examples/c/adlink_uart.c b/examples/c/adlink_uart.c
+new file mode 100644
+index 00000000..4d03dac2
+--- /dev/null
++++ b/examples/c/adlink_uart.c
+@@ -0,0 +1,47 @@
++#include <signal.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++
++/* mraa header */
++#include "mraa/uart.h"
++
++#define UART 0
++
++int main(int argc, char** argv)
++{
++    mraa_uart_context uart;
++    char buffer[] = "Adlink MRAA!\r\n";
++
++    /* initialize mraa for the platform (not needed most of the times) */
++    mraa_init();
++
++    /* initialize UART */
++    uart = mraa_uart_init(UART);
++    if (uart == NULL) {
++        fprintf(stderr, "Failed to initialize UART\n");
++        goto err_exit;
++    }
++
++    while (1) {
++        /* send data through UART */
++        mraa_uart_write(uart, buffer, sizeof(buffer));
++
++        sleep(1);
++    }
++
++    /* stop UART */
++    mraa_uart_stop(uart);
++
++    //! [Interesting]
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_SUCCESS;
++
++err_exit:
++    /* deinitialize mraa for the platform (not needed most of the times) */
++    mraa_deinit();
++
++    return EXIT_FAILURE;
++}
+-- 
+2.17.1
+

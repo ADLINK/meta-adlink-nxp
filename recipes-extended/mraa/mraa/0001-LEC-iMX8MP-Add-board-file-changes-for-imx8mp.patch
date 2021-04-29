@@ -1,0 +1,490 @@
+From a90ee8e196f55b5cb669f36392534d030b3f1c53 Mon Sep 17 00:00:00 2001
+From: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+Date: Thu, 29 Apr 2021 13:08:35 +0530
+Subject: [PATCH 1/2] LEC-iMX8MP: Add board file changes for imx8mp
+
+Add board file changes for ipi imx8mp.
+define additional uart, spi and i2c
+
+Signed-off-by: Arun Kumar EV <arunkumar.ev@adlinktech.com>
+
+diff --git a/api/mraa/types.h b/api/mraa/types.h
+index ac14f265..ae8bf053 100644
+--- a/api/mraa/types.h
++++ b/api/mraa/types.h
+@@ -67,6 +67,7 @@ typedef enum {
+     MRAA_ADLINK_LEC_AL = 22,        /**< Adlink LEC-AL*/
+     MRAA_ADLINK_LEC_AL_AI = 23,        /**< Adlink LEC-AL*/
+     MRAA_UPXTREME = 24,             /**< The UPXTREME Board */
++    MRAA_ADLINK_IPI_IMX8MP = 25,    /**<IPI SMARC plus imx8mp> */
+     // USB platform extenders start at 256
+     MRAA_FTDI_FT4222 = 256,         /**< FTDI FT4222 USB to i2c bridge */
+ 
+diff --git a/include/arm/adlink_ipi.h b/include/arm/adlink_ipi.h
+index ab3e0776..4d9fa9bc 100755
+--- a/include/arm/adlink_ipi.h
++++ b/include/arm/adlink_ipi.h
+@@ -17,7 +17,8 @@ extern "C" {
+ 
+ mraa_board_t *
+         mraa_adlink_ipi();
+-
++mraa_board_t *
++	mraa_adlink_ipi_imx8mp();
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/src/arm/adlink_ipi.c b/src/arm/adlink_ipi.c
+index af6f105b..5a517f9a 100644
+--- a/src/arm/adlink_ipi.c
++++ b/src/arm/adlink_ipi.c
+@@ -23,12 +23,15 @@
+ #include "common.h"
+ 
+ #define PLATFORM_NAME_ADLINK_IPI "Adlink IPI - PX30"
++#define PLATFORM_NAME_ADLINK_IPI_IMX8MP "Adlink IPI - IMX8MP"
+ #define MRAA_ADLINK_IPI_PINCOUNT 41
+ 
+ static int platform_detected = 0;
+ 
+-static const char* serialdev[] = { "/dev/ttyS0", "/dev/ttyS1" };
+-static const char* seriallink[] = { "/sys/class/tty/ttyS0", "/sys/class/tty/ttyS1" };
++static const char* serialdev[] = { "/dev/ttyS0", "/dev/ttyS1", "/dev/ttymxc0", "/dev/ttymxc1",
++				"/dev/ttymxc2", "/dev/ttymxc3" };
++static const char* seriallink[] = { "/sys/class/tty/ttyS0", "/sys/class/tty/ttyS1", "/sys/class/tty/ttymxc0",
++				"/sys/class/tty/ttymxc1", "/sys/class/tty/ttymxc2", "/sys/class/tty/ttymxc3"};
+ 
+ static const char* spilink[] = { "/sys/class/spidev/spidev0.0",
+                           "/sys/class/spidev/spidev1.0" };
+@@ -37,7 +40,7 @@ static const char* i2clink[] = {
+     "/sys/class/i2c-dev/i2c-0", "/sys/class/i2c-dev/i2c-1" };
+ 
+ static const char* pwmlink[] = {
+-    "/sys/class/pwm/pwmchip1", "/sys/class/pwm/pwmchip2" };
++    "/sys/class/pwm/pwmchip1", "/sys/class/pwm/pwmchip2", "/sys/class/pwm/pwmchip0" };
+ 
+ static unsigned char regIon[16]   = {0x2A, 0x2D, 0x30, 0x33, 0x36, 0x3B, 0x40, 0x45, 0x4A, 0x4D, 0x50, 0x53, 0x56, 0x5B, 0x60, 0x65};
+ 
+@@ -583,7 +586,7 @@ mraa_adlink_ipi()
+     strncpy(b->pins[28].name, "I2C0_SCL", MRAA_PIN_NAME_SIZE); // GPIO0_B0
+     b->pins[28].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 1, 0, 0 };
+     b->pins[28].gpio.pinmap = 8;
+-
++    
+     strncpy(b->pins[29].name, "EGPIO1_0", MRAA_PIN_NAME_SIZE); // Expander GPIO
+     b->pins[29].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
+     b->pins[29].gpio.pinmap = 496;
+@@ -724,3 +727,387 @@ mraa_adlink_ipi()
+ 
+     return b;
+ }
++
++mraa_board_t* mraa_adlink_ipi_imx8mp()
++{
++    mraa_board_t* b = (mraa_board_t*) calloc(1, sizeof(mraa_board_t));
++    if (b == NULL) {
++        return NULL;
++    }
++
++    platform_detected = 0;
++    int i2c0 = -1;
++    int i2c1 = -1;
++    int spi0 = -1;
++    int spi1 = -1;
++    int uart0 = -1;
++    int uart1 = -1;
++    int uart2 = -1;
++    int uart3 = -1;
++    int pwm0 = -1;
++    int pwm1 = -1;
++
++    //TODO: Handle different Adlink arm variants eg. IMX6, IMX8M
++    b->platform_name = PLATFORM_NAME_ADLINK_IPI_IMX8MP;
++    //platform_detected = PLATFORM_PRO;
++    b->phy_pin_count = MRAA_ADLINK_IPI_PINCOUNT;
++/*
++    if (platform_detected == 0) {
++        free(b);
++        syslog(LOG_ERR, "mraa: Could not detect platform");
++        return NULL;
++    }
++*/
++    int devnum;
++    for (devnum = 0; devnum < 6; devnum++) {
++        if (mraa_link_targets(seriallink[devnum], "30860000")) {
++            uart0 = devnum;
++        }
++        if (mraa_link_targets(seriallink[devnum], "30890000")) {
++            uart1 = devnum;
++        }
++        if (mraa_link_targets(seriallink[devnum], "30880000")) {
++            uart2 = devnum;
++        }
++        if (mraa_link_targets(seriallink[devnum], "30a60000")) {
++            uart3 = devnum;
++        }
++    }
++
++    for (devnum = 0; devnum < 2; devnum++) {
++        if (mraa_link_targets(spilink[devnum], "30820000")) {
++            spi0 = devnum;
++        }
++	if (mraa_link_targets(spilink[devnum], "30830000")) {
++		spi1 = devnum;
++	}
++    }
++
++    for (devnum = 0; devnum < 2; devnum++) {
++        if (mraa_link_targets(i2clink[devnum], "30a20000")) {
++            i2c0 = devnum;
++        }
++        if (mraa_link_targets(i2clink[devnum], "30a30000")) {
++            i2c1 = devnum;
++        }
++    }
++
++    for (devnum = 0; devnum < 3; devnum++) {
++        if (mraa_link_targets(pwmlink[devnum], "30660000")) {
++            pwm0 = devnum;
++        }
++        if (mraa_link_targets(pwmlink[devnum], "30670000")) {
++            pwm1 = devnum;
++        }
++    }
++
++    b->adv_func = (mraa_adv_func_t*) calloc(1, sizeof(mraa_adv_func_t));
++    if (b->adv_func == NULL) {
++        free(b);
++        return NULL;
++    }
++
++    b->pins = (mraa_pininfo_t*) calloc(b->phy_pin_count, sizeof(mraa_pininfo_t));
++    if (b->pins == NULL) {
++        free(b->adv_func);
++        free(b);
++        return NULL;
++    }
++
++    b->pwm_dev_count = 0;
++    b->pwm_default_period = 500;
++    b->pwm_max_period = 2147483;
++    b->pwm_min_period = 1;
++
++    b->adv_func->gpio_init_pre = gpio_init_pre;
++
++    // initializations of pwm functions
++    b->adv_func->pwm_init_raw_replace = pwm_init_raw_replace;
++    b->adv_func->pwm_period_replace = pwm_period_replace;
++    b->adv_func->pwm_read_replace = pwm_read_replace;
++    b->adv_func->pwm_write_replace = pwm_write_replace;
++    b->adv_func->pwm_enable_replace = pwm_enable_replace;
++
++
++    /*
++    b->adv_func->spi_init_pre = &mraa_adlink_spi_init_pre;
++    b->adv_func->i2c_init_pre = &mraa_adlink_i2c_init_pre;
++    b->adv_func->gpio_mmap_setup = &mraa_adlink_mmap_setup;
++*/
++    strncpy(b->pins[0].name, "INVALID", MRAA_PIN_NAME_SIZE);
++    b->pins[0].capabilities = (mraa_pincapabilities_t){ 0, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[1].name, "3V3", MRAA_PIN_NAME_SIZE);
++    b->pins[1].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[2].name, "5V", MRAA_PIN_NAME_SIZE);
++    b->pins[2].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[3].name, "I2C_GP_DAT", MRAA_PIN_NAME_SIZE); // GPIO0_C3 
++    b->pins[3].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 1, 0, 0 };
++    b->pins[3].gpio.pinmap = 145;
++
++    strncpy(b->pins[4].name, "5V", MRAA_PIN_NAME_SIZE);
++    b->pins[4].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[5].name, "I2C_GP_CK", MRAA_PIN_NAME_SIZE); // GPIO0_C2
++    b->pins[5].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 1, 0, 0 };
++    b->pins[5].gpio.pinmap = 144;
++
++    strncpy(b->pins[6].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[6].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[7].name, "S_GPIO06_3V", MRAA_PIN_NAME_SIZE); // GPIO3_C4
++    b->pins[7].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[7].gpio.pinmap = 497;
++
++    strncpy(b->pins[8].name, "UART0_TX", MRAA_PIN_NAME_SIZE); // GPIO0_B2
++    b->pins[8].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 1 };
++    b->pins[8].gpio.pinmap = 153;
++
++    strncpy(b->pins[9].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[9].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[10].name, "UART0_RX", MRAA_PIN_NAME_SIZE); // GPIO0_B3
++    b->pins[10].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 1 };
++    b->pins[10].gpio.pinmap = 152;
++
++    strncpy(b->pins[11].name, "S_GPIO08_3V", MRAA_PIN_NAME_SIZE); // GPIO3_C6
++    b->pins[11].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[11].gpio.pinmap = 499;
++
++    strncpy(b->pins[12].name, "S_GPIO07_3V", MRAA_PIN_NAME_SIZE); // GPIO3_C5
++    b->pins[12].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[12].gpio.pinmap = 498;
++
++    strncpy(b->pins[13].name, "S_GPIO09_3V", MRAA_PIN_NAME_SIZE); // GPIO3_B3
++    b->pins[13].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[13].gpio.pinmap = 500;
++
++    strncpy(b->pins[14].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[14].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[15].name, "S_GPIO10_3V", MRAA_PIN_NAME_SIZE); // GPIO3_B4
++    b->pins[15].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[15].gpio.pinmap = 501;
++
++    strncpy(b->pins[16].name, "S_GPIO11_3V", MRAA_PIN_NAME_SIZE); // GPIO3_B5
++    b->pins[16].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[16].gpio.pinmap = 502;
++
++    strncpy(b->pins[17].name, "3V3", MRAA_PIN_NAME_SIZE);
++    b->pins[17].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[18].name, "S_GPIO12_3V", MRAA_PIN_NAME_SIZE); // GPIO3_D1
++    b->pins[18].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[18].gpio.pinmap = 503;
++
++    strncpy(b->pins[19].name, "SPI0_MOSI", MRAA_PIN_NAME_SIZE); // GPIO1_B4
++    b->pins[19].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 1, 0, 0, 0 };
++    b->pins[19].gpio.pinmap = 135;
++
++    strncpy(b->pins[20].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[20].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[21].name, "SPI0_MISO", MRAA_PIN_NAME_SIZE); // GPIO1_B5
++    b->pins[21].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 1, 0, 0, 0 };
++    b->pins[21].gpio.pinmap = 136;
++
++    strncpy(b->pins[22].name, "S_GPIO13_3V", MRAA_PIN_NAME_SIZE); // GPIO3_D2
++    b->pins[22].capabilities = (mraa_pincapabilities_t){ 1, 1, 0, 0, 0, 0, 0, 0 };
++    b->pins[22].gpio.pinmap = 504;
++
++    strncpy(b->pins[23].name, "SPI0_CLK", MRAA_PIN_NAME_SIZE); // GPIO1_B7
++    b->pins[23].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 1, 0, 0, 0 };
++    b->pins[23].gpio.pinmap = 134;
++
++    strncpy(b->pins[24].name, "SPI0_CSN", MRAA_PIN_NAME_SIZE); // GPIO1_B6
++    b->pins[24].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 1, 0, 0, 0 };
++    b->pins[24].gpio.pinmap = 137;
++
++    strncpy(b->pins[25].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[25].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[26].name, "SPI0_CS1", MRAA_PIN_NAME_SIZE); // NC 
++    b->pins[26].capabilities = (mraa_pincapabilities_t){ 0, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[27].name, "I2C_PM_DAT", MRAA_PIN_NAME_SIZE); // GPIO0_B1
++    b->pins[27].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 1, 0, 0 };
++    b->pins[27].gpio.pinmap = 143;
++
++    strncpy(b->pins[28].name, "I2C_PM_SCL", MRAA_PIN_NAME_SIZE); // GPIO0_B0
++    b->pins[28].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 1, 0, 0 };
++    b->pins[28].gpio.pinmap = 142;
++    
++    strncpy(b->pins[29].name, "EGPIO1_0", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[29].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[29].gpio.pinmap = 461;
++
++    b->pins[29].pwm.parent_id = 3;
++    b->pins[29].pwm.pinmap = 0;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[30].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[30].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[31].name, "EGPIO1_1", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[31].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[31].gpio.pinmap = 462;
++
++    b->pins[31].pwm.parent_id = 3;
++    b->pins[31].pwm.pinmap = 1;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[32].name, "EGPIO1_2", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[32].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[32].gpio.pinmap = 463;
++
++    b->pins[32].pwm.parent_id = 3;
++    b->pins[32].pwm.pinmap = 2;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[33].name, "EGPIO1_3", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[33].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[33].gpio.pinmap = 464;
++
++    b->pins[33].pwm.parent_id = 3;
++    b->pins[33].pwm.pinmap = 3;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[34].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[34].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[35].name, "EGPIO1_4", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[35].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[35].gpio.pinmap = 465;
++
++    b->pins[35].pwm.parent_id = 3;
++    b->pins[35].pwm.pinmap = 4;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[36].name, "EGPIO1_5", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[36].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[36].gpio.pinmap = 466;
++
++    b->pins[36].pwm.parent_id = 3;
++    b->pins[36].pwm.pinmap = 5;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[37].name, "EGPIO1_6", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[37].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[37].gpio.pinmap = 467;
++
++    b->pins[37].pwm.parent_id = 3;
++    b->pins[37].pwm.pinmap = 6;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[38].name, "EGPIO1_7", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[38].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[38].gpio.pinmap = 468;
++
++    b->pins[38].pwm.parent_id = 3;
++    b->pins[38].pwm.pinmap = 7;
++    b->pwm_dev_count++;
++
++    strncpy(b->pins[39].name, "GND", MRAA_PIN_NAME_SIZE);
++    b->pins[39].capabilities = (mraa_pincapabilities_t){ 1, 0, 0, 0, 0, 0, 0, 0 };
++
++    strncpy(b->pins[40].name, "EGPIO2_8", MRAA_PIN_NAME_SIZE); // Expander GPIO
++    b->pins[40].capabilities = (mraa_pincapabilities_t){ 1, 1, 1, 0, 0, 0, 0, 0 };
++    b->pins[40].gpio.pinmap = 469;
++
++    b->pins[40].pwm.parent_id = 3;
++    b->pins[40].pwm.pinmap = 8;
++    b->pwm_dev_count++;
++
++    b->aio_count = 0;
++    b->adc_raw = 0;
++    b->adc_supported = 0;
++    b->gpio_count = 0;
++    int i;
++    for (i = 0; i < b->phy_pin_count; i++) {
++        if (b->pins[i].capabilities.gpio) {
++            b->gpio_count++;
++        }
++    }
++
++    // BUS DEFINITIONS
++    b->i2c_bus_count = 0;
++    b->def_i2c_bus = 0;
++    if (i2c0 >= 0) {
++	b->def_i2c_bus = b->i2c_bus_count;
++        b->i2c_bus[b->i2c_bus_count].bus_id = i2c0;
++        b->i2c_bus[b->i2c_bus_count].sda = 27;
++        b->i2c_bus[b->i2c_bus_count].scl = 28;
++        b->i2c_bus_count++;
++    }
++
++    if (i2c1 >= 0) {
++	b->def_i2c_bus = b->i2c_bus_count;
++        b->i2c_bus[b->i2c_bus_count].bus_id = i2c1;
++        b->i2c_bus[b->i2c_bus_count].sda = 3;
++        b->i2c_bus[b->i2c_bus_count].scl = 5;
++        b->i2c_bus_count++;
++    }
++
++    b->spi_bus_count = 0;
++    b->def_spi_bus = 0;
++    if (spi0 >= 0) {
++        b->spi_bus[b->spi_bus_count].bus_id = spi0;
++        b->spi_bus[b->spi_bus_count].slave_s = 0;
++        b->spi_bus[b->spi_bus_count].cs = 24;
++        b->spi_bus[b->spi_bus_count].mosi = 19;
++        b->spi_bus[b->spi_bus_count].miso = 21;
++        b->spi_bus[b->spi_bus_count].sclk = 23;
++        b->spi_bus_count++;
++    }
++    
++    if (spi1 >= 0) {
++        b->spi_bus[b->spi_bus_count].bus_id = spi0;
++        b->spi_bus[b->spi_bus_count].slave_s = 0;
++        b->spi_bus[b->spi_bus_count].cs = 21;
++        b->spi_bus[b->spi_bus_count].mosi = 27;
++        b->spi_bus[b->spi_bus_count].miso = 28;
++        b->spi_bus[b->spi_bus_count].sclk = 25;
++        b->spi_bus_count++;
++    }
++
++    b->uart_dev_count = 0;
++    b->def_uart_dev = 0;
++
++    if (uart0 >= 0) {
++        b->uart_dev[b->uart_dev_count].device_path = (char *)serialdev[uart0];
++        b->uart_dev[b->uart_dev_count].rx = 1;
++        b->uart_dev[b->uart_dev_count].tx = 3;
++        b->uart_dev_count++;
++    }
++    
++    if (uart1 >= 0) {
++        b->uart_dev[b->uart_dev_count].device_path = (char *)serialdev[uart1];
++        b->uart_dev[b->uart_dev_count].rx = 10;
++        b->uart_dev[b->uart_dev_count].tx = 8;
++        b->uart_dev_count++;
++    }
++    
++    if (uart2 >= 0) {
++        b->uart_dev[b->uart_dev_count].device_path = (char *)serialdev[uart2];
++        b->uart_dev[b->uart_dev_count].rx = 7;
++        b->uart_dev[b->uart_dev_count].tx = 9;
++        b->uart_dev_count++;
++    }
++ 
++    if (uart3 >= 0) {
++        b->uart_dev[b->uart_dev_count].device_path = (char *)serialdev[uart3];
++        b->uart_dev[b->uart_dev_count].rx = 2;
++        b->uart_dev[b->uart_dev_count].tx = 4;
++        b->uart_dev_count++;
++    }
++
++    if(sx150x_init() < 0)
++    {
++	    _fd = -1;
++    }
++
++    return b;
++
++}
+diff --git a/src/arm/arm.c b/src/arm/arm.c
+index a4c6bfc9..b5bd6a25 100644
+--- a/src/arm/arm.c
++++ b/src/arm/arm.c
+@@ -99,6 +99,8 @@ mraa_arm_platform()
+             platform_type = MRAA_RASPBERRY_PI;
+         else if (mraa_file_contains("/proc/device-tree/model", "ADLINK ARM, LEC-PX30"))
+             platform_type = MRAA_ADLINK_IPI;
++	else if (mraa_file_contains("/proc/device-tree/model", "ADLINK LEC-iMX8MP SOM"))
++		platform_type = MRAA_ADLINK_IPI_IMX8MP;
+     }
+ 
+     switch (platform_type) {
+@@ -126,6 +128,9 @@ mraa_arm_platform()
+ 	case MRAA_ADLINK_IPI:
+ 	    plat = mraa_adlink_ipi();
+ 	    break;
++	case MRAA_ADLINK_IPI_IMX8MP:
++	    plat = mraa_adlink_ipi_imx8mp();
++	    break;
+         default:
+             plat = NULL;
+             syslog(LOG_ERR, "Unknown Platform, currently not supported by MRAA");
+-- 
+2.17.1
+
