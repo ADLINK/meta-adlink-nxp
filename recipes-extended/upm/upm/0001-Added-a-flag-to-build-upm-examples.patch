@@ -1,0 +1,26 @@
+From 637fda2ea927a2e828272617f33cfc4e8fddeb8d Mon Sep 17 00:00:00 2001
+From: Dineshkumar V <dineshkumar.varadarajan@adlinktech.com>
+Date: Wed, 18 Mar 2020 15:38:15 +0530
+Subject: [PATCH] Added a flag to build upm examples
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 069e490..4d81447 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,7 +9,7 @@ option (BUILDSWIGPYTHON "Build swig python modules" ON)
+ option (BUILDSWIGNODE "Build swig node modules" ON)
+ option (BUILDSWIGJAVA "Build swig java modules" OFF)
+ option (BUILDCORDOVA "Build cordova bindings" OFF)
+-option (BUILDEXAMPLES "Build C/C++/JAVA examples" OFF)
++option (BUILDEXAMPLES "Build C/C++/JAVA examples" ON)
+ option (NPM "Generate NPM/GYP tarballs" OFF)
+ option (BUILDTESTS "Generate check-ups for upm" OFF)
+ option (WERROR "Make all warnings into errors." ON)
+-- 
+2.7.4
+
+
