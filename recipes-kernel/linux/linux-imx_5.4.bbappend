@@ -155,8 +155,8 @@ SRC_URI_append_lec-imx8mp += " \
 "
 
 SRC_URI_append_wifibt = " \
+			file://0001-LEC-iMX8MP-add-device-tree-for-wifi-bt.patch \
 			file://mxm_wifiex.cfg \
 "
 
 DELTA_KERNEL_DEFCONFIG_append_wifibt = " mxm_wifiex.cfg"
-
