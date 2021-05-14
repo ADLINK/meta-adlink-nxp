@@ -153,3 +153,10 @@ SRC_URI_append_lec-imx8mp += " \
 			file://0019-LEC-iMX8MP-Changes-for-OV13855-camera-sensor.patch \
 			file://0020-LEC-iMX8MP-switch-usb-mode-to-OTG.patch \
 "
+
+SRC_URI_append_wifibt = " \
+			file://mxm_wifiex.cfg \
+"
+
+DELTA_KERNEL_DEFCONFIG_append_wifibt = " mxm_wifiex.cfg"
+
