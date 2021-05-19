@@ -150,4 +150,5 @@ SRC_URI_append_lec-imx8mp += " \
 			file://0016-LEC-iMX8MP-Removing-pm_runtime-routines-from-hantro.patch \
 			file://0017-LEC-iMX8MP-Change-USB-2-default-mode.patch \
 			file://0018-LEC-iMX8MP-Enable-PCIE-compliance-test.patch \
+			file://0019-LEC-iMX8MP-Changes-for-OV13855-camera-sensor.patch \
 "
