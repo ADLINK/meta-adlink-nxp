@@ -1,4 +1,4 @@
-SUMMARY = "tools required for dqac testing"
+SUMMARY = "tools required for testing"
 LICENSE = "CLOSED"
 
 SRC_URI = "\
@@ -11,9 +11,23 @@ SRC_URI = "\
 	file://USB31_TX_COMPLIANCE \
 	file://USBTest \
 	file://UTest.sh \
+	file://set_mac_address.c \
 "
 
 S = "${WORKDIR}"
+
+do_compile() {
+
+if ${@bb.utils.contains('MACHINE', 'lec-imx8mp', 'true', 'false', d)}; then # LEC-i.MX8mp
+	${CC} ${WORKDIR}/set_mac_address.c -o ${WORKDIR}/set_mac_address
+fi
+
+}
+
+do_install() {
+    install -d -m 0755 ${D}/usr${base_bindir}
+    install -m 0755 ${WORKDIR}/version ${D}/usr${base_bindir}/
+}
 
 do_install() {
     install -d -m 0755 ${D}/usr${base_bindir}
@@ -26,6 +40,10 @@ do_install() {
     install -m 0755 ${WORKDIR}/USB31_TX_COMPLIANCE ${D}/usr${base_bindir}/
     install -m 0755 ${WORKDIR}/USBTest ${D}/usr${base_bindir}/
     install -m 0755 ${WORKDIR}/UTest.sh ${D}/usr${base_bindir}/
+ 
+if ${@bb.utils.contains('MACHINE', 'lec-imx8mp', 'true', 'false', d)}; then # LEC-i.MX8mp
+	install -m 0755 ${WORKDIR}/set_mac_address ${D}/usr${base_bindir}/
+fi
 }
 
 do_package_qa() {
@@ -40,3 +58,4 @@ FILES_${PN} += " /usr${base_bindir}/spidev_test"
 FILES_${PN} += " /usr${base_bindir}/USB31_TX_COMPLIANCE"
 FILES_${PN} += " /usr${base_bindir}/USBTest"
 FILES_${PN} += " /usr${base_bindir}/UTest.sh"
+FILES_${PN} += " /usr${base_bindir}/set_mac_address"

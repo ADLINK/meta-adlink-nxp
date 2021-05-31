@@ -13,3 +13,7 @@ modprobe adl_bmc_nvmem
 modprobe adl_bmc_wdt
 modprobe adl_bmc_hwmon
 modprobe adl_bmc_vm
+
+
+#Read MAC address from BMC
+set_mac_address eth0 eth1
