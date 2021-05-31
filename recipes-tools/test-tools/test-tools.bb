@@ -26,11 +26,6 @@ fi
 
 do_install() {
     install -d -m 0755 ${D}/usr${base_bindir}
-    install -m 0755 ${WORKDIR}/version ${D}/usr${base_bindir}/
-}
-
-do_install() {
-    install -d -m 0755 ${D}/usr${base_bindir}
     install -m 0755 ${WORKDIR}/eltt2 ${D}/usr${base_bindir}/
     install -m 0755 ${WORKDIR}/edid-decode ${D}/usr${base_bindir}/
     install -m 0755 ${WORKDIR}/mbw ${D}/usr${base_bindir}/
