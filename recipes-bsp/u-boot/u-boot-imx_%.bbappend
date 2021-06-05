@@ -1,7 +1,31 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
+do_copy_source () {
+  configs=$(echo "${UBOOT_MACHINE}" | xargs)
+  dtbes=$(echo "${UBOOT_DTB_NAME}" | xargs)
+  bbnote "u-boot dtbes: $dtbes"
+
+  # Copy config and dts
+  for config in ${configs}; do
+    if [ -f ${WORKDIR}/${config} ]; then
+      bbnote "u-boot config: $config"
+      cp -f ${WORKDIR}/${config} ${S}/configs/
+    fi
+  done
+  for dtbname in ${dtbes}; do
+    dtsname=$(echo "${dtbname%%.*}.dts")
+    if [ -f ${WORKDIR}/$dtsname ]; then
+      bbnote "u-boot dts: ${dtsname}"
+      cp -f ${WORKDIR}/$dtsname ${S}/arch/arm/dts/
+    fi
+  done
+}
+
+addtask copy_source before do_patch after do_unpack
+
 do_configure_prepend () {
-  # Additional CONFIG_XXX for u-boot build
+
+  # Additional CONFIG_XXX for u-boot config
   # E.g. in local.conf
   #     UBOOT_EXTRA_CONFIGS = "LPDDR4_8GB"
   #
@@ -9,8 +33,8 @@ do_configure_prepend () {
   #     DDR3L_1GB, DDR3L_2GB, DDR3L_4GB, DDR3L_4GB_MT
   # For imx8mp:
   #     LPDDR4_2GB, LPDDR4_2GK, LPDDR4_4GB, LPDDR4_8GB
-  extras=$(echo "${UBOOT_EXTRA_CONFIGS}" | xargs)
   configs=$(echo "${UBOOT_MACHINE}" | xargs)
+  extras=$(echo "${UBOOT_EXTRA_CONFIGS}" | xargs)
   echo "Add ${extras} to ${configs}"
   for extra in ${extras}; do
     if [ -n $extra ]; then
