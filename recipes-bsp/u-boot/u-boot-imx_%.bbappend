@@ -1,5 +1,12 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
+SRC_URI_append_lec-imx8mp = " \
+  file://adlink_lec8mp_defconfig \
+  file://lec-imx8mp.dts \
+  file://0001-board-add-lec-imx8mp-source.patch \
+  file://0002-u-boot-modify-Kconfig-Makefile-to-build-lec-imx8mp.patch \
+"
+
 do_copy_source () {
   configs=$(echo "${UBOOT_MACHINE}" | xargs)
   dtbes=$(echo "${UBOOT_DTB_NAME}" | xargs)
