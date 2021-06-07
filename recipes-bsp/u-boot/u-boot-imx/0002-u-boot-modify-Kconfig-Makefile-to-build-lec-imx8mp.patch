@@ -1,0 +1,53 @@
+From dd9a7d6bc77be00ac9a50cbe4783a5adc9d17ddc Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Mon, 7 Jun 2021 14:51:10 +0800
+Subject: [PATCH 2/2] u-boot: modify Kconfig/Makefile to build lec-imx8mp
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ arch/arm/dts/Makefile           | 3 ++-
+ arch/arm/mach-imx/imx8m/Kconfig | 8 ++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 0d24acd457..22b2c29ef3 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -799,7 +799,8 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
+ 	imx8mm-ddr4-ab2.dtb \
+ 	imx8mm-ab2.dtb \
+ 	imx8mn-ddr4-ab2.dtb \
+-	imx8mn-ab2.dtb
++	imx8mn-ab2.dtb \
++	lec-imx8mp.dtb
+ 
+ dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb
+ 
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index 41c68a49a3..23eed009c9 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -118,6 +118,13 @@ config TARGET_IMX8MP_EVK
+ 	select SUPPORT_SPL
+ 	select IMX8M_LPDDR4
+ 
++config TARGET_LEC_IMX8MP
++	bool "Adlink lec-imx8mp LPDDR4 board"
++	select IMX8MP
++	select SUPPORT_SPL
++	select IMX8M_LPDDR4
++	select CONFIG_IMX_DDRSIZE
++
+ config TARGET_IMX8MP_DDR4_EVK
+ 	bool "imx8mp DDR4 EVK board"
+ 	select IMX8MP
+@@ -164,5 +171,6 @@ source "board/freescale/imx8mm_val/Kconfig"
+ source "board/freescale/imx8mn_evk/Kconfig"
+ source "board/freescale/imx8mp_evk/Kconfig"
+ source "board/toradex/verdin-imx8mm/Kconfig"
++source "board/adlink/lec-imx8mp/Kconfig"
+ 
+ endif
+-- 
+2.25.1
+
