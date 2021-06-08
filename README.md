@@ -14,6 +14,25 @@
 * NXP i.MX8M Plus 4G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [ link](https://hq0epm0west0us0storage.blob.core.windows.net/$web/public/SMARC/LEC-iMX8MP/Images/Yocto/LEC-IMX8MP-4G-IPi-SMARC-PLUS_Yocto-zeus_v1.3_20210519.zip)
 * NXP i.MX8M Plus 2G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [link](https://hq0epm0west0us0storage.blob.core.windows.net/$web/public/SMARC/LEC-iMX8MP/Images/Yocto/LEC-IMX8MP-2G-IPi-SMARC-PLUS_Yocto-zeus_v1.3_20210519.zip)
 
+
+<br>
+
+**Supported features & interfaces**
+
+* Linux Kernel version: 5.4.70
+* 40 Pin expansion Header with Eclipse Mraa library and Eclipse UPM library which supports C/C++, Python, JAVA and JavaScript
+* SEMA 4.0 (Smart Embedded Management Agent) support the functions such as CPU temperature, voltage monitoring total up time, … etc.
+* 2D / 3D Graphics Acceleration which supports Wayland
+* Support1080p60 H.265, H.264, VP9, VP8 decoder, 1080p60 H.265, H.264 encoder
+* HDMI output with the resolution up to 1920x1080@60Hz
+* 4 x USB 2.0 ports
+* 2 x 10/100 Gb LAN ports
+* USB OTG Serial Gadget supported (baud rate: 115200)
+* CAN FD Bus interface
+* Audio & speaker
+* Raspberry Pi Camera V2.1 (2 Lanes) - SONY iMX219 sensor (Datasheet)
+
+
 <br>
 
 
