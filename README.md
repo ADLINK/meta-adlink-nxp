@@ -11,8 +11,8 @@
 
 **SD Card image (64bit) for the quick evaluation (images includes u-boot) - beta version**
 
-* NXP i.MX8M Plus 4G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [ link](https://hq0epm0west0us0storage.blob.core.windows.net/$web/public/SMARC/LEC-iMX8MP/Images/Yocto/imx-image-multimedia-lec-imx8mp-weston_4G_1v1.wic.bz2)
-* NXP i.MX8M Plus 2G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [link](https://hq0epm0west0us0storage.blob.core.windows.net/$web/public/SMARC/LEC-iMX8MP/Images/Yocto/imx-image-multimedia-lec-imx8mp-weston_2G_1v1.wic.bz2)
+* NXP i.MX8M Plus 4G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [ link](https://hq0epm0west0us0storage.blob.core.windows.net/$web/public/SMARC/LEC-iMX8MP/Images/Yocto/LEC-IMX8MP-4G-IPi-SMARC-PLUS_Yocto-zeus_v1.3_20210519.zip)
+* NXP i.MX8M Plus 2G Memory with Wayland Weston Desktop (carrier board: I-Pi SMARC Plus): [link](https://hq0epm0west0us0storage.blob.core.windows.net/$web/public/SMARC/LEC-iMX8MP/Images/Yocto/LEC-IMX8MP-2G-IPi-SMARC-PLUS_Yocto-zeus_v1.3_20210519.zip)
 
 <br>
 
