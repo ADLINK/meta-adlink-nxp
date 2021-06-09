@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 		system(command);
 	}
 
-	//We assume MAC 2 is stored from pBuffer[7] to pBuffer[12], assign to argv[2] interface
+	//We assume MAC 2 is stored from pBuffer[6] to pBuffer[11], assign to argv[2] interface
 	if(argc >=3 ) {
 		memset(MAC, 0, sizeof(MAC));
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 		system(command);
 
 		memset(command, 0, sizeof(command));
-		sprintf(MAC, "%x:%x:%x:%x:%x:%x", pBuffer[7], pBuffer[8], pBuffer[9], pBuffer[10], pBuffer[11], pBuffer[12]);
+		sprintf(MAC, "%x:%x:%x:%x:%x:%x", pBuffer[6], pBuffer[7], pBuffer[8], pBuffer[9], pBuffer[10], pBuffer[11]);
 		sprintf(command, "ifconfig %s hw ether %s", argv[2], MAC);
 		system(command);
 
