@@ -1,0 +1,74 @@
+From 7ff664ae4266c37a545a147e1160e831ddee56f1 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Wed, 9 Jun 2021 14:03:50 +0800
+Subject: [PATCH 2/3] imx8mq: Fix QL CPU with no HDMI output issue
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ arch/arm/include/asm/arch-imx8m/sys_proto.h |  3 +++
+ arch/arm/mach-imx/imx8m/soc.c               | 16 +++++++++++++++-
+ arch/arm/mach-imx/imx8m/video_common.c      |  2 +-
+ 3 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/include/asm/arch-imx8m/sys_proto.h b/arch/arm/include/asm/arch-imx8m/sys_proto.h
+index cdf268f99b..1a56c151fc 100644
+--- a/arch/arm/include/asm/arch-imx8m/sys_proto.h
++++ b/arch/arm/include/asm/arch-imx8m/sys_proto.h
+@@ -16,4 +16,7 @@ int imx8m_usb_power(int usb_id, bool on);
+ extern unsigned long rom_pointer[];
+ enum boot_device get_boot_device(void);
+ bool is_usb_boot(void);
++#ifdef CONFIG_IMX8MQ
++bool check_dcss_fused(void);
++#endif
+ #endif
+diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
+index 9408105569..535b701363 100644
+--- a/arch/arm/mach-imx/imx8m/soc.c
++++ b/arch/arm/mach-imx/imx8m/soc.c
+@@ -398,6 +398,20 @@ add_status:
+ }
+ 
+ #ifdef CONFIG_IMX8MQ
++bool check_dcss_fused(void)
++{
++	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
++	struct fuse_bank *bank = &ocotp->bank[1];
++	struct fuse_bank1_regs *fuse =
++		(struct fuse_bank1_regs *)bank->fuse_regs;
++
++	u32 value = readl(&fuse->tester4);
++	if (value & 0x4000000)
++		return true;
++
++	return false;
++}
++
+ static int disable_mipi_dsi_nodes(void *blob)
+ {
+ 	const char *nodes_path[] = {
+@@ -593,7 +607,7 @@ usb_modify_speed:
+ 		}
+ 	}
+ 
+-	if (is_imx8mql()) {
++	if (is_imx8mql() && check_dcss_fused()) {
+ 		disable_vpu_nodes(blob);
+ 		disable_dcss_nodes(blob);
+ 		check_mipi_dsi_nodes(blob);
+diff --git a/arch/arm/mach-imx/imx8m/video_common.c b/arch/arm/mach-imx/imx8m/video_common.c
+index de2ffe33b6..26a8091fa7 100644
+--- a/arch/arm/mach-imx/imx8m/video_common.c
++++ b/arch/arm/mach-imx/imx8m/video_common.c
+@@ -709,7 +709,7 @@ int imx8m_fb_init(struct fb_videomode const *mode,
+ {
+ 	debug("entering %s()\n", __func__);
+ 
+-	if (is_imx8mql()) {
++	if (is_imx8mql() && check_dcss_fused()) {
+ 		printf("dcss is diabled on i.MX8MQL\n");
+ 		return -EPERM;
+ 	}
+-- 
+2.25.1
+

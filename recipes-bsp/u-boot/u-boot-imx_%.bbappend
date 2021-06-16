@@ -7,6 +7,14 @@ SRC_URI_append_lec-imx8mp = " \
   file://0002-u-boot-modify-Kconfig-Makefile-to-build-lec-imx8mp.patch \
 "
 
+SRC_URI_append_lec-imx8m = " \
+  file://adlink_lec8m_defconfig \
+  file://lec-imx8m.dts \
+  file://0001-board-add-lec-imx8mq-source.patch \
+  file://0002-imx8mq-Fix-QL-CPU-with-no-HDMI-output-issue.patch \
+  file://0003-Kconfig-modify-to-include-lec-imx8mq-build.patch \
+"
+
 do_copy_source () {
   configs=$(echo "${UBOOT_MACHINE}" | xargs)
   dtbes=$(echo "${UBOOT_DTB_NAME}" | xargs)
