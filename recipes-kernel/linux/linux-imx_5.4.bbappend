@@ -160,3 +160,7 @@ SRC_URI_append_wifibt = " \
 "
 
 DELTA_KERNEL_DEFCONFIG_append_wifibt = " mxm_wifiex.cfg"
+
+SRC_URI_append_tinycma = " \
+			file://0000-dtb-tsl-reduce-cma-size-for-adlink-imx8mp-som.patch \
+"
