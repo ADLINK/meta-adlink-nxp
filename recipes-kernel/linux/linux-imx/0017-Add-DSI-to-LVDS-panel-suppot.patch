@@ -1,7 +1,7 @@
-From 02b287d1f99ed1c9ec6f5ec1e66dd392eba52100 Mon Sep 17 00:00:00 2001
+From 88cb579e44f777e953459376e21d801502f6576a Mon Sep 17 00:00:00 2001
 From: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
 Date: Tue, 7 Jul 2020 13:09:27 +0530
-Subject: [PATCH 17/17] Add DSI to LVDS panel suppot
+Subject: [PATCH 17/19] Add DSI to LVDS panel suppot
 
 This patch will add support for the following LVDS panels by converting the MIPI DSI
 signal into LVDS signal using SN65DSI84 bridge driver and also adds a panel driver
@@ -67,7 +67,7 @@ Signed-off-by: Antony Abee Prakash XV <antonyabee.prakashxv@adlinktech.com>
  create mode 100644 drivers/gpu/drm/panel/panel-lecimx8.c
 
 diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
-index 67d4b0bef837..077d059a591a 100644
+index 67d4b0bef837b..077d059a591aa 100644
 --- a/arch/arm64/boot/dts/adlink/Makefile
 +++ b/arch/arm64/boot/dts/adlink/Makefile
 @@ -1,8 +1,27 @@
@@ -100,7 +100,7 @@ index 67d4b0bef837..077d059a591a 100644
 +
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-dcss-g133han01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-dcss-g133han01.dts
 new file mode 100644
-index 000000000000..aaf66d250fc2
+index 0000000000000..aaf66d250fc2a
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-dcss-g133han01.dts
 @@ -0,0 +1,38 @@
@@ -144,7 +144,7 @@ index 000000000000..aaf66d250fc2
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-g104x1l03.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-g104x1l03.dts
 new file mode 100644
-index 000000000000..2e04cdea48c9
+index 0000000000000..2e04cdea48c97
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-g104x1l03.dts
 @@ -0,0 +1,38 @@
@@ -188,7 +188,7 @@ index 000000000000..2e04cdea48c9
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-g185xw01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-g185xw01.dts
 new file mode 100644
-index 000000000000..f338a4ffd4a5
+index 0000000000000..f338a4ffd4a5e
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-g185xw01.dts
 @@ -0,0 +1,38 @@
@@ -232,7 +232,7 @@ index 000000000000..f338a4ffd4a5
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-hv150ux2.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-hv150ux2.dts
 new file mode 100644
-index 000000000000..95beca8f2b52
+index 0000000000000..95beca8f2b524
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-hv150ux2.dts
 @@ -0,0 +1,38 @@
@@ -276,7 +276,7 @@ index 000000000000..95beca8f2b52
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-lm215wf3.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-lm215wf3.dts
 new file mode 100644
-index 000000000000..bdc9ed163e3b
+index 0000000000000..bdc9ed163e3bd
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-lm215wf3.dts
 @@ -0,0 +1,38 @@
@@ -320,7 +320,7 @@ index 000000000000..bdc9ed163e3b
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-n101bge.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-n101bge.dts
 new file mode 100644
-index 000000000000..43976d2e3f9b
+index 0000000000000..43976d2e3f9b2
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-1gb-ddr3l-lcdif-n101bge.dts
 @@ -0,0 +1,38 @@
@@ -364,7 +364,7 @@ index 000000000000..43976d2e3f9b
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-dcss-g133han01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-dcss-g133han01.dts
 new file mode 100644
-index 000000000000..27d33f9aa03b
+index 0000000000000..27d33f9aa03ba
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-dcss-g133han01.dts
 @@ -0,0 +1,10 @@
@@ -380,7 +380,7 @@ index 000000000000..27d33f9aa03b
 +/delete-node/ &vpu;
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-g104x1l03.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-g104x1l03.dts
 new file mode 100644
-index 000000000000..972ee37d2fae
+index 0000000000000..972ee37d2fae5
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-g104x1l03.dts
 @@ -0,0 +1,10 @@
@@ -396,7 +396,7 @@ index 000000000000..972ee37d2fae
 +/delete-node/ &vpu;
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-g185xw01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-g185xw01.dts
 new file mode 100644
-index 000000000000..09ad6f053157
+index 0000000000000..09ad6f0531577
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-g185xw01.dts
 @@ -0,0 +1,10 @@
@@ -412,7 +412,7 @@ index 000000000000..09ad6f053157
 +/delete-node/ &vpu;
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-hv150ux2.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-hv150ux2.dts
 new file mode 100644
-index 000000000000..0142d2ab447e
+index 0000000000000..0142d2ab447e9
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-hv150ux2.dts
 @@ -0,0 +1,10 @@
@@ -428,7 +428,7 @@ index 000000000000..0142d2ab447e
 +/delete-node/ &vpu;
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-lm215wf3.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-lm215wf3.dts
 new file mode 100644
-index 000000000000..e94ad16e6812
+index 0000000000000..e94ad16e68120
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-lm215wf3.dts
 @@ -0,0 +1,10 @@
@@ -444,7 +444,7 @@ index 000000000000..e94ad16e6812
 +/delete-node/ &vpu;
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-n101bge.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-n101bge.dts
 new file mode 100644
-index 000000000000..e401972b3e40
+index 0000000000000..e401972b3e40b
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-2gb-ddr3l-lcdif-n101bge.dts
 @@ -0,0 +1,10 @@
@@ -460,7 +460,7 @@ index 000000000000..e401972b3e40
 +/delete-node/ &vpu;
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-dcss-g133han01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-dcss-g133han01.dts
 new file mode 100644
-index 000000000000..991065ee0e13
+index 0000000000000..991065ee0e130
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-dcss-g133han01.dts
 @@ -0,0 +1,107 @@
@@ -573,7 +573,7 @@ index 000000000000..991065ee0e13
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-g104x1l03.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-g104x1l03.dts
 new file mode 100644
-index 000000000000..a9b4a91caf97
+index 0000000000000..a9b4a91caf979
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-g104x1l03.dts
 @@ -0,0 +1,167 @@
@@ -746,7 +746,7 @@ index 000000000000..a9b4a91caf97
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-g185xw01.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-g185xw01.dts
 new file mode 100644
-index 000000000000..523290bd0db9
+index 0000000000000..523290bd0db98
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-g185xw01.dts
 @@ -0,0 +1,167 @@
@@ -919,7 +919,7 @@ index 000000000000..523290bd0db9
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-hv150ux2.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-hv150ux2.dts
 new file mode 100644
-index 000000000000..6b457df4cc32
+index 0000000000000..6b457df4cc32b
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-hv150ux2.dts
 @@ -0,0 +1,175 @@
@@ -1100,7 +1100,7 @@ index 000000000000..6b457df4cc32
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-lm215wf3.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-lm215wf3.dts
 new file mode 100644
-index 000000000000..f6ae6cc0e96e
+index 0000000000000..f6ae6cc0e96ed
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-lm215wf3.dts
 @@ -0,0 +1,175 @@
@@ -1281,7 +1281,7 @@ index 000000000000..f6ae6cc0e96e
 +};
 diff --git a/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-n101bge.dts b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-n101bge.dts
 new file mode 100644
-index 000000000000..d2d346b55895
+index 0000000000000..d2d346b558954
 --- /dev/null
 +++ b/arch/arm64/boot/dts/adlink/adlink-lec-imx8m-lcdif-n101bge.dts
 @@ -0,0 +1,176 @@
@@ -1462,7 +1462,7 @@ index 000000000000..d2d346b55895
 +       status = "okay";
 +};
 diff --git a/arch/arm64/configs/lec_imx8m_defconfig b/arch/arm64/configs/lec_imx8m_defconfig
-index 96603e1752df..7d25a0b671c7 100644
+index 96603e1752dfb..7d25a0b671c73 100644
 --- a/arch/arm64/configs/lec_imx8m_defconfig
 +++ b/arch/arm64/configs/lec_imx8m_defconfig
 @@ -466,8 +466,9 @@ CONFIG_DRM_I2C_NXP_TDA998X=m
@@ -1477,10 +1477,10 @@ index 96603e1752df..7d25a0b671c7 100644
  CONFIG_DRM_I2C_ADV7511=y
  CONFIG_DRM_NWL_MIPI_DSI=y
 diff --git a/drivers/gpu/drm/bridge/Kconfig b/drivers/gpu/drm/bridge/Kconfig
-index a0b4628cbc5f..756def7ed44e 100644
+index 1a20991ba88e2..3cd3d44ee20ef 100644
 --- a/drivers/gpu/drm/bridge/Kconfig
 +++ b/drivers/gpu/drm/bridge/Kconfig
-@@ -91,6 +91,14 @@ config DRM_PARADE_PS8622
+@@ -105,6 +105,14 @@ config DRM_PARADE_PS8622
  	---help---
  	  Parade eDP-LVDS bridge chip driver.
  
@@ -1496,17 +1496,17 @@ index a0b4628cbc5f..756def7ed44e 100644
  	tristate "Silicon Image SII8620 HDMI/MHL bridge"
  	depends on OF
 diff --git a/drivers/gpu/drm/bridge/Makefile b/drivers/gpu/drm/bridge/Makefile
-index b131dc70dcbf..61957b4aa193 100644
+index 103466b50b2ab..1a835342e204e 100644
 --- a/drivers/gpu/drm/bridge/Makefile
 +++ b/drivers/gpu/drm/bridge/Makefile
-@@ -21,3 +21,4 @@ obj-y += cadence/
- obj-y += synopsys/
+@@ -23,3 +23,4 @@ obj-y += synopsys/
  obj-$(CONFIG_DRM_ITE_IT6263) += it6263.o
  obj-$(CONFIG_DRM_SEC_MIPI_DSIM) += sec-dsim.o
+ obj-$(CONFIG_DRM_NXP_SEIKO_43WVFIG) += nxp-seiko-43wvfig.o
 +obj-$(CONFIG_DRM_TI_SN65DSI84) += sn65dsi84-dsi2lvds.o
 diff --git a/drivers/gpu/drm/bridge/sn65dsi84-dsi2lvds.c b/drivers/gpu/drm/bridge/sn65dsi84-dsi2lvds.c
 new file mode 100644
-index 000000000000..33f6f4e7bf54
+index 0000000000000..33f6f4e7bf543
 --- /dev/null
 +++ b/drivers/gpu/drm/bridge/sn65dsi84-dsi2lvds.c
 @@ -0,0 +1,217 @@
@@ -1728,7 +1728,7 @@ index 000000000000..33f6f4e7bf54
 +MODULE_DESCRIPTION("TI SN65DSI84 DSI to LVDS bridge driver");
 +MODULE_LICENSE("GPL v2");
 diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index f152bc4eeb53..e65e0e6ff182 100644
+index 4d2a854d4ab78..a28f44ce1d385 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
 @@ -75,6 +75,17 @@ config DRM_PANEL_INNOLUX_P079ZCA
@@ -1750,7 +1750,7 @@ index f152bc4eeb53..e65e0e6ff182 100644
  config DRM_PANEL_JDI_LT070ME05000
  	tristate "JDI LT070ME05000 WUXGA DSI panel"
 diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index b6cd39fe0f20..5710a9d75614 100644
+index 6924b70adc787..d09b6deb31011 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
 @@ -2,6 +2,7 @@
@@ -1763,7 +1763,7 @@ index b6cd39fe0f20..5710a9d75614 100644
  obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9881C) += panel-ilitek-ili9881c.o
 diff --git a/drivers/gpu/drm/panel/panel-lecimx8.c b/drivers/gpu/drm/panel/panel-lecimx8.c
 new file mode 100644
-index 000000000000..ca050fe67233
+index 0000000000000..ca050fe67233e
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-lecimx8.c
 @@ -0,0 +1,2693 @@
@@ -4461,10 +4461,10 @@ index 000000000000..ca050fe67233
 +MODULE_DESCRIPTION("DRM Driver for Simple Panels");
 +MODULE_LICENSE("GPL and additional rights");
 diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
-index 8632df827c96..6ac5367ab9ce 100644
+index c34a36d3dd0ff..dc3278961aae3 100644
 --- a/drivers/gpu/drm/panel/panel-simple.c
 +++ b/drivers/gpu/drm/panel/panel-simple.c
-@@ -3685,6 +3685,160 @@ static const struct panel_desc_dsi osd101t2045_53ts = {
+@@ -3722,6 +3722,160 @@ static const struct panel_desc_dsi osd101t2045_53ts = {
  	.lanes = 4,
  };
  
@@ -4625,7 +4625,7 @@ index 8632df827c96..6ac5367ab9ce 100644
  static const struct of_device_id dsi_of_match[] = {
  	{
  		.compatible = "auo,b080uan01",
-@@ -3708,6 +3862,22 @@ static const struct of_device_id dsi_of_match[] = {
+@@ -3745,6 +3899,22 @@ static const struct of_device_id dsi_of_match[] = {
  		.compatible = "osddisplays,osd101t2045-53ts",
  		.data = &osd101t2045_53ts
  	}, {
@@ -4649,5 +4649,5 @@ index 8632df827c96..6ac5367ab9ce 100644
  	}
  };
 -- 
-2.17.1
+2.25.1
 
