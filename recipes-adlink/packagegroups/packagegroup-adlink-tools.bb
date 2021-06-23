@@ -93,6 +93,7 @@ RDEPENDS_packagegroup-adlink-bluetooth = " \
 SUMMARY_packagegroup-adlink-tools = "Adlink Tools Support"
 RDEPENDS_packagegroup-adlink-tools = " \
     adlink-imx8mp-startup \
+    sema \
     test-tools \
     mraa \
     mraa-dev \
