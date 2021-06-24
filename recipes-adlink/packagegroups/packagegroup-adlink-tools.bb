@@ -95,6 +95,7 @@ RDEPENDS_packagegroup-adlink-tools = " \
     adlink-imx8mp-startup \
     sema \
     test-tools \
+    powerled \
     mraa \
     mraa-dev \
     mraa-doc \
