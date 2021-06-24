@@ -11,17 +11,17 @@ SRC_URI = "\
 	file://USB31_TX_COMPLIANCE \
 	file://USBTest \
 	file://UTest.sh \
+"
+
+SRC_URI_append_lec-imx8mp = " \
 	file://set_mac_address.c \
+	file://hwbom_id.sh \
 "
 
 S = "${WORKDIR}"
 
-do_compile() {
-
-if ${@bb.utils.contains('MACHINE', 'lec-imx8mp', 'true', 'false', d)}; then # LEC-i.MX8mp
+do_compile_lec-imx8mp() {
 	${CC} ${WORKDIR}/set_mac_address.c -o ${WORKDIR}/set_mac_address
-fi
-
 }
 
 do_install() {
@@ -35,14 +35,14 @@ do_install() {
     install -m 0755 ${WORKDIR}/USB31_TX_COMPLIANCE ${D}/usr${base_bindir}/
     install -m 0755 ${WORKDIR}/USBTest ${D}/usr${base_bindir}/
     install -m 0755 ${WORKDIR}/UTest.sh ${D}/usr${base_bindir}/
+}
  
-if ${@bb.utils.contains('MACHINE', 'lec-imx8mp', 'true', 'false', d)}; then # LEC-i.MX8mp
+do_install_append_lec-imx8mp() {
+	install -m 0755 ${WORKDIR}/hwbom_id.sh ${D}/usr${base_bindir}/
 	install -m 0755 ${WORKDIR}/set_mac_address ${D}/usr${base_bindir}/
-fi
 }
 
-do_package_qa() {
-}
+do_package_qa[noexec] = "1"
 
 FILES_${PN} += " /usr${base_bindir}/eltt2"
 FILES_${PN} += " /usr${base_bindir}/edid-decode"
@@ -53,4 +53,8 @@ FILES_${PN} += " /usr${base_bindir}/spidev_test"
 FILES_${PN} += " /usr${base_bindir}/USB31_TX_COMPLIANCE"
 FILES_${PN} += " /usr${base_bindir}/USBTest"
 FILES_${PN} += " /usr${base_bindir}/UTest.sh"
-FILES_${PN} += " /usr${base_bindir}/set_mac_address"
+FILES_${PN}_append_lec-imx8mp = " /usr${base_bindir}/set_mac_address"
+FILES_${PN}_append_lec-imx8mp = " /usr${base_bindir}/hwbom_id.sh"
+
+RDEPENDS_${PN}_append_lec-imx8mp = "bash i2c-tools"
+
