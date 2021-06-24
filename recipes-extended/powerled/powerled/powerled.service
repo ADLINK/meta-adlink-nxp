@@ -1,0 +1,12 @@
+[Unit]
+Description=ADLINK to turn on BMC Green (Power) LED Service
+After=multi-user.target
+AllowIsolate=yes
+
+[Service]
+Type=oneshot
+# Start grow partition on system default rootfs
+ExecStart=/usr/bin/powerled.sh
+
+[Install]
+WantedBy=multi-user.target
