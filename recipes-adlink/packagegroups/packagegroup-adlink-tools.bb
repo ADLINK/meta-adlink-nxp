@@ -17,6 +17,7 @@ PACKAGES = "packagegroup-adlink \
             packagegroup-adlink-bluetooth \
             packagegroup-adlink-tools \
             packagegroup-adlink-utils \
+            packagegroup-adlink-ci \
 "
 
 #
@@ -29,6 +30,7 @@ RDEPENDS_packagegroup-adlink = " \
     ${@bb.utils.contains('MACHINE_FEATURES', 'bluetooth', 'packagegroup-adlink-bluetooth', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'adlink', 'packagegroup-adlink-tools', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'adlink', 'packagegroup-adlink-utils', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'ci', 'packagegroup-adlink-ci', '', d)} \
 "
 
 #
@@ -162,3 +164,13 @@ RDEPENDS_packagegroup-adlink-utils = " \
     wget \
     ${@bb.utils.contains('IMAGE_FEATURES', 'ssh-server-openssh', 'packagegroup-core-ssh-openssh', '', d)} \
 "
+
+#
+# packages added by adlink continuous integration
+#
+SUMMARY_packagegroup-adlink-ci = "Adlink Continuous Integration Support"
+RDEPENDS_packagegroup-adlink-ci = " \
+    python3 \
+    python3-robotframework \
+"
+
