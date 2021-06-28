@@ -18,6 +18,9 @@ REG_DATA_MASK=${5:-0x1F}
 # i2cget -f -y 4 0x70 0x10
 VALUE=$( i2cget -f -y $I2C_BUS $I2C_ADDR $REG_DATA )
 # from e1 => 1
+BOMID=$(( ( $VALUE & 0x1C ) >> 2))
+HWID=$(( $VALUE & 0x03 ))
+CONFID=$(( $BOMID | ( $HWID << 3 ) ))
 VALUE=$(( $VALUE & $REG_DATA_MASK ))
-printf "hw/bom id: %d (0x%02X)\n" $VALUE $VALUE
+printf "hw: id 0x%02X, bom id: 0x%02X, id: %d, gpio: 0x%02X\n" $HWID $BOMID $CONFID $VALUE
 
