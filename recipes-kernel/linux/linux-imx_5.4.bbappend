@@ -115,6 +115,7 @@ SRC_URI_append_lec-imx8m += " \
 			    file://0017-Add-DSI-to-LVDS-panel-suppot.patch \
 			    file://0018-Add-dual-display-support.patch \
 			    file://0019-Add-MIPI-DSI-Panel-support.patch \
+			    file://0020-CAN-Add-MCB1517FD-driver-and-dts-to-kernel-5.4.47.patch \
 "
 
 SRC_URI_append_lec-imx8mp += " \
