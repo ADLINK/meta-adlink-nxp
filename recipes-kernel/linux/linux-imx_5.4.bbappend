@@ -1,23 +1,9 @@
-FSL_KERNEL_DEFCONFIG_IMX6 = "lec_imx6_defconfig"
-FSL_KERNEL_DEFCONFIG_IMX8m = "lec_imx8m_defconfig"
-FSL_KERNEL_DEFCONFIG_IMX8mp = "lec-imx8mp_defconfig"
+IMX_KERNEL_CONFIG_AARCH32_lec-imx6-1 = "lec_imx6_defconfig"
+IMX_KERNEL_CONFIG_AARCH32_lec-imx6-2 = "lec_imx6_defconfig"
+IMX_KERNEL_CONFIG_AARCH64_lec-imx8m = "lec_imx8m_defconfig"
+IMX_KERNEL_CONFIG_AARCH64_lec-imx8mp = "lec-imx8mp_defconfig"
 
-do_copy_defconfig() {
-
-if ${@bb.utils.contains('TARGET_ARCH', 'arm', 'true', 'false', d)}; then # LEC-i.MX6
-    cp ${S}/arch/arm/configs/${FSL_KERNEL_DEFCONFIG_IMX6} ${B}/.config
-    cp ${S}/arch/arm/configs/${FSL_KERNEL_DEFCONFIG_IMX6} ${B}/../defconfig
-
-elif ${@bb.utils.contains('MACHINE', 'lec-imx8mp', 'true', 'false', d)}; then # LEC-i.MX8mp
-    cp ${S}/arch/arm64/configs/${FSL_KERNEL_DEFCONFIG_IMX8mp} ${B}/.config
-    cp ${S}/arch/arm64/configs/${FSL_KERNEL_DEFCONFIG_IMX8mp} ${B}/../defconfig
-
-elif ${@bb.utils.contains('TARGET_ARCH', 'aarch64', 'true', 'false', d)}; then # LEC-i.MX8m
-    cp ${S}/arch/arm64/configs/${FSL_KERNEL_DEFCONFIG_IMX8m} ${B}/.config
-    cp ${S}/arch/arm64/configs/${FSL_KERNEL_DEFCONFIG_IMX8m} ${B}/../defconfig
-fi
-
-}
+addtask copy_defconfig after do_patch before do_merge_delta_config
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
