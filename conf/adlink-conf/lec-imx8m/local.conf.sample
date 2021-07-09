@@ -19,8 +19,13 @@ CONF_VERSION = "1"
 DL_DIR ?= "${BSPDIR}/downloads/"
 ACCEPT_FSL_EULA = "1"
 
-CORE_IMAGE_EXTRA_INSTALL += "kernel-devicetree ssh"
+CORE_IMAGE_EXTRA_INSTALL += "kernel-devicetree ssh kernel-modules spitools can-utils iproute2"
 
 #Remove unwanted bbappend here
+BBMASK += " imx-boot_1.0"
 BBMASK += " weston_9.0.0.imx"
 BBMASK += " imx-vpu-hantro-vc_1.3.0"
+BBMASK += " nxp-wlan-sdk"
+
+UBOOT_EXTRA_CONFIGS = "DDR3L_4GB"
+PREFERRED_VERSION_u-boot-imx = "2018.03"

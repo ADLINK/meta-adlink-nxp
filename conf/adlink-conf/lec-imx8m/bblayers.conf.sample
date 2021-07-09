@@ -30,4 +30,5 @@ BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-filesystems"
 BBLAYERS += "${BSPDIR}/sources/meta-qt5"
 
 # ADLINK Layers
-BBLAYERS += " ${BSPDIR}/sources/meta-adlink-nxp "
+BBLAYERS += "${BSPDIR}/sources/meta-adlink-nxp"
+BBLAYERS += "${BSPDIR}/sources/meta-adlink-sema"
