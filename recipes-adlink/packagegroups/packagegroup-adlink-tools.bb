@@ -64,17 +64,20 @@ RDEPENDS_packagegroup-adlink-benchmarks = " \
 #
 SUMMARY_packagegroup-adlink-wifi = "Adlink wifi Support"
 RDEPENDS_packagegroup-adlink-wifi = " \
-    linux-firmware-sd8997 \
-    kernel-module-sd8997 \
-    nxp-wlan-sdk \
     iperf3 \
     iw \
     rfkill \
     connman \
-    wireless-tools \
     wpa-supplicant \
     dhcp-server \
     dhcp-client \
+"
+
+RDEPENDS_package-group-adlink-wifi_append_lec-imx8mp = " \
+    wireless-tools \
+    linux-firmware-sd8997 \
+    kernel-module-sd8997 \
+    nxp-wlan-sdk \
 "
 
 #
@@ -82,11 +85,14 @@ RDEPENDS_packagegroup-adlink-wifi = " \
 #
 SUMMARY_packagegroup-adlink-bluetooth = "Adlink bluetooth Support"
 RDEPENDS_packagegroup-adlink-bluetooth = " \
+    rfkill \
+    bluez5 \
+"
+
+RDEPENDS_package-group-adlink-bluetooth_append_lec-imx8mp = " \
     linux-firmware-sd8997 \
     kernel-module-bt-sd8997 \
     nxp-bt-sdk \
-    rfkill \
-    bluez5 \
 "
 
 #
@@ -95,7 +101,6 @@ RDEPENDS_packagegroup-adlink-bluetooth = " \
 SUMMARY_packagegroup-adlink-tools = "Adlink Tools Support"
 RDEPENDS_packagegroup-adlink-tools = " \
     adlink-imx8mp-startup \
-    sema \
     test-tools \
     powerled \
     mraa \
@@ -106,6 +111,7 @@ RDEPENDS_packagegroup-adlink-tools = " \
     upm-dev \
     python3-upm \
     python3-mraa \
+    ${@bb.utils.contains('BBLAYERS', 'meta-adlink-sema', 'sema', '', d)} \
 "
 
 SUMMARY_packagegroup-adlink-utils = "Adlink Utils Support"
