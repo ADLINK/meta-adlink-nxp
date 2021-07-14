@@ -207,7 +207,9 @@
   * [How to boot the image (includes u-boot) from eMMC - LEC-iMX8M/LEC-iMX6R2/LEC-iMX6 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/03.-How-to-install-Yocto-Image-into-eMMC)
   
 
- 
+### RELEASE NOTE
+* see [RELEASE.md](https://github.com/ADLINK/meta-adlink-nxp/blob/zeus/RELEASE.md)
+
 
 <br>
 
