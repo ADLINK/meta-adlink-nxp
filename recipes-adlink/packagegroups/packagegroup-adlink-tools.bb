@@ -111,7 +111,7 @@ RDEPENDS_packagegroup-adlink-tools = " \
     upm-dev \
     python3-upm \
     python3-mraa \
-    ${@bb.utils.contains('BBLAYERS', 'meta-adlink-sema', 'sema', '', d)} \
+    ${@bb.utils.contains('BBLAYERS', '${BSPDIR}/sources/meta-adlink-sema', 'sema', '', d)} \
 "
 
 SUMMARY_packagegroup-adlink-utils = "Adlink Utils Support"
