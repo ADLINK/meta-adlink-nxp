@@ -1,0 +1,13 @@
+
+CONNECTIVITY_CHECK_URIS = "https://www.google.com"
+
+#CORE_IMAGE_EXTRA_INSTALL += "packagegroup-adlink"
+
+PACKAGECONFIG_append_pn-opencv_mx8 += " test"
+TOOLCHAIN_TARGET_TASK_append += " onnxruntime-dev"
+
+DISTRO_FEATURES_append = " sensors benchmarks adlink"
+MACHINE_FEATURES_append = " wifi bluetooth"
+
+OVERRIDES_append = ":wifibt"
+
