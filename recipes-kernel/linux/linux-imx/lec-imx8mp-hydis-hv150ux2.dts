@@ -1,0 +1,64 @@
+/*
+ * Copyright 2020 NXP
+ */
+
+#include "lec-imx8mp.dts"
+
+/ {
+	lvds0_panel {
+		status = "okay";
+		compatible = "hydis,hv150ux2-100";
+		backlight = <&lvds_backlight>;
+
+		enable-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+
+		port {
+			panel_lvds_in: endpoint {
+				remote-endpoint = <&lvds_out>;
+			};
+		};
+	};
+
+	lvds_backlight {
+		enable-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	};
+
+	// gpio3_IO23 on lec-imx8mp is display mux
+	reg_mipi_lvds_select: regulator-mipi-lvds {
+		compatible = "regulator-fixed";
+		regulator-name = "mipi_lvds_select_vbus";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_disp_select>;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio3 23 GPIO_ACTIVE_HIGH>;
+		enable-active-low;
+		regulator-always-on;
+	};
+};
+
+&ldb {
+	status = "okay";
+	fsl,dual-channel;
+
+	lvds-channel@0 {
+		fsl,data-mapping = "jeida";
+		fsl,data-width = <24>;
+		status = "okay";
+
+		/delete-node/ port@1;
+
+		port@1 {
+			reg = <1>;
+
+			lvds_out: endpoint {
+				remote-endpoint = <&panel_lvds_in>;
+			};
+		};
+	};
+
+};
+
+&ldb_phy {
+	status = "okay";
+};
