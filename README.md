@@ -197,7 +197,7 @@
 
 **How to build Yocto Image**
 
-* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01.-Build-Yocto-Image) for more details.
+* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki) for more details.
 
 #### How to flash image to your storage
 
