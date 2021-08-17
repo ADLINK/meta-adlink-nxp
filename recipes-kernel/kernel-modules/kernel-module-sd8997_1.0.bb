@@ -7,7 +7,10 @@ SUMMARY = "moal driver for NXP-W9887 WIFI/BT module via sdio"
 LICENSE = "GPL-2.0"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
 
-SRC_URI_append = " file://sd8xxx.conf"
+SRC_URI_append = " \
+  file://sd8xxx.conf \
+  file://sd8xxx-fcc.conf \
+"
 
 inherit module
 
@@ -39,9 +42,12 @@ EXTRA_OEMAKE += " \
 
 S = "${WORKDIR}/git/mwifiex_8997"
 
+MODPROBE_CONFFILE = "${@bb.utils.contains('DISTRO_FEATURES', 'fcc', 'sd8xxx-fcc.conf', 'sd8xxx.conf', d)}"
+
 do_install_append () {
    install -d ${D}${sysconfdir}/modprobe.d
-   install -m 644 ${WORKDIR}/sd8xxx.conf ${D}${sysconfdir}/modprobe.d
+   # if building wifi/bt, then copy sd8xxx.conf
+   install -m 644 ${WORKDIR}/${MODPROBE_CONFFILE} ${D}${sysconfdir}/modprobe.d/sd8xxx.conf
 }
 
 FILES_${PN} += "${sysconfdir}/modprobe.d"
