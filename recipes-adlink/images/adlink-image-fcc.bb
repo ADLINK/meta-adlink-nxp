@@ -36,6 +36,9 @@ IMAGE_LINGUAS = ""
 
 LICENSE = "MIT"
 
+inherit distro_features_check
+REQUIRED_DISTRO_FEATURES = "fcc"
+
 inherit core-image
 
 # Following is for appearance as we are only building /boot vfat partition
