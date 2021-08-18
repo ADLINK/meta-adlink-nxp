@@ -1,0 +1,14 @@
+[Unit]
+Description=FCC MFG Bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/mfgbridge
+Restart=always
+RestartSec=10
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target
