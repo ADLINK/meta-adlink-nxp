@@ -2,6 +2,17 @@
 
 ## LEC-IMX8MP
 
+### v1.7
+2021-08-30
+
+### Fixes
+- Fix RDEPENDS packagegroup spelling mistake for wifi and bluetooth
+- Add FCC specific mfg firmwares for nxp WIFI/BT sd8997 module
+- Work-around patch for WIFI/BT sd8997 driver to enable private ioctls (iwpriv)
+- Start the mfgbridge as an systemd service for adlink-image-fcc
+- Fix inclusion of sema4.0 using full bsp meta-adlink-sema path
+- set IO4 on ioexpander enable output on ethernet levelshift
+
 ### v1.6
 2021-07-06
 
