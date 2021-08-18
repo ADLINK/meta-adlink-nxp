@@ -73,7 +73,7 @@ RDEPENDS_packagegroup-adlink-wifi = " \
     dhcp-client \
 "
 
-RDEPENDS_package-group-adlink-wifi_append_lec-imx8mp = " \
+RDEPENDS_packagegroup-adlink-wifi_append_lec-imx8mp = " \
     wireless-tools \
     linux-firmware-sd8997 \
     kernel-module-sd8997 \
@@ -89,7 +89,7 @@ RDEPENDS_packagegroup-adlink-bluetooth = " \
     bluez5 \
 "
 
-RDEPENDS_package-group-adlink-bluetooth_append_lec-imx8mp = " \
+RDEPENDS_packagegroup-adlink-bluetooth_append_lec-imx8mp = " \
     linux-firmware-sd8997 \
     kernel-module-bt-sd8997 \
     nxp-bt-sdk \
