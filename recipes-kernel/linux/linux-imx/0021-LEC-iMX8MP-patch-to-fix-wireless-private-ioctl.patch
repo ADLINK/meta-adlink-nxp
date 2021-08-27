@@ -1,0 +1,30 @@
+From f817f1e402b243d44117150c8ab4dae43c4f2b9c Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Fri, 27 Aug 2021 13:59:22 +0800
+Subject: [PATCH] linux: patch to fix wireless private ioctl not supported
+ issue.
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ net/wireless/wext-core.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/net/wireless/wext-core.c b/net/wireless/wext-core.c
+index 69102fda9ebd..bf3948d8627f 100644
+--- a/net/wireless/wext-core.c
++++ b/net/wireless/wext-core.c
+@@ -955,6 +955,11 @@ static int wireless_process_ioctl(struct net *net, struct iwreq *iwr,
+ 		else if (private)
+ 			return private(dev, iwr, cmd, info, handler);
+ 	}
++
++	/* Use Old driver API : call driver's private ioctl handler */
++	if (dev && dev->netdev_ops && dev->netdev_ops->ndo_do_ioctl)
++		return dev->netdev_ops->ndo_do_ioctl(dev, (struct ifreq *)iwr, cmd);
++
+ 	return -EOPNOTSUPP;
+ }
+ 
+-- 
+2.25.1
+

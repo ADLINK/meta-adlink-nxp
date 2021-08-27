@@ -139,6 +139,7 @@ SRC_URI_append_lec-imx8mp += " \
 			file://0018-LEC-iMX8MP-Enable-PCIE-compliance-test.patch \
 			file://0019-LEC-iMX8MP-Changes-for-OV13855-camera-sensor.patch \
 			file://0020-LEC-iMX8MP-switch-usb-mode-to-OTG.patch \
+			file://0021-LEC-iMX8MP-patch-to-fix-wireless-private-ioctl.patch \
 "
 
 SRC_URI_append_wifibt = " \
