@@ -1,8 +1,7 @@
 #!/bin/sh
 
 TOKEN_PRE="ghp_"
-TOKEN_POST="n4138GgHZwaS7MChjf83NeQD2E7iUt01u9po"
-
+TOKEN_POST="iGvgyyrnRFoA71UrF0N12vm6pqEIFi0xgPs7"
 CWD=$(pwd)
 PROGNAME="$CWD/imx-setup-release.sh"
 
