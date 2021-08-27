@@ -6,7 +6,7 @@ ADLINK_SRC ?= "git://github.com/ADLINK/mwifiex-adlink.git"
 
 SRCBRANCH = "adlink-bridge-0.1.0.43"
 SRC_URI = "${ADLINK_SRC};branch=${SRCBRANCH};protocol=https;user=${PA_USER}:${PA_TOKEN};"
-SRCREV = "8a40ea40a6aa9a9b24be995016685feb888537c8"
+SRCREV = "2e2c7e0a1d5b733aa5398c6d3e6cc57dd68b8f52"
 
 S = "${WORKDIR}/git"
 
