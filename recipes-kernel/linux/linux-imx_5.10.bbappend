@@ -1,5 +1,3 @@
-IMX_KERNEL_CONFIG_AARCH64_lec-imx8mp = "lec-imx8mp_defconfig"
-
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 KERNEL_SRC_PATCHES[lec-imx8mp] = " \
@@ -31,25 +29,29 @@ do_copy_source () {
   dtbes=$(echo "${KERNEL_DEVICETREE}" | xargs)
 
   # Copy config
-  for config in ${configs}; do
-    if [ -f ${WORKDIR}/${config} -a ! -f ${S}/arch/arm64/configs/${IMX_KERNEL_CONFIG_AARCH64} ]; then
-      bbnote "copy kernel config: $config"
-      cp -f ${WORKDIR}/${config} ${S}/arch/arm64/configs/${config}
-    fi
-  done
+  if [ -n "${configs}" ]; then
+    for config in ${configs}; do
+      if [ -f ${WORKDIR}/${config} -a ! -f ${S}/arch/arm64/configs/${IMX_KERNEL_CONFIG_AARCH64} ]; then
+        bbnote "copy kernel config: $config"
+        cp -f ${WORKDIR}/${config} ${S}/arch/arm64/configs/${config}
+      fi
+    done
+  fi
   
   # Copy device trees
-  for dtbname in ${dtbes}; do
-    dtsname=$(echo "${dtbname%%.*}.dts")
-    dtsfile=$(basename -- $dtsname)
-    if [ -f ${WORKDIR}/$dtsfile ]; then
-      if [ ! -d ${S}/arch/arm64/boot/dts/adlink ]; then
-        mkdir -p ${S}/arch/arm64/boot/dts/adlink/
+  if [ -n "${dtbes}" ]; then
+    for dtbname in ${dtbes}; do
+      dtsname=$(echo "${dtbname%%.*}.dts")
+      dtsfile=$(basename -- $dtsname)
+      if [ -f ${WORKDIR}/$dtsfile ]; then
+        if [ ! -d ${S}/arch/arm64/boot/dts/adlink ]; then
+          mkdir -p ${S}/arch/arm64/boot/dts/adlink/
+        fi
+        bbnote "copy kernel dts: $dtsfile"
+        cp -f ${WORKDIR}/$dtsfile ${S}/arch/arm64/boot/dts/adlink/
       fi
-      bbnote "copy kernel dts: $dtsfile"
-      cp -f ${WORKDIR}/$dtsfile ${S}/arch/arm64/boot/dts/adlink/
-    fi
-  done
+    done
+  fi
 }
 
 addtask copy_source before do_validate_branches after do_kernel_checkout
