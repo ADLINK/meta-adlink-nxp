@@ -1,6 +1,6 @@
-From d5d20fdc9e25681d284f48829767a86de3adaabc Mon Sep 17 00:00:00 2001
+From 8e8832cb8953b147800218cd6d7ab9f8da3b9e6e Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
-Date: Mon, 2 Aug 2021 16:42:09 +0800
+Date: Mon, 7 Jun 2021 14:51:10 +0800
 Subject: [PATCH 2/2] u-boot: modify Kconfig/Makefile to build lec-imx8mp
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
@@ -10,25 +10,25 @@ Signed-off-by: po.cheng <po.cheng@adlinktech.com>
  2 files changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index aa0c6a75c3..b3a2c8bafa 100644
+index 83d1439dd3..635434c27b 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -875,7 +875,8 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
- 	imx8mp-ddr4-evk.dtb \
- 	imx8mp-evk.dtb \
- 	imx8mp-phyboard-pollux-rdk.dtb \
--	imx8mq-pico-pi.dtb
-+	imx8mq-pico-pi.dtb \
+@@ -802,7 +802,8 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
+ 	imx8mm-ddr4-ab2.dtb \
+ 	imx8mm-ab2.dtb \
+ 	imx8mn-ddr4-ab2.dtb \
+-	imx8mn-ab2.dtb
++	imx8mn-ab2.dtb \
 +	lec-imx8mp.dtb
  
- dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb \
- 	imxrt1020-evk.dtb
+ dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb
+ 
 diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
-index 9e5b6d7ffa..8cbf52c313 100644
+index 41c68a49a3..23eed009c9 100644
 --- a/arch/arm/mach-imx/imx8m/Kconfig
 +++ b/arch/arm/mach-imx/imx8m/Kconfig
-@@ -162,6 +162,13 @@ config TARGET_PICO_IMX8MQ
- 	select IMX8MQ
+@@ -118,6 +118,13 @@ config TARGET_IMX8MP_EVK
+ 	select SUPPORT_SPL
  	select IMX8M_LPDDR4
  
 +config TARGET_LEC_IMX8MP
@@ -41,10 +41,10 @@ index 9e5b6d7ffa..8cbf52c313 100644
  config TARGET_IMX8MP_DDR4_EVK
  	bool "imx8mp DDR4 EVK board"
  	select IMX8MP
-@@ -217,5 +224,6 @@ source "board/beacon/imx8mm/Kconfig"
- source "board/beacon/imx8mn/Kconfig"
- source "board/phytec/phycore_imx8mm/Kconfig"
- source "board/phytec/phycore_imx8mp/Kconfig"
+@@ -164,5 +171,6 @@ source "board/freescale/imx8mm_val/Kconfig"
+ source "board/freescale/imx8mn_evk/Kconfig"
+ source "board/freescale/imx8mp_evk/Kconfig"
+ source "board/toradex/verdin-imx8mm/Kconfig"
 +source "board/adlink/lec-imx8mp/Kconfig"
  
  endif
