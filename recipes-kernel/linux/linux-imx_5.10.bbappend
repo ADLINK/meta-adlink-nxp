@@ -1,5 +1,3 @@
-IMX_KERNEL_CONFIG_AARCH64_lec-imx8mp = "lec-imx8mp_defconfig"
-
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 KERNEL_SRC_PATCHES[lec-imx8mp] = " \
