@@ -1,0 +1,25 @@
+From 3095b1fd9da6f8d8a2f88e141783154d3aeda166 Mon Sep 17 00:00:00 2001
+From: "sandadi.mahesh" <sandadi.mahesh@adlinktech.com>
+Date: Tue, 5 Oct 2021 10:11:43 +0530
+Subject: [PATCH] SD card hotplug issue is fixed for imx6-R1
+
+Signed-off-by: sandadi.mahesh <sandadi.mahesh@adlinktech.com>
+---
+ arch/arm/boot/dts/lec-imx6.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/lec-imx6.dtsi b/arch/arm/boot/dts/lec-imx6.dtsi
+index 536df67a4025..e5a304f7ff70 100644
+--- a/arch/arm/boot/dts/lec-imx6.dtsi
++++ b/arch/arm/boot/dts/lec-imx6.dtsi
+@@ -1251,6 +1251,7 @@
+ };
+ 
+ &usdhc2 {	/* SMARC SDIO */
++	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_usdhc2>;
+ 	bus-width = <4>;
+ 	//fsl,cd-controller; /* using controller internal CD doesn't work properly */
+-- 
+2.17.1
+
