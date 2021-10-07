@@ -18,6 +18,6 @@
 
 part u-boot --source rawcopy --sourceparams "file=imx-boot" --ondisk ${WIC_FSTAB_BLKDEV} --no-table --align ${IMX_BOOT_SEEK}
 part /boot --source bootimg-partition --ondisk ${WIC_FSTAB_BLKDEV} --fstype=vfat --label boot --active --align 1024 --part-type 0xef00 --fixed-size 128 --uuid C12A7328-F81F-11D2-BA4B-00A0C93EC93B
-part / --source rootfs --ondisk ${WIC_FSTAB_BLKDEV} --fstype=ext4 --label root --align 1024 --size=12288
+part / ${WIC_SRC_ROOTFS} --ondisk ${WIC_FSTAB_BLKDEV} --fstype=ext4 --label root --align 1024 --size=12288
 
 bootloader --ptable gpt

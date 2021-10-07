@@ -35,3 +35,5 @@ IMAGE_OVERHEAD_FACTOR = "1.0"
 RDEPENDS_${PN} += "bash"
 DEPENDS += "e2fsprogs-native dosfstools-native mtools-native parted-native gptfdisk-native"
 do_image_wic[depends] = "imx-boot:do_install"
+
+WIC_SRC_ROOTFS = ""
