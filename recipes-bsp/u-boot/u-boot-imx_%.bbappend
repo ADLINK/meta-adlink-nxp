@@ -5,8 +5,7 @@ UBOOT_SRC_PATCHES[lec-imx8mp] = " \
   file://uboot-lec8mp.dts \
   file://0001-board-add-lec-imx8mp-source.patch \
   file://0002-u-boot-modify-Kconfig-Makefile-to-build-lec-imx8mp.patch \
-  file://0003-patch-ArmSystemReady-IR-for-NXP-imx8mp-evk.patch \
-  file://0004-patch-armsystemready-for-adlink-lec-imx8mp.patch \
+  file://0003-patch-armsystemready-for-adlink-lec-imx8mp.patch \
 "
 
 UBOOT_SRC_private = "git://github.com/ADLINK/u-boot-adlink.git;protocol=https"
