@@ -1,7 +1,7 @@
-From f08281a7928f64bb246c58f0699da99be41a3021 Mon Sep 17 00:00:00 2001
+From 9a0f0d67ca101557e4c3aef32668ed7a2f7f4ac1 Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Wed, 6 Oct 2021 11:03:51 +0800
-Subject: [PATCH 4/4] patch: armsystemready for adlink lec-imx8mp
+Subject: [PATCH 3/6] patch: armsystemready for adlink lec-imx8mp
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
 ---

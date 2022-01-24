@@ -1,7 +1,7 @@
-From 7e753212df2e68d4abf7b172ed1c18c509f21b98 Mon Sep 17 00:00:00 2001
+From 2f6b20f3cf9c94282db6f4b18537a311717d21ed Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Mon, 2 Aug 2021 16:42:09 +0800
-Subject: [PATCH 2/4] u-boot: modify Kconfig/Makefile to build lec-imx8mp
+Subject: [PATCH 2/6] u-boot: modify Kconfig/Makefile to build lec-imx8mp
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
 ---
@@ -10,24 +10,24 @@ Signed-off-by: po.cheng <po.cheng@adlinktech.com>
  2 files changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index aa0c6a75c3e3..dfc72620b728 100644
+index 24a387fb600e..1a93552b8dfc 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -875,7 +875,8 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
- 	imx8mp-ddr4-evk.dtb \
- 	imx8mp-evk.dtb \
- 	imx8mp-phyboard-pollux-rdk.dtb \
--	imx8mq-pico-pi.dtb
-+	imx8mq-pico-pi.dtb \
+@@ -882,7 +882,8 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
+ 	imx8mm-ab2.dtb \
+ 	imx8mn-ddr4-ab2.dtb \
+ 	imx8mn-ddr3l-ab2.dtb \
+-	imx8mn-ab2.dtb
++	imx8mn-ab2.dtb \
 +	uboot-lec8mp.dtb
  
  dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb \
  	imxrt1020-evk.dtb
 diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
-index 9e5b6d7ffa1d..8cbf52c313a3 100644
+index 245b085499bd..b333f688f942 100644
 --- a/arch/arm/mach-imx/imx8m/Kconfig
 +++ b/arch/arm/mach-imx/imx8m/Kconfig
-@@ -162,6 +162,13 @@ config TARGET_PICO_IMX8MQ
+@@ -170,6 +170,13 @@ config TARGET_PICO_IMX8MQ
  	select IMX8MQ
  	select IMX8M_LPDDR4
  
@@ -41,7 +41,7 @@ index 9e5b6d7ffa1d..8cbf52c313a3 100644
  config TARGET_IMX8MP_DDR4_EVK
  	bool "imx8mp DDR4 EVK board"
  	select IMX8MP
-@@ -217,5 +224,6 @@ source "board/beacon/imx8mm/Kconfig"
+@@ -276,5 +283,6 @@ source "board/beacon/imx8mm/Kconfig"
  source "board/beacon/imx8mn/Kconfig"
  source "board/phytec/phycore_imx8mm/Kconfig"
  source "board/phytec/phycore_imx8mp/Kconfig"
