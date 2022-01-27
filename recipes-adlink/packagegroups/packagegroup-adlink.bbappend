@@ -6,7 +6,6 @@ RDEPENDS_packagegroup-adlink-wifi_append_lec-imx8mp = " \
 "
 
 RDEPENDS_packagegroup-adlink-tools_append_lec-imx8mp = " \
-    firmware-imx-sdma \
     powerled \
     eth-lsoe \
     test-tools \
