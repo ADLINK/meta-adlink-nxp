@@ -85,7 +85,7 @@ index 000000000000..e974d3a68c50
 + * GNU General Public License for more details.
 + */
 +
-+#include "adlink-lec-imx8m-dual-display.dts"
++#include "adlink-lec-imx8m.dts"
 +
 +/delete-node/ &pgc_vpu;
 +/delete-node/ &vpu;
