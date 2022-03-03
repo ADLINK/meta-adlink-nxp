@@ -1,19 +1,12 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
-UBOOT_SRC_PATCHES[lec-imx8mp] = " \
-  file://adlink_lec8mp_defconfig \
-  file://uboot-lec8mp.dts \
-  file://0001-board-add-lec-imx8mp-source.patch \
-  file://0002-u-boot-modify-Kconfig-Makefile-to-build-lec-imx8mp.patch \
-  file://0003-patch-armsystemready-for-adlink-lec-imx8mp.patch \
-"
-
-UBOOT_SRC_private = "git://github.com/ADLINK/u-boot-adlink.git;protocol=https"
 SRCBRANCH_private = "lf_v2021.04-adlink"
+UBOOT_SRC_private = "git://github.com/ADLINK/u-boot-adlink.git;protocol=https"
 SRC_URI_private = "${UBOOT_SRC};branch=${SRCBRANCH};user=${PRIVATE_USER}:${PRIVATE_TOKEN};"
 SRCREV_private = "5f9689b0fd44532af6f4f9aad1cf1ba2d2d0a45e"
 
-SRC_URI += "${@bb.utils.contains_any('MACHINE', 'lec-imx8m lec-imx8mp', d.getVarFlag('UBOOT_SRC_PATCHES', d.getVar('MACHINE'), True), '', d) if 'private' not in d.getVar('OVERRIDES') else ''}"
+EXTRA_SRC = "${@d.getVarFlag('UBOOT_SRC_PATCHES', d.getVar('MACHINE'), True)}"
+SRC_URI_append = " ${EXTRA_SRC}"
 
 do_copy_source () {
   configs=$(echo "${UBOOT_MACHINE}" | xargs)
