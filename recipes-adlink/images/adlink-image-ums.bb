@@ -7,6 +7,7 @@ This image contains everything used to test i.MX machines including GUI, \
 demos and lots of applications. This creates a very large image, not \
 suitable for production."
 LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 IMAGE_FSTYPES_append = " wic wic.xz"
 IMAGE_FSTYPES_remove = "tar tar.bz2 ext4"
