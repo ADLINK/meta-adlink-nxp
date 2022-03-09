@@ -5,6 +5,7 @@ DESCRIPTION = "ADLINK Image for ArmSystemReady IR validation on i.MX machines. \
 This image contains boot-able u-boot (imx-boot) with u-boot dtb file in a EFI System Partition. \
 This creates a very small, just enought to load grub efi binary using u-boot's distro-boot."
 LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
 IMAGE_FSTYPES_append = " wic.xz"
 IMAGE_FSTYPES_remove = "tar tar.bz2 wic.bz2 ext4"
