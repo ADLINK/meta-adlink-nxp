@@ -6,11 +6,9 @@ CORE_IMAGE_EXTRA_INSTALL += "packagegroup-adlink"
 PACKAGECONFIG_append_pn-opencv_mx8 += " test"
 TOOLCHAIN_TARGET_TASK_append += " onnxruntime-dev"
 
-DISTRO_FEATURES_append = " sensors benchmarks adlink"
+DISTRO_FEATURES_append = " sensors benchmarks adlink wifi"
 MACHINE_FEATURES_append = " wifi bluetooth"
 IMAGE_FEATURES_append = " ssh-server-openssh"
-
-OVERRIDES_append = ":wifibt"
 
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
