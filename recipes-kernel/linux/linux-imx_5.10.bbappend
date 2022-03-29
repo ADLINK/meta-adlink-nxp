@@ -40,3 +40,5 @@ do_copy_source () {
 }
 
 addtask copy_source before do_validate_branches after do_kernel_checkout
+
+RDEPENDS_${PN} += "kernel-devsrc"
