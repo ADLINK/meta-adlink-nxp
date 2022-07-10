@@ -11,3 +11,8 @@ RDEPENDS_packagegroup-adlink-tools_append_lec-imx8mp = " \
     test-tools \
     v4lcap-mplane \
 "
+
+RDEPENDS_packagegroup-adlink-bluetooth_append_lec-imx8mp = " \
+    kernel-module-bt-sd8997 \
+    linux-firmware-sd8997 \
+"
