@@ -9,4 +9,5 @@ RDEPENDS_packagegroup-adlink-tools_append_lec-imx8mp = " \
     powerled \
     eth-lsoe \
     test-tools \
+    v4lcap-mplane \
 "
