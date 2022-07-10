@@ -737,6 +737,10 @@
 	status = "disabled";
 };
 
+&snvs_pwrkey {
+	status = "okay";
+};
+
 &easrc {
 	fsl,asrc-rate  = <48000>;
 	status = "okay";
@@ -868,18 +872,18 @@
 };
 
 &usb_dwc3_0 {
-	dr_mode = "host";
+	dr_mode = "otg";
 	hnp-disable;
 	srp-disable;
 	adp-disable;
 	usb-role-switch;
 	status = "okay";
 
-	port {
+	/*port {
 		usb3_drd_sw: endpoint {
 			// remote-endpoint = <&typec_dr_sw>;
 		};
-	};
+	};*/
 };
 
 &usb3_phy1 {
