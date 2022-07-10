@@ -1,0 +1,29 @@
+From 848666cfbc57bfaae1c3af9e6724e55f3616a198 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar.a@adlinktech.com>
+Date: Fri, 8 Oct 2021 19:11:37 +0530
+Subject: [PATCH] lec-imx8mp: Migrate uart log port from MRAA header to
+ EXPANSION header
+
+Move ATF uart log port from MRAA header to EXPANSION header
+
+Signed-off-by: Santhana Kumar A <santhanakumar.a@adlinktech.com>
+---
+ plat/imx/imx8m/imx8mp/platform.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/plat/imx/imx8m/imx8mp/platform.mk b/plat/imx/imx8m/imx8mp/platform.mk
+index d7999d846..bad41a4a7 100644
+--- a/plat/imx/imx8m/imx8mp/platform.mk
++++ b/plat/imx/imx8m/imx8mp/platform.mk
+@@ -61,7 +61,7 @@ $(eval $(call add_define,BL32_BASE))
+ BL32_SIZE		?=	0x2000000
+ $(eval $(call add_define,BL32_SIZE))
+ 
+-IMX_BOOT_UART_BASE	?=	0x30890000
++IMX_BOOT_UART_BASE	?=	0x30880000
+ $(eval $(call add_define,IMX_BOOT_UART_BASE))
+ 
+ ifeq (${SPD},trusty)
+-- 
+2.25.1
+
