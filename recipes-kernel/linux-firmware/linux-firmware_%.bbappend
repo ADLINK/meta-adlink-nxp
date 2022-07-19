@@ -28,6 +28,15 @@ do_install_append () {
         done
         install -m 0644 ${WORKDIR}/fcc-wifi_mod_para.conf ${D}${nonarch_base_libdir}/firmware/nxp/
     fi
+     if [ "${SD8997_FWDIR}" = "FwImage" ]; then   
+        #Install NXP sd-sd mode Firmware for Wifi/BT (sd8997) 
+            install -d ${D}/lib/firmware/nxp
+        for binfile in ${WORKDIR}/adlink-sd8997/${SD8997_FWDIR}/*.bin; do
+            install -m 0644 ${binfile} ${D}/lib/firmware/nxp
+        done
+    fi	
+    
+    
 }
 
 LICENSE_${PN}-nxp89xx = "Firmware-Marvell"

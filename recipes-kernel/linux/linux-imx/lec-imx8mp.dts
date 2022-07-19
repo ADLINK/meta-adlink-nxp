@@ -164,6 +164,28 @@
 
 &clk {
 	init-on-array = <IMX8MP_CLK_HSIO_ROOT>;
+	clocks = <&osc_32k>, <&osc_24m>, <&clk_ext1>, <&clk_ext2>,
+		 <&clk_ext3>, <&clk_ext4>, <&sai1_mclk>, <&sai2_mclk>,
+		 <&sai3_mclk>, <&sai5_mclk>, <&sai6_mclk>, <&sai7_mclk>;
+	clock-names = "osc_32k", "osc_24m", "clk_ext1", "clk_ext2",
+		      "clk_ext3", "clk_ext4", "sai1_mclk", "sai2_mclk",
+		      "sai3_mclk", "sai5_mclk", "sai6_mclk", "sai7_mclk";
+	assigned-clocks = <&clk IMX8MP_CLK_A53_SRC>,
+			  <&clk IMX8MP_CLK_A53_CORE>,
+			  <&clk IMX8MP_CLK_NOC>,
+			  <&clk IMX8MP_CLK_NOC_IO>,
+			  <&clk IMX8MP_CLK_GIC>,
+			  <&clk IMX8MP_CLK_AUDIO_AHB>,
+			  <&clk IMX8MP_CLK_AUDIO_AXI_SRC>,
+			  <&clk IMX8MP_AUDIO_PLL1>,
+			  <&clk IMX8MP_AUDIO_PLL2>,
+			  <&clk IMX8MP_VIDEO_PLL1>,
+			  <&clk IMX8MP_CLK_SAI1>,
+			  <&clk IMX8MP_CLK_SAI2>,
+			  <&clk IMX8MP_CLK_SAI3>,
+			  <&clk IMX8MP_CLK_SAI5>,
+			  <&clk IMX8MP_CLK_SAI6>,
+			  <&clk IMX8MP_CLK_SAI7>;
 };
 
 &A53_0 {
@@ -715,6 +737,10 @@
 	status = "disabled";
 };
 
+&snvs_pwrkey {
+	status = "okay";
+};
+
 &easrc {
 	fsl,asrc-rate  = <48000>;
 	status = "okay";
@@ -846,18 +872,18 @@
 };
 
 &usb_dwc3_0 {
-	dr_mode = "host";
+	dr_mode = "otg";
 	hnp-disable;
 	srp-disable;
 	adp-disable;
 	usb-role-switch;
 	status = "okay";
 
-	port {
+	/*port {
 		usb3_drd_sw: endpoint {
 			// remote-endpoint = <&typec_dr_sw>;
 		};
-	};
+	};*/
 };
 
 &usb3_phy1 {
