@@ -32,4 +32,6 @@ IMAGE_BOOT_FILES ?= " \
 
 #Remove unwanted bbappend here
 BBMASK += " weston_9.0.0.imx"
-BBMASK += " imx-vpu-hantro-vc_1.3.0"
+
+BBMASK += " imx-vpu-hantro-vc_1.3.0 meta-adlink-nxp/recipes-bsp/imx-mkimage/imx-boot_1.0.bbappend  meta-adlink-nxp/recipes-connectivity/nxp-wlan-sdk/nxp-wlan-sdk_%.bbappend"
+
