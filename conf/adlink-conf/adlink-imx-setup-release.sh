@@ -1,7 +1,7 @@
 #!/bin/sh
 
 TOKEN_PRE="ghp_"
-TOKEN_POST="iGvgyyrnRFoA71UrF0N12vm6pqEIFi0xgPs7"
+TOKEN_POST="DiFPUbMC2PjG06sFvpuDrsBdJAH5bO0bSQd9"
 
 if [ -z "$BUILD" ]; then
 	BUILD=build
