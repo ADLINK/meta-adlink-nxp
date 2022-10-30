@@ -1,9 +1,19 @@
+
+CONNECTIVITY_CHECK_URIS = "https://www.google.com"
+
+CORE_IMAGE_EXTRA_INSTALL += "packagegroup-adlink"
+
+PACKAGECONFIG_append_pn-opencv_mx8 += " test"
+TOOLCHAIN_TARGET_TASK_append += " onnxruntime-dev"
+
+DISTRO_FEATURES_append = " sensors benchmarks adlink "
+MACHINE_FEATURES_append = " bluetooth"
+IMAGE_FEATURES_append = " ssh-server-openssh"
+
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
 
-#BUILDTAG ??= "LEC-iMX8MM-0v1"
+
 RELEASE_VERSION ?= "LEC-iMX8MM-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
 
-INHERIT += "rm_work"
-BBMASK += "xfdesktop"
-
+#KERNEL_MODULE_AUTOLOAD += "mlan moal"

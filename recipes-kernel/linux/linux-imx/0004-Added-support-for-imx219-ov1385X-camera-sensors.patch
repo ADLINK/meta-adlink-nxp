@@ -1,0 +1,3951 @@
+From e441e740b24ab1fc6a401c92688e0c48b51183a0 Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Fri, 21 Oct 2022 11:52:32 +0530
+Subject: [PATCH 4/5] Added support for imx219,ov1385X camera sensors
+
+---
+ drivers/media/i2c/Kconfig                     |   18 +
+ drivers/media/i2c/Makefile                    |    2 +
+ drivers/media/i2c/imx219.c                    |   80 +-
+ drivers/media/i2c/ov13850.c                   | 1940 +++++++++++++++++
+ drivers/media/i2c/ov13855.c                   | 1322 +++++++++++
+ drivers/media/i2c/ov13858.c                   |  126 +-
+ .../media/platform/mxc/capture/mx6s_capture.c |   58 +
+ .../media/platform/mxc/capture/mxc_mipi_csi.c |   28 +
+ .../media/platform/mxc/capture/ov5647_mipi.c  |    8 +-
+ 9 files changed, 3535 insertions(+), 47 deletions(-)
+ create mode 100755 drivers/media/i2c/ov13850.c
+ create mode 100755 drivers/media/i2c/ov13855.c
+
+diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
+index 878f66ef2719..3b874b2bc0dd 100644
+--- a/drivers/media/i2c/Kconfig
++++ b/drivers/media/i2c/Kconfig
+@@ -1169,6 +1169,24 @@ config VIDEO_NOON010PC30
+ 	help
+ 	  This driver supports NOON010PC30 CIF camera from Siliconfile
+ 
++config VIDEO_OV13850
++	tristate "OmniVision OV13850 sensor support"
++	depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API
++	depends on MEDIA_CAMERA_SUPPORT
++	select V4L2_FWNODE
++	help
++	  This is a Video4Linux2 sensor driver for the OmniVision
++	  OV13850 camera.
++
++config VIDEO_OV13855
++	tristate "OmniVision OV13855 sensor support"
++	depends on I2C && VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API
++	depends on MEDIA_CAMERA_SUPPORT
++	select V4L2_FWNODE
++	help
++	  This is a Video4Linux2 sensor driver for the OmniVision
++	  OV13850 camera.
++
+ source "drivers/media/i2c/m5mols/Kconfig"
+ 
+ config VIDEO_RDACM20
+diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
+index f0a77473979d..9d9fcb74154b 100644
+--- a/drivers/media/i2c/Makefile
++++ b/drivers/media/i2c/Makefile
+@@ -123,5 +123,7 @@ obj-$(CONFIG_VIDEO_MAX9286)	+= max9286.o
+ rdacm20-camera_module-objs	:= rdacm20.o max9271.o
+ obj-$(CONFIG_VIDEO_RDACM20)	+= rdacm20-camera_module.o
+ obj-$(CONFIG_VIDEO_ST_MIPID02) += st-mipid02.o
++obj-$(CONFIG_VIDEO_OV13850) += ov13850.o
++obj-$(CONFIG_VIDEO_OV13855) += ov13855.o
+ 
+ obj-$(CONFIG_SDR_MAX2175) += max2175.o
+diff --git a/drivers/media/i2c/imx219.c b/drivers/media/i2c/imx219.c
+index 4771d0ef2c46..c00b13869bc5 100644
+--- a/drivers/media/i2c/imx219.c
++++ b/drivers/media/i2c/imx219.c
+@@ -27,6 +27,7 @@
+ #include <media/v4l2-fwnode.h>
+ #include <media/v4l2-mediabus.h>
+ #include <asm/unaligned.h>
++#include <linux/of_gpio.h>
+ 
+ #define IMX219_REG_VALUE_08BIT		1
+ #define IMX219_REG_VALUE_16BIT		2
+@@ -543,7 +544,9 @@ struct imx219 {
+ 	struct clk *xclk; /* system clock to IMX219 */
+ 	u32 xclk_freq;
+ 
+-	struct gpio_desc *reset_gpio;
++	//struct gpio_desc *reset_gpio;
++	unsigned reset_gpio;
++	unsigned power_gpio;
+ 	struct regulator_bulk_data supplies[IMX219_NUM_SUPPLIES];
+ 
+ 	struct v4l2_ctrl_handler ctrl_handler;
+@@ -670,7 +673,7 @@ static void imx219_set_default_format(struct imx219 *imx219)
+ 	struct v4l2_mbus_framefmt *fmt;
+ 
+ 	fmt = &imx219->fmt;
+-	fmt->code = MEDIA_BUS_FMT_SRGGB10_1X10;
++	fmt->code = MEDIA_BUS_FMT_SBGGR8_1X8;
+ 	fmt->colorspace = V4L2_COLORSPACE_SRGB;
+ 	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
+ 	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true,
+@@ -695,7 +698,7 @@ static int imx219_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
+ 	try_fmt->width = supported_modes[0].width;
+ 	try_fmt->height = supported_modes[0].height;
+ 	try_fmt->code = imx219_get_format_code(imx219,
+-					       MEDIA_BUS_FMT_SRGGB10_1X10);
++					       MEDIA_BUS_FMT_SBGGR8_1X8);
+ 	try_fmt->field = V4L2_FIELD_NONE;
+ 
+ 	/* Initialize try_crop rectangle. */
+@@ -1128,14 +1131,17 @@ static int imx219_power_on(struct device *dev)
+ 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+ 	struct imx219 *imx219 = to_imx219(sd);
+ 	int ret;
++	gpio_set_value(imx219->power_gpio, 0);
++	usleep_range(IMX219_XCLR_MIN_DELAY_US,
++		     IMX219_XCLR_MIN_DELAY_US + IMX219_XCLR_DELAY_RANGE_US);
+ 
+-	ret = regulator_bulk_enable(IMX219_NUM_SUPPLIES,
+-				    imx219->supplies);
+-	if (ret) {
+-		dev_err(&client->dev, "%s: failed to enable regulators\n",
+-			__func__);
+-		return ret;
+-	}
++	gpio_set_value(imx219->reset_gpio, 0);
++	usleep_range(IMX219_XCLR_MIN_DELAY_US,
++		     IMX219_XCLR_MIN_DELAY_US + IMX219_XCLR_DELAY_RANGE_US);
++
++	gpio_set_value(imx219->power_gpio, 1);
++	usleep_range(IMX219_XCLR_MIN_DELAY_US,
++		     IMX219_XCLR_MIN_DELAY_US + IMX219_XCLR_DELAY_RANGE_US);
+ 
+ 	ret = clk_prepare_enable(imx219->xclk);
+ 	if (ret) {
+@@ -1144,14 +1150,13 @@ static int imx219_power_on(struct device *dev)
+ 		goto reg_off;
+ 	}
+ 
+-	gpiod_set_value_cansleep(imx219->reset_gpio, 1);
++	gpio_set_value(imx219->reset_gpio, 1);
+ 	usleep_range(IMX219_XCLR_MIN_DELAY_US,
+ 		     IMX219_XCLR_MIN_DELAY_US + IMX219_XCLR_DELAY_RANGE_US);
+-
+ 	return 0;
+ 
+ reg_off:
+-	regulator_bulk_disable(IMX219_NUM_SUPPLIES, imx219->supplies);
++	//regulator_bulk_disable(IMX219_NUM_SUPPLIES, imx219->supplies);
+ 
+ 	return ret;
+ }
+@@ -1161,11 +1166,14 @@ static int imx219_power_off(struct device *dev)
+ 	struct i2c_client *client = to_i2c_client(dev);
+ 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+ 	struct imx219 *imx219 = to_imx219(sd);
+-
+-	gpiod_set_value_cansleep(imx219->reset_gpio, 0);
+-	regulator_bulk_disable(IMX219_NUM_SUPPLIES, imx219->supplies);
++	msleep(10);
++	gpio_set_value(imx219->reset_gpio, 0);
++	usleep_range(IMX219_XCLR_MIN_DELAY_US,
++		     IMX219_XCLR_MIN_DELAY_US + IMX219_XCLR_DELAY_RANGE_US);
++	gpio_set_value(imx219->power_gpio, 0);
++	usleep_range(IMX219_XCLR_MIN_DELAY_US,
++		     IMX219_XCLR_MIN_DELAY_US + IMX219_XCLR_DELAY_RANGE_US);
+ 	clk_disable_unprepare(imx219->xclk);
+-
+ 	return 0;
+ }
+ 
+@@ -1401,13 +1409,11 @@ static int imx219_check_hwcfg(struct device *dev)
+ 		dev_err(dev, "could not parse endpoint\n");
+ 		goto error_out;
+ 	}
+-
+ 	/* Check the number of MIPI CSI2 data lanes */
+ 	if (ep_cfg.bus.mipi_csi2.num_data_lanes != 2) {
+ 		dev_err(dev, "only 2 data lanes are currently supported\n");
+ 		goto error_out;
+ 	}
+-
+ 	/* Check the link frequency set in device tree */
+ 	if (!ep_cfg.nr_of_link_frequencies) {
+ 		dev_err(dev, "link-frequency property not found in DT\n");
+@@ -1433,6 +1439,7 @@ static int imx219_check_hwcfg(struct device *dev)
+ static int imx219_probe(struct i2c_client *client)
+ {
+ 	struct device *dev = &client->dev;
++	struct pinctrl *pinctrl;
+ 	struct imx219 *imx219;
+ 	int ret;
+ 
+@@ -1440,6 +1447,10 @@ static int imx219_probe(struct i2c_client *client)
+ 	if (!imx219)
+ 		return -ENOMEM;
+ 
++	pinctrl = devm_pinctrl_get_select_default(dev);
++	if (IS_ERR(pinctrl))
++		dev_warn(dev, "No pin available\n");
++
+ 	v4l2_i2c_subdev_init(&imx219->sd, client, &imx219_subdev_ops);
+ 
+ 	/* Check the hardware configuration in device tree */
+@@ -1447,7 +1458,7 @@ static int imx219_probe(struct i2c_client *client)
+ 		return -EINVAL;
+ 
+ 	/* Get system clock (xclk) */
+-	imx219->xclk = devm_clk_get(dev, NULL);
++	imx219->xclk = devm_clk_get(dev, "csi_mclk");
+ 	if (IS_ERR(imx219->xclk)) {
+ 		dev_err(dev, "failed to get xclk\n");
+ 		return PTR_ERR(imx219->xclk);
+@@ -1459,17 +1470,32 @@ static int imx219_probe(struct i2c_client *client)
+ 			imx219->xclk_freq);
+ 		return -EINVAL;
+ 	}
+-
+-	ret = imx219_get_regulators(imx219);
+-	if (ret) {
+-		dev_err(dev, "failed to get regulators\n");
++	/* Request optional enable pin */
++	imx219->reset_gpio = of_get_named_gpio(dev->of_node, "rst-gpios", 0);
++	if (!gpio_is_valid(imx219->reset_gpio)) {
++		dev_err(dev, "no sensor reset pin available");
++		return -EINVAL;
++	}
++	ret = devm_gpio_request_one(dev, imx219->reset_gpio, GPIOF_OUT_INIT_LOW,
++					"imx219_reset");
++	if (ret < 0) {
++		dev_err(dev, "failed to acquire sensor reset pin");
+ 		return ret;
+ 	}
+ 
+-	/* Request optional enable pin */
+-	imx219->reset_gpio = devm_gpiod_get_optional(dev, "reset",
+-						     GPIOD_OUT_HIGH);
++	imx219->power_gpio = of_get_named_gpio(dev->of_node, "pwn-gpios", 0);
++	if (!gpio_is_valid(imx219->power_gpio)) {
++		dev_err(dev, "no sensor power pin available");
++		return -EINVAL;
++	}
+ 
++	ret = devm_gpio_request_one(dev, imx219->power_gpio, GPIOF_OUT_INIT_HIGH,
++					"imx219_pwdn");
++	if (ret < 0) {
++		dev_err(dev, "failed to acquire sensor power pin");
++		return ret;
++	}
++	
+ 	/*
+ 	 * The sensor must be powered for imx219_identify_module()
+ 	 * to be able to read the CHIP_ID register
+diff --git a/drivers/media/i2c/ov13850.c b/drivers/media/i2c/ov13850.c
+new file mode 100755
+index 000000000000..ecdc78a2fcbe
+--- /dev/null
++++ b/drivers/media/i2c/ov13850.c
+@@ -0,0 +1,1940 @@
++/*
++ * ov13850 sensor level driver
++ * This driver used to capture raw BGGR data
++ * 4 lanes, 2112x1568, 4224x3136
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/ctype.h>
++#include <linux/types.h>
++#include <linux/delay.h>
++#include <linux/clk.h>
++#include <linux/of_device.h>
++#include <linux/i2c.h>
++#include <linux/of_gpio.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/regulator/consumer.h>
++#include <linux/v4l2-mediabus.h>
++#include <linux/kobject.h>
++#include <media/v4l2-device.h>
++#include <media/v4l2-ctrls.h>
++
++#define OV13850_XVCLK_FREQ		24000000
++
++#define CHIP_ID				0x00d850
++#define OV13850_REG_CHIP_ID		0x300a
++
++#define OV13850_REG_CTRL_MODE		0x0100
++#define OV13850_MODE_SW_STANDBY		0x0
++#define OV13850_MODE_STREAMING		BIT(0)
++
++#define OV13850_REG_EXPOSURE		0x3500
++#define	OV13850_EXPOSURE_MIN		4
++#define	OV13850_EXPOSURE_STEP		1
++#define OV13850_VTS_MAX			0x7fff
++
++#define OV13850_REG_GAIN_H		0x350a
++#define OV13850_REG_GAIN_L		0x350b
++#define OV13850_GAIN_H_MASK		0x07
++#define OV13850_GAIN_H_SHIFT		8
++#define OV13850_GAIN_L_MASK		0xff
++#define OV13850_GAIN_MIN		0x10
++#define OV13850_GAIN_MAX		0xf8
++#define OV13850_GAIN_STEP		1
++#define OV13850_GAIN_DEFAULT		0x10
++
++#define OV13850_REG_TEST_PATTERN	0x5e00
++#define ENABLE_TEST_PATTERN		0
++
++#define OV13850_REG_VTS			0x380e
++
++#define REG_NULL			0xFFFF
++
++#define OV13850_REG_VALUE_08BIT		1
++#define OV13850_REG_VALUE_16BIT		2
++#define OV13850_REG_VALUE_24BIT		3
++
++#define OV13850_LANES			4
++#define OV13850_BITS_PER_SAMPLE		10
++
++#define OV13850_CHIP_REVISION_REG	0x302A
++#define OV13850_R1A			0xb1
++#define OV13850_R2A			0xb2
++
++#define OF_CAMERA_PINCTRL_STATE_DEFAULT	"ov13850_camera_default"
++#define OF_CAMERA_PINCTRL_STATE_SLEEP	"ov13850_camera_sleep"
++
++#define OV13850_NAME			"ov13850_mipi_raw"
++#define OV13850_VCHANNEL	0x4813
++
++#define OV13850_RES_HIGH_WIDTH		4224
++#define OV13850_RES_HIGH_HEIGHT		3136
++#define OV13850_RES_LOW_WIDTH		2112
++#define OV13850_RES_LOW_HEIGHT		1568
++
++#define DEFAULT_FPS	15
++
++#define OV13850_SENS_PAD_SOURCE	0
++#define OV13850_SENS_PADS_NUM	1
++
++//only running 8 bit settings, 10 bit need to validate
++#define OV13850_8BIT 1
++
++static u32 ov13850_revid;
++
++static const struct regval *ov13850_global_regs;
++
++struct regval {
++	u16 addr;
++	u8 val;
++};
++
++struct ov13850_mode {
++	u32 width;
++	u32 height;
++	const struct regval *reg_list;
++};
++
++struct ov13850 {
++	struct v4l2_subdev		subdev;
++	struct i2c_client *i2c_client;
++	struct v4l2_pix_format pix;
++	const struct ov13850_datafmt	*fmt;
++	struct v4l2_captureparm streamcap;
++	bool on;
++
++	u32 mclk;
++	u8 mclk_source;
++	struct clk *sensor_clk;
++	int csi_vc;
++
++	int pwn_gpio;
++	int rst_gpio;
++	struct media_pad pads[OV13850_SENS_PADS_NUM];
++
++	bool streaming;
++	int mode;
++};
++
++
++struct ov13850_datafmt {
++	u32	code;
++	enum v4l2_colorspace		colorspace;
++};
++
++static const struct ov13850_datafmt ov13850_colour_fmts[] = {
++#ifdef OV13850_10BIT
++	{MEDIA_BUS_FMT_SBGGR10_1X10, V4L2_COLORSPACE_RAW},
++#endif
++#ifdef OV13850_8BIT
++	{MEDIA_BUS_FMT_SBGGR8_1X8, V4L2_COLORSPACE_RAW},
++#endif
++};
++
++
++/*Init settings for 3.3MP resolution*/
++static struct regval ov13850_init_2112x1568_r2a[] = {
++#ifdef OV13850_10BIT
++	{0x0103, 0x01},
++	{0x0300, 0x01},
++	{0x0301, 0x00},
++	{0x0302, 0x28},
++	{0x0303, 0x00},
++	{0x030a, 0x00},
++	{0x300f, 0x11},
++	{0x3010, 0x01},
++	{0x3011, 0x76},
++	{0x3012, 0x41},
++	{0x3013, 0x12},
++	{0x3014, 0x11},
++	{0x301f, 0x03},
++	{0x3106, 0x00},
++	{0x3210, 0x47},
++	{0x3500, 0x00},
++	{0x3501, 0x60},
++	{0x3502, 0x00},
++	{0x3506, 0x00},
++	{0x3507, 0x02},
++	{0x3508, 0x00},
++	{0x350a, 0x00},
++	{0x350b, 0x80},
++	{0x350e, 0x00},
++	{0x350f, 0x10},
++	{0x351a, 0x00},
++	{0x351b, 0x10},
++	{0x351c, 0x00},
++	{0x351d, 0x20},
++	{0x351e, 0x00},
++	{0x351f, 0x40},
++	{0x3520, 0x00},
++	{0x3521, 0x80},
++	{0x3600, 0xc0},
++	{0x3601, 0xfc},
++	{0x3602, 0x02},
++	{0x3603, 0x78},
++	{0x3604, 0xb1},
++	{0x3605, 0x95},
++	{0x3606, 0x73},
++	{0x3607, 0x07},
++	{0x3609, 0x40},
++	{0x360a, 0x30},
++	{0x360b, 0x91},
++	{0x360C, 0x09},
++	{0x360f, 0x02},
++	{0x3611, 0x10},
++	{0x3612, 0x27},
++	{0x3613, 0x33},
++	{0x3615, 0x0c},
++	{0x3616, 0x0e},
++	{0x3641, 0x02},
++	{0x3660, 0x82},
++	{0x3668, 0x54},
++	{0x3669, 0x00},
++	{0x366a, 0x3f},
++	{0x3667, 0xa0},
++	{0x3702, 0x40},
++	{0x3703, 0x44},
++	{0x3704, 0x2c},
++	{0x3705, 0x01},
++	{0x3706, 0x15},
++	{0x3707, 0x44},
++	{0x3708, 0x3c},
++	{0x3709, 0x1f},
++	{0x370a, 0x27},
++	{0x370b, 0x3c},
++	{0x3720, 0x55},
++	{0x3722, 0x84},
++	{0x3728, 0x40},
++	{0x372a, 0x00},
++	{0x372b, 0x02},
++	{0x372e, 0x22},
++	{0x372f, 0x90},
++	{0x3730, 0x00},
++	{0x3731, 0x00},
++	{0x3732, 0x00},
++	{0x3733, 0x00},
++	{0x3710, 0x28},
++	{0x3716, 0x03},
++	{0x3718, 0x10},
++	{0x3719, 0x0c},
++	{0x371a, 0x08},
++	{0x371c, 0xfc},
++	{0x3748, 0x00},
++	{0x3760, 0x13},
++	{0x3761, 0x33},
++	{0x3762, 0x86},
++	{0x3763, 0x16},
++	{0x3767, 0x24},
++	{0x3768, 0x06},
++	{0x3769, 0x45},
++	{0x376c, 0x23},
++	{0x376f, 0x80},
++	{0x3773, 0x06},
++	{0x3d84, 0x00},
++	{0x3d85, 0x17},
++	{0x3d8c, 0x73},
++	{0x3d8d, 0xbf},
++	{0x3800, 0x00},
++	{0x3801, 0x08},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x97},
++	{0x3806, 0x0c},
++	{0x3807, 0x4b},
++	{0x3808, 0x08},
++	{0x3809, 0x40},
++	{0x380a, 0x06},
++	{0x380b, 0x20},
++	{0x380c, 0x09},
++	{0x380d, 0x60},
++	{0x380e, 0x06},
++	{0x380f, 0x80},
++	{0x3810, 0x00},
++	{0x3811, 0x04},
++	{0x3812, 0x00},
++	{0x3813, 0x02},
++	{0x3814, 0x31},
++	{0x3815, 0x31},
++	{0x3820, 0x02},
++	{0x3821, 0x06},
++	{0x3823, 0x00},
++	{0x3826, 0x00},
++	{0x3827, 0x02},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x08},
++	{0x3837, 0x02},
++	{0x4000, 0xf1},
++	{0x4001, 0x00},
++	{0x400b, 0x0c},
++	{0x4011, 0x00},
++	{0x401a, 0x00},
++	{0x401b, 0x00},
++	{0x401c, 0x00},
++	{0x401d, 0x00},
++	{0x4020, 0x00},
++	{0x4021, 0xe4},
++	{0x4022, 0x04},
++	{0x4023, 0xd7},
++	{0x4024, 0x05},
++	{0x4025, 0xbc},
++	{0x4026, 0x05},
++	{0x4027, 0xbf},
++	{0x4028, 0x00},
++	{0x4029, 0x02},
++	{0x402a, 0x04},
++	{0x402b, 0x08},
++	{0x402c, 0x02},
++	{0x402d, 0x02},
++	{0x402e, 0x0c},
++	{0x402f, 0x08},
++	{0x403d, 0x2c},
++	{0x403f, 0x40},
++	{0x4041, 0x07},
++	{0x4500, 0x82},
++	{0x4501, 0x3c},
++	{0x458b, 0x00},
++	{0x459c, 0x00},
++	{0x459d, 0x00},
++	{0x459e, 0x00},
++	{0x4601, 0x83},
++	{0x4602, 0x22},
++	{0x4603, 0x01},
++	{0x4837, 0x19},
++	{0x4d00, 0x04},
++	{0x4d01, 0x42},
++	{0x4d02, 0xd1},
++	{0x4d03, 0x90},
++	{0x4d04, 0x66},
++	{0x4d05, 0x65},
++	{0x4d0b, 0x00},
++	{0x5000, 0x0e},
++	{0x5001, 0x01},
++	{0x5002, 0x07},
++	{0x5003, 0x4f},
++	{0x5013, 0x40},
++	{0x501c, 0x00},
++	{0x501d, 0x10},
++	{0x5100, 0x30},
++	{0x5101, 0x02},
++	{0x5102, 0x01},
++	{0x5103, 0x01},
++	{0x5104, 0x02},
++	{0x5105, 0x01},
++	{0x5106, 0x01},
++	{0x5107, 0x00},
++	{0x5108, 0x00},
++	{0x5109, 0x00},
++	{0x510f, 0xfc},
++	{0x5110, 0xf0},
++	{0x5111, 0x10},
++	{0x536d, 0x02},
++	{0x536e, 0x67},
++	{0x536f, 0x01},
++	{0x5370, 0x4c},
++	{0x5400, 0x00},
++	{0x5400, 0x00},
++	{0x5401, 0x61},
++	{0x5402, 0x00},
++	{0x5403, 0x00},
++	{0x5404, 0x00},
++	{0x5405, 0x40},
++	{0x540c, 0x05},
++	{0x5501, 0x00},
++	{0x5b00, 0x00},
++	{0x5b01, 0x00},
++	{0x5b02, 0x01},
++	{0x5b03, 0xff},
++	{0x5b04, 0x02},
++	{0x5b05, 0x6c},
++	{0x5b09, 0x02},
++	{0x5e00, 0x00},
++	{0x5e10, 0x1c},
++#endif
++#ifdef OV13850_8BIT
++	{0x0103, 0x01},
++	{0x0300, 0x01},
++	{0x0301, 0x00},
++	{0x0302, 0x28},
++	{0x0303, 0x00},
++	{0x030a, 0x00},
++	{0x300f, 0x10},
++	{0x3010, 0x01},
++	{0x3011, 0x76},
++	{0x3012, 0x41},
++	{0x3013, 0x12},
++	{0x3014, 0x11},
++	{0x301f, 0x03},
++	{0x3106, 0x00},
++	{0x3210, 0x47},
++	{0x3500, 0x00},
++	{0x3501, 0xc0},
++	{0x3502, 0x00},
++	{0x3506, 0x00},
++	{0x3507, 0x02},
++	{0x3508, 0x00},
++	{0x350a, 0x00},
++	{0x350b, 0x80},
++	{0x350e, 0x00},
++	{0x350f, 0x10},
++	{0x351a, 0x00},
++	{0x351b, 0x10},
++	{0x351c, 0x00},
++	{0x351d, 0x20},
++	{0x351e, 0x00},
++	{0x351f, 0x40},
++	{0x3520, 0x00},
++	{0x3521, 0x80},
++	{0x3600, 0xc0},
++	{0x3601, 0xfc},
++	{0x3602, 0x02},
++	{0x3603, 0x78},
++	{0x3604, 0xb1},
++	{0x3605, 0x95},
++	{0x3606, 0x73},
++	{0x3607, 0x07},
++	{0x3609, 0x40},
++	{0x360a, 0x30},
++	{0x360b, 0x91},
++	{0x360C, 0x09},
++	{0x360f, 0x02},
++	{0x3611, 0x10},
++	{0x3612, 0x27},
++	{0x3613, 0x33},
++	{0x3615, 0x0c},
++	{0x3616, 0x0e},
++	{0x3641, 0x02},
++	{0x3660, 0x82},
++	{0x3668, 0x54},
++	{0x3669, 0x00},
++	{0x366a, 0x3f},
++	{0x3667, 0xa0},
++	{0x3702, 0x40},
++	{0x3703, 0x44},
++	{0x3704, 0x2c},
++	{0x3705, 0x01},
++	{0x3706, 0x15},
++	{0x3707, 0x44},
++	{0x3708, 0x3c},
++	{0x3709, 0x1f},
++	{0x370a, 0x27},
++	{0x370b, 0x3c},
++	{0x3720, 0x55},
++	{0x3722, 0x84},
++	{0x3728, 0x40},
++	{0x372a, 0x00},
++	{0x372b, 0x02},
++	{0x372e, 0x22},
++	{0x372f, 0xa0},
++	{0x3730, 0x00},
++	{0x3731, 0x00},
++	{0x3732, 0x00},
++	{0x3733, 0x00},
++	{0x3710, 0x28},
++	{0x3716, 0x03},
++	{0x3718, 0x1c},
++	{0x3719, 0x0c},
++	{0x371a, 0x08},
++	{0x371c, 0xfc},
++	{0x3748, 0x00},
++	{0x3760, 0x13},
++	{0x3761, 0x33},
++	{0x3762, 0x86},
++	{0x3763, 0x16},
++	{0x3767, 0x24},
++	{0x3768, 0x06},
++	{0x3769, 0x45},
++	{0x376c, 0x23},
++	{0x376f, 0x80},
++	{0x3773, 0x06},
++	{0x3d84, 0x00},
++	{0x3d85, 0x17},
++	{0x3d8c, 0x73},
++	{0x3d8d, 0xbf},
++	{0x3800, 0x00},
++	{0x3801, 0x00},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x9f},
++	{0x3806, 0x0c},
++	{0x3807, 0x4b},
++	{0x3808, 0x08},
++	{0x3809, 0x40},
++	{0x380a, 0x06},
++	{0x380b, 0x20},
++	{0x380c, 0x11},
++	{0x380d, 0xa0},
++	{0x380e, 0x0d},
++	{0x380f, 0x00},
++	{0x3810, 0x00},
++	{0x3811, 0x08},
++	{0x3812, 0x00},
++	{0x3813, 0x02},
++	{0x3814, 0x31},
++	{0x3815, 0x31},
++	{0x3820, 0x01},
++	{0x3821, 0x06},
++	{0x3823, 0x00},
++	{0x3826, 0x00},
++	{0x3827, 0x02},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x08},
++	{0x3837, 0x02},
++	{0x4000, 0xf1},
++	{0x4001, 0x00},
++	{0x400b, 0x0c},
++	{0x4011, 0x00},
++	{0x401a, 0x00},
++	{0x401b, 0x00},
++	{0x401c, 0x00},
++	{0x401d, 0x00},
++	{0x4020, 0x00},
++	{0x4021, 0xe4},
++	{0x4022, 0x04},
++	{0x4023, 0xd7},
++	{0x4024, 0x05},
++	{0x4025, 0xbc},
++	{0x4026, 0x05},
++	{0x4027, 0xbf},
++	{0x4028, 0x00},
++	{0x4029, 0x02},
++	{0x402a, 0x04},
++	{0x402b, 0x08},
++	{0x402c, 0x02},
++	{0x402d, 0x02},
++	{0x402e, 0x0c},
++	{0x402f, 0x08},
++	{0x403d, 0x2c},
++	{0x403f, 0x7F},
++	{0x4041, 0x07},
++	{0x4500, 0x82},
++	{0x4501, 0x3c},
++	{0x458b, 0x00},
++	{0x459c, 0x00},
++	{0x459d, 0x00},
++	{0x459e, 0x00},
++	{0x4601, 0x83},
++	{0x4602, 0x22},
++	{0x4603, 0x01},
++	{0x4837, 0x19},
++	{0x4d00, 0x04},
++	{0x4d01, 0x42},
++	{0x4d02, 0xd1},
++	{0x4d03, 0x90},
++	{0x4d04, 0x66},
++	{0x4d05, 0x65},
++	{0x4d0b, 0x00},
++	{0x5000, 0x0e},
++	{0x5001, 0x01},
++	{0x5002, 0x07},
++	{0x5003, 0x4f},
++	{0x5013, 0x40},
++	{0x501c, 0x00},
++	{0x501d, 0x10},
++	{0x5100, 0x30},
++	{0x5101, 0x02},
++	{0x5102, 0x01},
++	{0x5103, 0x01},
++	{0x5104, 0x02},
++	{0x5105, 0x01},
++	{0x5106, 0x01},
++	{0x5107, 0x00},
++	{0x5108, 0x00},
++	{0x5109, 0x00},
++	{0x510f, 0xfc},
++	{0x5110, 0xf0},
++	{0x5111, 0x10},
++	{0x536d, 0x02},
++	{0x536e, 0x67},
++	{0x536f, 0x01},
++	{0x5370, 0x4c},
++	{0x5400, 0x00},
++	{0x5400, 0x00},
++	{0x5401, 0x61},
++	{0x5402, 0x00},
++	{0x5403, 0x00},
++	{0x5404, 0x00},
++	{0x5405, 0x40},
++	{0x540c, 0x05},
++	{0x5501, 0x00},
++	{0x5b00, 0x00},
++	{0x5b01, 0x00},
++	{0x5b02, 0x01},
++	{0x5b03, 0xff},
++	{0x5b04, 0x02},
++	{0x5b05, 0x6c},
++	{0x5b09, 0x02},
++	{0x5e10, 0x1c},
++#endif
++	{REG_NULL, 0x00},
++};
++
++/*Init settings for 13MP resolution*/
++static const struct regval ov13850_init_4224x3136_r2a[] = {
++#ifdef OV13850_10BIT
++	{0x0103, 0x01},
++	{0x0300, 0x00},
++	{0x0301, 0x00},
++	{0x0302, 0x32},
++	{0x0303, 0x01},
++	{0x030a, 0x00},
++	{0x300f, 0x11},
++	{0x3010, 0x01},
++	{0x3011, 0x76},
++	{0x3012, 0x41},
++	{0x3013, 0x12},
++	{0x3014, 0x11},
++	{0x301f, 0x03},
++	{0x3106, 0x00},
++	{0x3210, 0x47},
++	{0x3500, 0x00},
++	{0x3501, 0xc0},
++	{0x3502, 0x00},
++	{0x3506, 0x00},
++	{0x3507, 0x02},
++	{0x3508, 0x00},
++	{0x350a, 0x00},
++	{0x350b, 0x80},
++	{0x350e, 0x00},
++	{0x350f, 0x10},
++	{0x3600, 0x40},
++	{0x3601, 0xfc},
++	{0x3602, 0x02},
++	{0x3603, 0x48},
++	{0x3604, 0xa5},
++	{0x3605, 0x9f},
++	{0x3607, 0x00},
++	{0x360a, 0x40},
++	{0x360b, 0x91},
++	{0x360c, 0x49},
++	{0x360f, 0x8a},
++	{0x3611, 0x10},
++	{0x3612, 0x27},
++	{0x3613, 0x33},
++	{0x3615, 0x08},
++	{0x3641, 0x02},
++	{0x3660, 0x82},
++	{0x3668, 0x54},
++	{0x3669, 0x00},
++	{0x3667, 0xa0},
++	{0x3702, 0x40},
++	{0x3703, 0x44},
++	{0x3704, 0x2c},
++	{0x3705, 0x24},
++	{0x3706, 0x50},
++	{0x3707, 0x44},
++	{0x3708, 0x3c},
++	{0x3709, 0x1f},
++	{0x370a, 0x24},
++	{0x370b, 0x3c},
++	{0x3720, 0x66},
++	{0x3722, 0x84},
++	{0x3728, 0x40},
++	{0x372a, 0x04},
++	{0x372e, 0x22},
++	{0x372f, 0xa0},
++	{0x3730, 0x00},
++	{0x3731, 0x00},
++	{0x3732, 0x00},
++	{0x3733, 0x00},
++	{0x3748, 0x00},
++	{0x3710, 0x28},
++	{0x3716, 0x03},
++	{0x3718, 0x10},
++	{0x3719, 0x08},
++	{0x371c, 0xfc},
++	{0x3760, 0x13},
++	{0x3761, 0x34},
++	{0x3762, 0x86},
++	{0x3763, 0x16},
++	{0x3767, 0x24},
++	{0x3768, 0x06},
++	{0x3769, 0x45},
++	{0x376c, 0x23},
++	{0x3d84, 0x00},
++	{0x3d85, 0x17},
++	{0x3d8c, 0x73},
++	{0x3d8d, 0xbf},
++	{0x3800, 0x00},
++	{0x3801, 0x0C},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x93},
++	{0x3806, 0x0c},
++	{0x3807, 0x4B},
++	{0x3808, 0x10},
++	{0x3809, 0x80},
++	{0x380a, 0x0c},
++	{0x380b, 0x40},
++	{0x380c, 0x12},
++	{0x380d, 0xc0},
++	{0x380e, 0x0d},
++	{0x380f, 0x00},
++	{0x3810, 0x00},
++	{0x3811, 0x04},
++	{0x3812, 0x00},
++	{0x3813, 0x04},
++	{0x3814, 0x11},
++	{0x3815, 0x11},
++	{0x3820, 0x00},
++	{0x3821, 0x04},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x04},
++	{0x3837, 0x01},
++	{0x4000, 0xf1},
++	{0x4001, 0x00},
++	{0x400b, 0x0c},
++	{0x4011, 0x00},
++	{0x401a, 0x00},
++	{0x401b, 0x00},
++	{0x401c, 0x00},
++	{0x401d, 0x00},
++	{0x4020, 0x02},
++	{0x4021, 0x4C},
++	{0x4022, 0x0E},
++	{0x4023, 0x37},
++	{0x4024, 0x0F},
++	{0x4025, 0x1C},
++	{0x4026, 0x0F},
++	{0x4027, 0x1F},
++	{0x4028, 0x00},
++	{0x4029, 0x02},
++	{0x402a, 0x04},
++	{0x402b, 0x08},
++	{0x402c, 0x02},
++	{0x402d, 0x02},
++	{0x402e, 0x0c},
++	{0x402f, 0x08},
++	{0x403d, 0x2c},
++	{0x403f, 0x7f},
++	{0x4500, 0x82},
++	{0x4501, 0x38},
++	{0x4601, 0x04},
++	{0x4602, 0x22},
++	{0x4603, 0x00},
++	{0x4837, 0x1b},
++	{0x4d00, 0x04},
++	{0x4d01, 0x42},
++	{0x4d02, 0xd1},
++	{0x4d03, 0x90},
++	{0x4d04, 0x66},
++	{0x4d05, 0x65},
++	{0x5000, 0x0e},
++	{0x5001, 0x01},
++	{0x5002, 0x07},
++	{0x5013, 0x40},
++	{0x501c, 0x00},
++	{0x501d, 0x10},
++	{0x5242, 0x00},
++	{0x5243, 0xb8},
++	{0x5244, 0x00},
++	{0x5245, 0xf9},
++	{0x5246, 0x00},
++	{0x5247, 0xf6},
++	{0x5248, 0x00},
++	{0x5249, 0xa6},
++	{0x5300, 0xfc},
++	{0x5301, 0xdf},
++	{0x5302, 0x3f},
++	{0x5303, 0x08},
++	{0x5304, 0x0c},
++	{0x5305, 0x10},
++	{0x5306, 0x20},
++	{0x5307, 0x40},
++	{0x5308, 0x08},
++	{0x5309, 0x08},
++	{0x530a, 0x02},
++	{0x530b, 0x01},
++	{0x530c, 0x01},
++	{0x530d, 0x0c},
++	{0x530e, 0x02},
++	{0x530f, 0x01},
++	{0x5310, 0x01},
++	{0x5400, 0x00},
++	{0x5401, 0x71},
++	{0x5402, 0x00},
++	{0x5403, 0x00},
++	{0x5404, 0x00},
++	{0x5405, 0x80},
++	{0x540c, 0x05},
++	{0x5b00, 0x00},
++	{0x5b01, 0x00},
++	{0x5b02, 0x01},
++	{0x5b03, 0xff},
++	{0x5b04, 0x02},
++	{0x5b05, 0x6c},
++	{0x5b09, 0x02},
++	{0x5e00, 0x00},
++	{0x5e10, 0x1c},
++#endif
++#ifdef OV13850_8BIT
++	{0x0103, 0x01},
++	{0x0300, 0x00},
++	{0x0301, 0x00},
++	{0x0302, 0x32},
++	{0x0303, 0x01},
++	{0x030a, 0x00},
++	{0x300f, 0x10},
++	{0x3010, 0x01},
++	{0x3011, 0x76},
++	{0x3012, 0x41},
++	{0x3013, 0x12},
++	{0x3014, 0x11},
++	{0x301f, 0x03},
++	{0x3106, 0x00},
++	{0x3210, 0x47},
++	{0x3500, 0x00},
++	{0x3501, 0xc0},
++	{0x3502, 0x00},
++	{0x3506, 0x00},
++	{0x3507, 0x02},
++	{0x3508, 0x00},
++	{0x350a, 0x00},
++	{0x350b, 0x80},
++	{0x350e, 0x00},
++	{0x350f, 0x10},
++	{0x351a, 0x00},
++	{0x351b, 0x10},
++	{0x351c, 0x00},
++	{0x351d, 0x20},
++	{0x351e, 0x00},
++	{0x351f, 0x40},
++	{0x3520, 0x00},
++	{0x3521, 0x80},
++	{0x3600, 0xc0},
++	{0x3601, 0xfc},
++	{0x3602, 0x02},
++	{0x3603, 0x78},
++	{0x3604, 0xb1},
++	{0x3605, 0x95},
++	{0x3606, 0x73},
++	{0x3607, 0x07},
++	{0x3609, 0x40},
++	{0x360a, 0x30},
++	{0x360b, 0x91},
++	{0x360C, 0x09},
++	{0x360f, 0x02},
++	{0x3611, 0x10},
++	{0x3612, 0x28},
++	{0x3613, 0x33},
++	{0x3614, 0x2a},
++	{0x3615, 0x0c},
++	{0x3616, 0x0e},
++	{0x3641, 0x02},
++	{0x3660, 0x82},
++	{0x3668, 0x54},
++	{0x3669, 0x00},
++	{0x366a, 0x3f},
++	{0x3667, 0xa0},
++	{0x3702, 0x40},
++	{0x3703, 0x44},
++	{0x3704, 0x2c},
++	{0x3705, 0x01},
++	{0x3706, 0x15},
++	{0x3707, 0x44},
++	{0x3708, 0x3c},
++	{0x3709, 0x1f},
++	{0x370a, 0x24},
++	{0x370b, 0x3c},
++	{0x3710, 0x28},
++	{0x3716, 0x03},
++	{0x3718, 0x10},
++	{0x3719, 0x0c},
++	{0x371a, 0x08},
++	{0x371b, 0x01},
++	{0x371c, 0xfc},
++	{0x3720, 0x55},
++	{0x3722, 0x84},
++	{0x3728, 0x40},
++	{0x372a, 0x05},
++	{0x372b, 0x02},
++	{0x372e, 0x22},
++	{0x372f, 0xa0},
++	{0x3730, 0x04},
++	{0x3731, 0xb8},
++	{0x3732, 0x04},
++	{0x3733, 0xcc},
++	{0x3738, 0x04},
++	{0x3739, 0xce},
++	{0x373a, 0x04},
++	{0x373b, 0xd0},
++	{0x3740, 0x01},
++	{0x3741, 0xd0},
++	{0x3742, 0x00},
++	{0x3743, 0x01},
++	{0x3748, 0x21},
++	{0x3749, 0x22},
++	{0x374a, 0x28},
++	{0x3760, 0x13},
++	{0x3761, 0x33},
++	{0x3762, 0x86},
++	{0x3763, 0x16},
++	{0x3767, 0x24},
++	{0x3768, 0x06},
++	{0x3769, 0x45},
++	{0x376c, 0x23},
++	{0x376f, 0x80},
++	{0x3773, 0x06},
++	{0x3780, 0x90},
++	{0x3781, 0x00},
++	{0x3782, 0x01},
++	{0x3d84, 0x00},
++	{0x3d85, 0x17},
++	{0x3d8c, 0x73},
++	{0x3d8d, 0xbf},
++	{0x3800, 0x00},
++	{0x3801, 0x0C},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x93},
++	{0x3806, 0x0c},
++	{0x3807, 0x4B},
++	{0x3808, 0x10},
++	{0x3809, 0x80},
++	{0x380a, 0x0c},
++	{0x380b, 0x40},
++	{0x380c, 0x11},
++	{0x380d, 0xa0},
++	{0x380e, 0x0d},
++	{0x380f, 0x00},
++	{0x3810, 0x00},
++	{0x3811, 0x04},
++	{0x3812, 0x00},
++	{0x3813, 0x04},
++	{0x3814, 0x11},
++	{0x3815, 0x11},
++	{0x3820, 0x00},
++	{0x3821, 0x04},
++	{0x3823, 0x00},
++	{0x3826, 0x00},
++	{0x3827, 0x02},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x04},
++	{0x3837, 0x01},
++	{0x4000, 0xf1},
++	{0x4001, 0x00},
++	{0x400b, 0x0c},
++	{0x4011, 0x00},
++	{0x401a, 0x00},
++	{0x401b, 0x00},
++	{0x401c, 0x00},
++	{0x401d, 0x00},
++	{0x4020, 0x03},
++	{0x4021, 0x6C},
++	{0x4022, 0x0D},
++	{0x4023, 0x17},
++	{0x4024, 0x0D},
++	{0x4025, 0xFC},
++	{0x4026, 0x0D},
++	{0x4027, 0xFF},
++	{0x4028, 0x00},
++	{0x4029, 0x02},
++	{0x402a, 0x04},
++	{0x402b, 0x08},
++	{0x402c, 0x02},
++	{0x402d, 0x02},
++	{0x402e, 0x0c},
++	{0x402f, 0x08},
++	{0x403d, 0x2c},
++	{0x403f, 0x7F},
++	{0x4041, 0x07},
++	{0x4500, 0x82},
++	{0x4501, 0x38},
++	{0x458b, 0x00},
++	{0x459c, 0x00},
++	{0x459d, 0x00},
++	{0x459e, 0x00},
++	{0x4601, 0x04},
++	{0x4602, 0x22},
++	{0x4603, 0x00},
++	{0x4837, 0x1b},
++	{0x4d00, 0x04},
++	{0x4d01, 0x42},
++	{0x4d02, 0xd1},
++	{0x4d03, 0x90},
++	{0x4d04, 0x66},
++	{0x4d05, 0x65},
++	{0x4d0b, 0x00},
++	{0x5000, 0x0e},
++	{0x5001, 0x01},
++	{0x5002, 0x07},
++	{0x5003, 0x4f},
++	{0x5013, 0x40},
++	{0x501c, 0x00},
++	{0x501d, 0x10},
++	{0x5100, 0x30},
++	{0x5101, 0x02},
++	{0x5102, 0x01},
++	{0x5103, 0x01},
++	{0x5104, 0x02},
++	{0x5105, 0x01},
++	{0x5106, 0x01},
++	{0x5107, 0x00},
++	{0x5108, 0x00},
++	{0x5109, 0x00},
++	{0x510f, 0xfc},
++	{0x5110, 0xf0},
++	{0x5111, 0x10},
++	{0x536d, 0x02},
++	{0x536e, 0x67},
++	{0x536f, 0x01},
++	{0x5370, 0x4c},
++	{0x5400, 0x00},
++	{0x5400, 0x00},
++	{0x5401, 0x71},
++	{0x5402, 0x00},
++	{0x5403, 0x00},
++	{0x5404, 0x00},
++	{0x5405, 0x80},
++	{0x540c, 0x05},
++	{0x5501, 0x00},
++	{0x5b00, 0x00},
++	{0x5b01, 0x00},
++	{0x5b02, 0x01},
++	{0x5b03, 0xff},
++	{0x5b04, 0x02},
++	{0x5b05, 0x6c},
++	{0x5b09, 0x02},
++	{0x5e00, 0x00},
++	{0x5e10, 0x1c},
++#endif
++	{REG_NULL, 0x00},
++};
++
++static const struct regval ov13850_2112x1568_regs[] = {
++#ifdef OV13850_10BIT
++	{0x3800, 0x00},
++	{0x3801, 0x08},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x97},
++	{0x3806, 0x0c},
++	{0x3807, 0x4b},
++	{0x3808, 0x08},
++	{0x3809, 0x40},
++	{0x380a, 0x06},
++	{0x380b, 0x20},
++	{0x380c, 0x09},
++	{0x380d, 0x60},
++	{0x380e, 0x06},
++	{0x380f, 0x80},
++	{0x3810, 0x00},
++	{0x3811, 0x04},
++	{0x3812, 0x00},
++	{0x3813, 0x02},
++	{0x3814, 0x31},
++	{0x3815, 0x31},
++	{0x3820, 0x02},
++	{0x3821, 0x06},
++	{0x3823, 0x00},
++	{0x3826, 0x00},
++	{0x3827, 0x02},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x08},
++	{0x3837, 0x02},
++	{REG_NULL, 0x00},
++#endif
++#ifdef OV13850_8BIT
++	{0x3800, 0x00},
++	{0x3801, 0x00},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x9f},
++	{0x3806, 0x0c},
++	{0x3807, 0x4b},
++	{0x3808, 0x08},
++	{0x3809, 0x40},
++	{0x380a, 0x06},
++	{0x380b, 0x20},
++	{0x380c, 0x11},
++	{0x380d, 0xa0},
++	{0x380e, 0x0d},
++	{0x380f, 0x00},
++	{0x3810, 0x00},
++	{0x3811, 0x08},
++	{0x3812, 0x00},
++	{0x3813, 0x02},
++	{0x3814, 0x31},
++	{0x3815, 0x31},
++	{0x3820, 0x01},
++	{0x3821, 0x06},
++	{0x3823, 0x00},
++	{0x3826, 0x00},
++	{0x3827, 0x02},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x08},
++	{0x3837, 0x02},
++#endif
++	{REG_NULL, 0x00},
++};
++
++static const struct regval ov13850_4224x3136_regs[] = {
++#ifdef OV13850_10BIT
++	{0x3800, 0x00},
++	{0x3801, 0x0C},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x93},
++	{0x3806, 0x0c},
++	{0x3807, 0x4B},
++	{0x3808, 0x10},
++	{0x3809, 0x80},
++	{0x380a, 0x0c},
++	{0x380b, 0x40},
++	{0x380c, 0x12},
++	{0x380d, 0xc0},
++	{0x380e, 0x0d},
++	{0x380f, 0x00},
++	{0x3810, 0x00},
++	{0x3811, 0x04},
++	{0x3812, 0x00},
++	{0x3813, 0x04},
++	{0x3814, 0x11},
++	{0x3815, 0x11},
++	{0x3820, 0x00},
++	{0x3821, 0x04},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x04},
++	{0x3837, 0x01},
++#endif
++#ifdef OV13850_8BIT
++	{0x3800, 0x00},
++	{0x3801, 0x0C},
++	{0x3802, 0x00},
++	{0x3803, 0x04},
++	{0x3804, 0x10},
++	{0x3805, 0x93},
++	{0x3806, 0x0c},
++	{0x3807, 0x4B},
++	{0x3808, 0x10},
++	{0x3809, 0x80},
++	{0x380a, 0x0c},
++	{0x380b, 0x40},
++	{0x380c, 0x11},
++	{0x380d, 0xa0},
++	{0x380e, 0x0d},
++	{0x380f, 0x00},
++	{0x3810, 0x00},
++	{0x3811, 0x04},
++	{0x3812, 0x00},
++	{0x3813, 0x04},
++	{0x3814, 0x11},
++	{0x3815, 0x11},
++	{0x3820, 0x00},
++	{0x3821, 0x04},
++	{0x3823, 0x00},
++	{0x3826, 0x00},
++	{0x3827, 0x02},
++	{0x3834, 0x00},
++	{0x3835, 0x1c},
++	{0x3836, 0x04},
++	{0x3837, 0x01},
++#endif
++	{REG_NULL, 0x00},
++};
++
++static const struct ov13850_mode supported_modes[] = {
++	{
++		.width = 2112,
++		.height = 1568,
++		.reg_list = ov13850_2112x1568_regs,
++	},{
++		.width = 4224,
++		.height = 3136,
++		.reg_list = ov13850_4224x3136_regs,
++	},
++};
++
++#ifdef OV13850_SYS_DEBUG
++
++#define MAXENTRIES 20
++
++struct kobject *kobj_ref;
++static u32 ov13850_revid;
++int sysregaddr = 0, sysregvalue = 0, countreg=0;
++struct regval dumpvalues[MAXENTRIES+2];
++
++static ssize_t  sysfs_reg_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf);
++static ssize_t  sysfs_reg_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count);
++static ssize_t  sysfs_regvalue_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf);
++static ssize_t  sysfs_regvalue_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count);
++
++struct kobj_attribute ov13850_reg_write = __ATTR(sysregaddr, 0660, sysfs_reg_show, sysfs_reg_store);
++struct kobj_attribute ov13850_regvalue_write = __ATTR(sysregvalue, 0660, sysfs_regvalue_show, sysfs_regvalue_store);
++
++static ssize_t sysfs_regvalue_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf)
++{
++	pr_info("ov13850 sysfs read\n");
++	return sprintf(buf, "%x", sysregvalue);
++}
++
++static ssize_t sysfs_regvalue_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count)
++{
++	int i=0, flag = 1;
++
++	pr_info("ov13850 sysfs write\n");
++	sscanf(buf,"%x",&sysregvalue);
++
++	if(countreg < MAXENTRIES) {
++		dumpvalues[countreg].addr = sysregaddr;
++		dumpvalues[countreg].val = sysregvalue;
++		countreg++;
++	}
++
++	return count;
++}
++
++
++static ssize_t sysfs_reg_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf)
++{
++	pr_info("Sysfs - Read!!!\n");
++	return sprintf(buf, "%x", sysregaddr);
++}
++
++static ssize_t sysfs_reg_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count)
++{
++	pr_info("Sysfs - reg Write!!!\n");
++	sscanf(buf,"%x",&sysregaddr);
++	return count;
++}
++
++#endif
++
++/* Write registers up to 4 at a time */
++static int ov13850_write_reg(struct i2c_client *client, u16 reg,
++			     u32 len, u32 val)
++{
++	u32 buf_i, val_i;
++	u8 buf[6];
++	u8 *val_p;
++	__be32 val_be;
++
++	if (len > 4)
++		return -EINVAL;
++
++	buf[0] = reg >> 8;
++	buf[1] = reg & 0xff;
++
++	val_be = cpu_to_be32(val);
++	val_p = (u8 *)&val_be;
++	buf_i = 2;
++	val_i = 4 - len;
++
++	while (val_i < 4)
++		buf[buf_i++] = val_p[val_i++];
++
++	if (i2c_master_send(client, buf, len + 2) != len + 2)
++		return -EIO;
++
++	return 0;
++}
++
++static int ov13850_write_array(struct i2c_client *client,
++			       const struct regval *regs)
++{
++	u32 i;
++	int ret = 0;
++
++	for (i = 0; ret == 0 && regs[i].addr != REG_NULL; i++)
++		ret = ov13850_write_reg(client, regs[i].addr,
++					OV13850_REG_VALUE_08BIT,
++					regs[i].val);
++
++	return ret;
++}
++
++/* Read registers up to 4 at a time */
++static int ov13850_read_reg(struct i2c_client *client, u16 reg,
++			    unsigned int len, u32 *val)
++{
++	struct i2c_msg msgs[2];
++	u8 *data_be_p;
++	__be32 data_be = 0;
++	__be16 reg_addr_be = cpu_to_be16(reg);
++	int ret;
++
++	if (len > 4 || !len)
++		return -EINVAL;
++
++	data_be_p = (u8 *)&data_be;
++	/* Write register address */
++	msgs[0].addr = client->addr;
++	msgs[0].flags = 0;
++	msgs[0].len = 2;
++	msgs[0].buf = (u8 *)&reg_addr_be;
++
++	/* Read data from register */
++	msgs[1].addr = client->addr;
++	msgs[1].flags = I2C_M_RD;
++	msgs[1].len = len;
++	msgs[1].buf = &data_be_p[4 - len];
++
++	ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
++	if (ret != ARRAY_SIZE(msgs))
++		return -EIO;
++
++	*val = be32_to_cpu(data_be);
++
++	return 0;
++}
++
++static struct ov13850 *to_ov13850(const struct i2c_client *client)
++{
++	return container_of(i2c_get_clientdata(client), struct ov13850, subdev);
++}
++
++/*@ov13850_enable_test_pattern - This enables the test pattern
++   Valid values for pattern are 1 - 4
++ Return value - 0 on success, negative on failure*/
++static int ov13850_enable_test_pattern(struct i2c_client *client, u32 pattern)
++{
++	u32 val;
++	val = (pattern - 1) | 0x80;
++
++	return ov13850_write_reg(client,
++				 OV13850_REG_TEST_PATTERN,
++				 OV13850_REG_VALUE_08BIT,
++				 val);
++}
++
++/*@ov13850_start_stream - writing mode register settings
++ and streaming register
++ Return value - 0 on success, negative on failure*/
++
++static int ov13850_start_stream(struct i2c_client *client)
++{
++	int ret = 0;
++	struct ov13850 *sensor = to_ov13850(client);
++	const struct regval *reg_list = supported_modes[sensor->mode].reg_list;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	if(sensor->streaming)
++	{
++		pr_debug("OV13850: Already streaming \n");
++		return ret;
++	}
++
++	ret = ov13850_write_array(client, reg_list);
++	if (ret)
++		return ret;
++	ret = ov13850_write_reg(client,
++				 OV13850_REG_CTRL_MODE,
++				 OV13850_REG_VALUE_08BIT,
++				 OV13850_MODE_STREAMING);
++	if(!ret)
++	{
++		pr_debug("%s: streaming started \n", __func__);
++		sensor->streaming = 1;
++		msleep(100);
++	}
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	return ret;
++}
++
++static int ov13850_stop_stream(struct i2c_client *client)
++{
++	struct ov13850 *sensor = to_ov13850(client);
++	int ret = 0;
++
++	if(!sensor->streaming) {
++		return ret;
++	}
++
++	ret = ov13850_write_reg(client,
++				 OV13850_REG_CTRL_MODE,
++				 OV13850_REG_VALUE_08BIT,
++				 OV13850_MODE_SW_STANDBY);
++	if(!ret)
++	{
++		pr_debug("%s: streaming stopped \n", __func__);
++		sensor->streaming = 0;
++	}
++	return ret;
++
++}
++
++/* Calculate the delay in us by clock rate and clock cycles */
++static inline u32 ov13850_cal_delay(u32 cycles)
++{
++        return DIV_ROUND_UP(cycles, OV13850_XVCLK_FREQ / 1000 / 1000);
++}
++
++/*@ov13850_power_on - Control reset and power down lines */
++static void ov13850_power_on(int rst_gpio, int pwn_gpio)
++{
++	u32 delay_us;
++
++	gpio_set_value(pwn_gpio, 0);
++	usleep_range(3000, 5000);
++
++	gpio_set_value(rst_gpio, 0);
++	usleep_range(3000, 5000);
++
++	gpio_set_value(pwn_gpio, 1);
++	usleep_range(3000, 5000);
++
++	gpio_set_value(rst_gpio, 1);
++	usleep_range(3000, 5000);
++
++	/* 8192 cycles prior to first SCCB transaction */
++        delay_us = ov13850_cal_delay(8192);
++        usleep_range(delay_us, delay_us * 2);
++
++}
++
++static void ov13850_power_off(int rst_gpio, int pwn_gpio)
++{
++	msleep(10);
++	gpio_set_value(rst_gpio, 0);
++	usleep_range(3000, 5000);
++	gpio_set_value(pwn_gpio, 0);
++	usleep_range(3000, 5000);
++}
++
++static int ov13850_check_sensor_id(struct i2c_client *client)
++{
++	u32 id = 0;
++	int ret;
++
++	ret = ov13850_read_reg(client, OV13850_REG_CHIP_ID,
++			       OV13850_REG_VALUE_16BIT, &id);
++	printk(KERN_ALERT "OV13850, register 0x300A: %d\n", id);
++	if (id != CHIP_ID) {
++		pr_err("Unexpected sensor id(%06x), ret(%d)\n", id, ret);
++		return -ENODEV;
++	}
++
++	ret = ov13850_read_reg(client, OV13850_CHIP_REVISION_REG,
++			       OV13850_REG_VALUE_08BIT, &id);
++	if (ret) {
++		pr_err("Read chip revision register error\n");
++		return ret;
++	}
++
++	/*We check revision above, but current driver only write settings
++	 for revision 0xb2 chips*/
++	ov13850_global_regs = ov13850_init_2112x1568_r2a;
++	ov13850_revid = id;
++	pr_info("Detected OV13850: %06x sensor, REVISION 0x%x\n", CHIP_ID, id);
++
++	return 0;
++}
++
++
++
++static int ov13850_write_init_settings(struct i2c_client *client,
++					const struct regval *settings)
++{
++	int retval = 0;
++
++	retval = ov13850_write_array(client, settings);
++	if (retval) {
++		pr_err("OV13850 global settings failed !\n");
++		return retval;
++	}
++	msleep(5);
++	return retval;
++}
++
++static int ov13850_enum_framesizes(struct v4l2_subdev *sd,
++			       struct v4l2_subdev_pad_config *cfg,
++			       struct v4l2_subdev_frame_size_enum *fse)
++{
++	if (fse->index > 2)
++                return -EINVAL;
++	fse->max_width = supported_modes[fse->index].width;
++	fse->min_width = supported_modes[fse->index].width;
++	fse->max_height = supported_modes[fse->index].height;
++	fse->min_height = supported_modes[fse->index].height;
++	return 0;
++}
++
++static int ov13850_get_fmt(struct v4l2_subdev *sd,
++			  struct v4l2_subdev_pad_config *cfg,
++			  struct v4l2_subdev_format *format)
++{
++	struct v4l2_mbus_framefmt *mf = &format->format;
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13850 *sensor = to_ov13850(client);
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	memset(mf, 0, sizeof(struct v4l2_mbus_framefmt));
++
++	mf->code = ov13850_colour_fmts[0].code;
++	mf->colorspace = ov13850_colour_fmts[0].colorspace;
++	mf->width = sensor->pix.width;
++	mf->height = sensor->pix.height;
++	mf->field = V4L2_FIELD_NONE;
++
++	return 0;
++}
++
++static int ov13850_s_power(struct v4l2_subdev *sd, int on)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13850 *sensor = to_ov13850(client);
++
++	pr_debug("%s: %d\n", __func__, on);
++	if (on) {
++		clk_prepare_enable(sensor->sensor_clk);
++		ov13850_power_on(sensor->rst_gpio, sensor->pwn_gpio);
++	} else if (!on) {
++		clk_disable_unprepare(sensor->sensor_clk);
++		ov13850_power_off(sensor->rst_gpio, sensor->pwn_gpio);
++	}
++
++	return 0;
++}
++
++
++static int ov13850_enum_code(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_pad_config *cfg,
++				 struct v4l2_subdev_mbus_code_enum *code)
++{
++	if (code->pad || code->index >= ARRAY_SIZE(ov13850_colour_fmts))
++		return -EINVAL;
++
++	code->code = ov13850_colour_fmts[code->index].code;
++	return 0;
++}
++
++static int ov13850_enum_frameintervals(struct v4l2_subdev *sd,
++		struct v4l2_subdev_pad_config *cfg,
++		struct v4l2_subdev_frame_interval_enum *fival)
++{
++	if(fival->index > 2)
++		return -EINVAL;
++	fival->interval.numerator = 1;
++	fival->interval.denominator = DEFAULT_FPS;
++
++	return 0;
++}
++
++
++static int ov13850_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13850 *sensor = to_ov13850(client);
++	struct v4l2_captureparm *cparm = &a->parm.capture;
++	int ret = 0;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	switch (a->type) {
++	/*Need to verify below settings further*/
++	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
++	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
++		pr_debug("%s: %d\n", __func__, __LINE__);
++		memset(a, 0, sizeof(*a));
++		a->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++		cparm->capability = sensor->streamcap.capability;
++		cparm->timeperframe = sensor->streamcap.timeperframe;
++		cparm->capturemode = sensor->streamcap.capturemode;
++		ret = 0;
++		break;
++	/*These cases not applicable now*/
++	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
++	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
++	case V4L2_BUF_TYPE_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_VBI_OUTPUT:
++	case V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
++		ret = -EINVAL;
++		break;
++
++	default:
++		pr_debug("   type is unknown - %d\n", a->type);
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static int ov13850_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
++{
++	int ret = 0;
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13850 *sensor = to_ov13850(client);
++	struct v4l2_fract *timeperframe = &a->parm.capture.timeperframe;
++
++	switch (a->type) {
++	/* This is the only case currently handled. */
++	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
++	/*Need to set fps as per request */
++		pr_debug("%s: %d\n", __func__, __LINE__);
++		sensor->streamcap.timeperframe = *timeperframe;
++		sensor->streamcap.capturemode =
++				(u32)a->parm.capture.capturemode;
++		break;
++	/* These cases not applicable for now*/
++	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
++	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
++	case V4L2_BUF_TYPE_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_VBI_OUTPUT:
++	case V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
++		pr_debug("   type is not " \
++			"V4L2_BUF_TYPE_VIDEO_CAPTURE but %d\n",
++			a->type);
++		ret = -EINVAL;
++		break;
++
++	default:
++		pr_debug("   type is unknown - %d\n", a->type);
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++
++static int ov13850_s_stream(struct v4l2_subdev *sd, int enable)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13850 *sensor = to_ov13850(client);
++	int retval;
++
++	pr_info("s_stream: %d\n", enable);
++	if (enable) {
++	/*if valid pattern value then enable test pattern, else go for
++	 * normal streaming. Change ENABLE_TEST_PATTERN with value 1
++	 * to 4 to enable test pattern */
++		if(ENABLE_TEST_PATTERN > 0 && ENABLE_TEST_PATTERN <= 4)
++			ov13850_enable_test_pattern(client,
++						ENABLE_TEST_PATTERN);
++		retval = ov13850_start_stream(client);
++		if (retval) {
++			pr_err("OV13850 start stream failed !\n");
++			return retval;
++		}
++
++		retval = ov13850_write_reg(client, OV13850_VCHANNEL,
++					OV13850_REG_VALUE_08BIT, sensor->csi_vc);
++		if(retval) {
++			pr_err("%s: set virtual channel failed\n", __func__);
++			return retval;
++		}
++	}
++	else {
++		retval = ov13850_stop_stream(client);
++		if (retval) {
++			pr_err("OV13850 stop stream failed !\n");
++			return retval;
++		}
++	}
++
++	return 0;
++}
++
++static int ov13850_set_fmt(struct v4l2_subdev *sd,
++			  struct v4l2_subdev_pad_config *cfg,
++			  struct v4l2_subdev_format *format)
++{
++	int retval = 0, ret;
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13850 *sensor = to_ov13850(client);
++	int i = 0;
++
++	if(format->format.width == OV13850_RES_HIGH_WIDTH &&
++		format->format.height == OV13850_RES_HIGH_HEIGHT)
++	{
++		sensor->mode = 1;
++		ov13850_global_regs = ov13850_init_4224x3136_r2a;
++		sensor->pix.width = OV13850_RES_HIGH_WIDTH;
++		sensor->pix.height = OV13850_RES_HIGH_HEIGHT;
++	}
++	else if(format->format.width == OV13850_RES_LOW_WIDTH &&
++		format->format.height == OV13850_RES_LOW_HEIGHT)
++	{
++		sensor->mode = 0;
++		ov13850_global_regs = ov13850_init_2112x1568_r2a;
++		sensor->pix.width = OV13850_RES_LOW_WIDTH;
++		sensor->pix.height = OV13850_RES_LOW_HEIGHT;
++	}
++	else
++	{
++		printk(KERN_INFO "OV13850: Unsupported resolution passed\n");
++		return -1;
++	}
++
++	retval = ov13850_write_init_settings(client, ov13850_global_regs);
++
++#ifdef OV13850_SYS_DEBUG
++	printk(KERN_INFO "OV13850 sysfs reg dump\n");
++	dumpvalues[countreg].addr = REG_NULL;
++	dumpvalues[countreg].val = 0;
++
++	printk(KERN_INFO "countreg size: 0x%x\n", countreg);
++	for(; dumpvalues[i].addr != REG_NULL; i++)
++	{
++		printk(KERN_INFO "addr: 0x%x, val: 0x%x\n", dumpvalues[i].addr,
++				dumpvalues[i].val);
++	}
++
++	ret = ov13850_write_array(client, dumpvalues);
++        if(ret)
++        {
++		printk(KERN_INFO "failed to write sysfs reg\n");
++        }
++#endif
++
++	return retval;
++}
++
++
++static int ov13850_link_setup(struct media_entity *entity,
++                           const struct media_pad *local,
++                           const struct media_pad *remote, u32 flags)
++{
++        return 0;
++}
++
++static struct v4l2_subdev_video_ops ov13850_subdev_video_ops = {
++	.g_parm = ov13850_g_parm,
++	.s_parm = ov13850_s_parm,
++	.s_stream = ov13850_s_stream,
++};
++
++static const struct v4l2_subdev_pad_ops ov13850_subdev_pad_ops = {
++	.enum_frame_size       = ov13850_enum_framesizes,
++	.enum_frame_interval   = ov13850_enum_frameintervals,
++	.enum_mbus_code        = ov13850_enum_code,
++	.set_fmt               = ov13850_set_fmt,
++	.get_fmt               = ov13850_get_fmt,
++};
++
++static struct v4l2_subdev_core_ops ov13850_subdev_core_ops = {
++	.s_power	= ov13850_s_power,
++};
++
++static struct v4l2_subdev_ops ov13850_subdev_ops = {
++	.core	= &ov13850_subdev_core_ops,
++	.video	= &ov13850_subdev_video_ops,
++	.pad	= &ov13850_subdev_pad_ops,
++};
++
++static const struct media_entity_operations ov13850_sd_media_ops = {
++	.link_setup = ov13850_link_setup,
++};
++
++static int ov13850_probe(struct i2c_client *client,
++			 const struct i2c_device_id *id)
++{
++	struct pinctrl *pinctrl;
++	struct device *dev = &client->dev;
++	struct v4l2_subdev *sd;
++	int ret, rst_gpio, pwn_gpio;
++	struct ov13850 *sensor;
++
++	sensor = devm_kzalloc(dev, sizeof(*sensor), GFP_KERNEL);
++
++	pr_info("OV13850: ov13850_probe called\n");
++
++	pinctrl = devm_pinctrl_get_select_default(dev);
++	if (IS_ERR(pinctrl))
++		dev_warn(dev, "No pin available\n");
++
++	sensor->mode = 0;
++	sensor->streaming = 0;
++
++	rst_gpio = of_get_named_gpio(dev->of_node, "rst-gpios", 0);
++	if (!gpio_is_valid(rst_gpio)) {
++		dev_err(dev, "no sensor reset pin available");
++		return -EINVAL;
++	}
++
++	ret = devm_gpio_request_one(dev, rst_gpio, GPIOF_OUT_INIT_LOW,
++					"ov13850_reset");
++	if (ret < 0) {
++		dev_err(dev, "failed to acquire sensor reset pin");
++		return ret;
++	}
++	sensor->rst_gpio = rst_gpio;
++
++	pwn_gpio = of_get_named_gpio(dev->of_node, "pwn-gpios", 0);
++	if (!gpio_is_valid(pwn_gpio)) {
++		dev_err(dev, "no sensor reset pin available");
++		return -EINVAL;
++	}
++
++	ret = devm_gpio_request_one(dev, pwn_gpio, GPIOF_OUT_INIT_LOW,
++					"ov13850_pwdn");
++	if (ret < 0) {
++		dev_err(dev, "failed to acquire sensor reset pin");
++		return ret;
++	}
++	sensor->pwn_gpio = pwn_gpio;
++
++	sensor->sensor_clk = devm_clk_get(dev, "csi_mclk");
++	if (IS_ERR(sensor->sensor_clk)) {
++                sensor->sensor_clk = NULL;
++                dev_err(dev, "clock-frequency missing or invalid\n");
++                return PTR_ERR(sensor->sensor_clk);
++        }
++
++	ret = of_property_read_u32(dev->of_node, "mclk",
++					&(sensor->mclk));
++	if (ret) {
++		dev_err(dev, "mclk missing or invalid\n");
++		return ret;
++	}
++
++	ret = of_property_read_u32(dev->of_node, "mclk_source",
++					(u32 *) &(sensor->mclk_source));
++	if (ret) {
++		dev_err(dev, "mclk_source missing or invalid\n");
++		return ret;
++	}
++
++	ret = of_property_read_u32(dev->of_node, "virtual_channel",
++					&(sensor->csi_vc));
++	if (ret) {
++		dev_err(dev, "csi id missing or invalid\n");
++		return ret;
++	}
++
++	ret = clk_prepare_enable(sensor->sensor_clk);
++	if (ret < 0) {
++		dev_err(dev, "Failed to enable xvclk\n");
++		return ret;
++	}
++
++	sensor->i2c_client = client;
++	/*Only can handle 8bit mode for now*/
++#ifdef OV13850_8BIT
++	sensor->pix.pixelformat = V4L2_PIX_FMT_SBGGR8;
++#endif
++#ifdef OV13850_10BIT
++	sensor->pix.pixelformat = V4L2_PIX_FMT_SBGGR10;
++#endif
++	sensor->pix.width = OV13850_RES_LOW_WIDTH;
++        sensor->pix.height = OV13850_RES_LOW_HEIGHT;
++	sensor->streamcap.capability = V4L2_MODE_HIGHQUALITY |
++                                           V4L2_CAP_TIMEPERFRAME;
++        sensor->streamcap.capturemode = 0;
++        sensor->streamcap.timeperframe.denominator = DEFAULT_FPS;
++        sensor->streamcap.timeperframe.numerator = 1;
++
++	ov13850_power_on(sensor->rst_gpio, sensor->pwn_gpio);
++
++	ret = ov13850_check_sensor_id(client);
++	if (ret)
++	{
++		dev_err(dev, "ov13850 mipi not found\n");
++		clk_disable_unprepare(sensor->sensor_clk);
++		goto err_free_handler;
++	}
++
++	sd = &sensor->subdev;
++	v4l2_i2c_subdev_init(sd, client, &ov13850_subdev_ops);
++
++	sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
++	sd->entity.function = MEDIA_ENT_F_CAM_SENSOR;
++	sensor->pads[OV13850_SENS_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
++
++	ret = media_entity_pads_init(&sd->entity, OV13850_SENS_PADS_NUM,
++							sensor->pads);
++	sd->entity.ops = &ov13850_sd_media_ops;
++	if (ret < 0)
++		return ret;
++
++	ret = v4l2_async_register_subdev(sd);
++	if (ret < 0) {
++		dev_err(&client->dev,
++				"%s--Async register failed, ret=%d\n", __func__, ret);
++		media_entity_cleanup(&sd->entity);
++	}
++
++        clk_disable_unprepare(sensor->sensor_clk);
++	ov13850_power_off(sensor->rst_gpio, sensor->pwn_gpio);
++
++#ifdef OV13850_SYS_DEBUG
++	kobj_ref = kobject_create_and_add("ov13850_debug", kernel_kobj);
++
++	/*Creating sysfs file for ov13850 register write*/
++	if(sysfs_create_file(kobj_ref, &ov13850_reg_write.attr)) {
++		pr_err("Cannot create sysfs file......\n");
++		kobject_put(kobj_ref);
++		sysfs_remove_file(kernel_kobj, &ov13850_reg_write.attr);
++	}
++
++	if(sysfs_create_file(kobj_ref, &ov13850_regvalue_write.attr)) {
++		pr_err("Cannot create sysfs file......\n");
++		kobject_put(kobj_ref);
++		sysfs_remove_file(kernel_kobj, &ov13850_regvalue_write.attr);
++	}
++	dumpvalues[countreg].addr = REG_NULL;
++	dumpvalues[countreg].val = 0;
++#endif
++
++	pr_info("OV13850: ov13850_probe successful\n");
++
++	return 0;
++
++err_free_handler:
++
++	return ret;
++}
++
++static int ov13850_remove(struct i2c_client *client)
++{
++	struct v4l2_subdev *sd = i2c_get_clientdata(client);
++	struct ov13850 *sensor = to_ov13850(client);
++
++	v4l2_async_unregister_subdev(sd);
++
++	clk_disable_unprepare(sensor->sensor_clk);
++
++	ov13850_power_off(sensor->rst_gpio, sensor->pwn_gpio);
++	v4l2_async_unregister_subdev(sd);
++
++	clk_disable_unprepare(sensor->sensor_clk);
++
++	return 0;
++}
++
++
++static const struct i2c_device_id ov13850_match_id[] = {
++        { "ov13850_mipi", 0 },
++        { },
++};
++
++static struct i2c_driver ov13850_i2c_driver = {
++        .driver = {
++                .name = OV13850_NAME,
++                //.of_match_table = of_match_ptr(ov13850_of_match),
++        },
++        .probe          = ov13850_probe,
++        .remove         = ov13850_remove,
++        .id_table       = ov13850_match_id,
++};
++
++module_i2c_driver(ov13850_i2c_driver);
++
++MODULE_DESCRIPTION("ov13850 sensor driver");
++MODULE_LICENSE("GPL v2");
++
+diff --git a/drivers/media/i2c/ov13855.c b/drivers/media/i2c/ov13855.c
+new file mode 100755
+index 000000000000..53726615a13b
+--- /dev/null
++++ b/drivers/media/i2c/ov13855.c
+@@ -0,0 +1,1322 @@
++/*
++ * ov13855 sensor level driver
++ * This driver used to capture raw BGGR data
++ * 4 lanes, 2112x1568, 4224x3136
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/ctype.h>
++#include <linux/types.h>
++#include <linux/delay.h>
++#include <linux/clk.h>
++#include <linux/of_device.h>
++#include <linux/i2c.h>
++#include <linux/of_gpio.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/regulator/consumer.h>
++#include <linux/v4l2-mediabus.h>
++#include <linux/kobject.h>
++#include <media/v4l2-device.h>
++#include <media/v4l2-ctrls.h>
++
++#define OV13855_SYS_DEBUG
++#define OV13855_XVCLK_FREQ		24000000
++
++#define CHIP_ID				0x00d855
++#define OV13855_REG_CHIP_ID		0x300a
++
++#define OV13855_REG_CTRL_MODE		0x0100
++#define OV13855_MODE_SW_STANDBY		0x0
++#define OV13855_MODE_STREAMING		BIT(0)
++
++#define OV13855_REG_EXPOSURE		0x3500
++#define	OV13855_EXPOSURE_MIN		4
++#define	OV13855_EXPOSURE_STEP		1
++#define OV13855_VTS_MAX			0x7fff
++
++#define OV13855_REG_TEST_PATTERN	0x4503
++#define ENABLE_TEST_PATTERN		0
++
++#define REG_NULL			0xFFFF
++
++#define OV13855_REG_VALUE_08BIT		1
++#define OV13855_REG_VALUE_16BIT		2
++#define OV13855_REG_VALUE_24BIT		3
++
++#define OV13855_LANES			4
++#define OV13855_BITS_PER_SAMPLE		10
++
++#define OF_CAMERA_PINCTRL_STATE_DEFAULT	"ov13855_camera_default"
++#define OF_CAMERA_PINCTRL_STATE_SLEEP	"ov13855_camera_sleep"
++
++#define OV13855_NAME			"ov13855_mipi_raw"
++#define OV13855_VCHANNEL	0x4813
++
++#define OV13855_RES_HIGH_WIDTH		4224
++#define OV13855_RES_HIGH_HEIGHT		3136
++#define OV13855_RES_LOW_WIDTH		2112
++#define OV13855_RES_LOW_HEIGHT		1568
++
++#define DEFAULT_FPS	15
++
++#define OV13855_SENS_PAD_SOURCE	0
++#define OV13855_SENS_PADS_NUM	1
++
++static const struct regval *ov13855_regs;
++
++struct regval {
++	u16 addr;
++	u8 val;
++};
++
++struct ov13855_mode {
++	u32 width;
++	u32 height;
++	const struct regval *reg_list;
++};
++
++struct ov13855 {
++	struct v4l2_subdev		subdev;
++	struct i2c_client *i2c_client;
++	struct v4l2_pix_format pix;
++	const struct ov13855_datafmt	*fmt;
++	struct v4l2_captureparm streamcap;
++	bool on;
++
++	u32 mclk;
++	u8 mclk_source;
++	struct clk *sensor_clk;
++	int csi_vc;
++
++	int pwn_gpio;
++	int rst_gpio;
++	struct media_pad pads[OV13855_SENS_PADS_NUM];
++
++	bool streaming;
++	int mode;
++};
++
++
++struct ov13855_datafmt {
++	u32	code;
++	enum v4l2_colorspace		colorspace;
++};
++
++static const struct ov13855_datafmt ov13855_colour_fmts[] = {
++	{MEDIA_BUS_FMT_SBGGR8_1X8, V4L2_COLORSPACE_RAW},
++};
++
++
++/*Init settings for 3.3MP resolution*/
++static struct regval ov13855_2112x1568[] = {
++	{0x0103, 0x01},
++	{0x0300, 0x02},
++	{0x0301, 0x00},
++	{0x0302, 0x5a},
++	{0x0303, 0x01},
++	{0x0304, 0x00},
++	{0x0305, 0x01},
++	{0x030b, 0x06},
++	{0x030c, 0x02},
++	{0x030d, 0x88},
++	{0x0312, 0x11},
++	{0x3022, 0x41},
++	{0x3012, 0x40},
++	{0x3013, 0x72},
++	{0x3016, 0x72},
++	{0x301b, 0xF0},
++	{0x301f, 0xd0},
++	{0x3106, 0x15},
++	{0x3107, 0x23},
++	{0x3500, 0x00},
++	{0x3501, 0x40},
++	{0x3502, 0x00},
++	{0x3508, 0x02},
++	{0x3509, 0x00},
++	{0x350a, 0x00},
++	{0x350e, 0x00},
++	{0x3510, 0x00},
++	{0x3511, 0x02},
++	{0x3512, 0x00},
++	{0x3600, 0x2b},
++	{0x3601, 0x52},
++	{0x3602, 0x60},
++	{0x3612, 0x05},
++	{0x3613, 0xa4},
++	{0x3620, 0x80},
++	{0x3621, 0x10},
++	{0x3622, 0x30},
++	{0x3624, 0x1c},
++	{0x3640, 0x10},
++	{0x3641, 0x70},
++	{0x3660, 0x04},
++	{0x3661, 0x80},
++	{0x3662, 0x10},
++	{0x3664, 0x73},
++	{0x3665, 0xa7},
++	{0x366e, 0xff},
++	{0x366f, 0xf4},
++	{0x3674, 0x00},
++	{0x3679, 0x0c},
++	{0x367f, 0x01},
++	{0x3680, 0x0c},
++	{0x3681, 0x50},
++	{0x3682, 0x50},
++	{0x3683, 0xa9},
++	{0x3684, 0xa9},
++	{0x3706, 0x40},
++	{0x3709, 0x5f},
++	{0x3714, 0x28},
++	{0x371a, 0x3e},
++	{0x3737, 0x08},
++	{0x3738, 0xcc},
++	{0x3739, 0x20},
++	{0x373d, 0x26},
++	{0x3764, 0x20},
++	{0x3765, 0x20},
++	{0x37a1, 0x36},
++	{0x37a8, 0x3b},
++	{0x37ab, 0x31},
++	{0x37c2, 0x14},
++	{0x37c3, 0xf1},
++	{0x37c5, 0x00},
++	{0x37d8, 0x03},
++	{0x37d9, 0x0c},
++	{0x37da, 0xc2},
++	{0x37dc, 0x02},
++	{0x37e0, 0x00},
++	{0x37e1, 0x0a},
++	{0x37e2, 0x14},
++	{0x37e3, 0x08},
++	{0x37e4, 0x38},
++	{0x37e5, 0x03},
++	{0x37e6, 0x08},
++	{0x3800, 0x00},
++	{0x3801, 0x00},
++	{0x3802, 0x00},
++	{0x3803, 0x08},
++	{0x3804, 0x10},
++	{0x3805, 0x9f},
++	{0x3806, 0x0c},
++	{0x3807, 0x4f},
++	{0x3808, 0x08},
++	{0x3809, 0x40},
++	{0x380a, 0x06},
++	{0x380b, 0x20},
++	{0x380c, 0x04},
++	{0x380d, 0x62},
++	{0x380e, 0x06},
++	{0x380f, 0x48},
++	{0x3811, 0x08},
++	{0x3813, 0x02},
++	{0x3814, 0x03},
++	{0x3815, 0x01},
++	{0x3816, 0x03},
++	{0x3817, 0x01},
++	{0x3820, 0xab},
++	{0x3821, 0x00},
++	{0x3822, 0xc2},
++	{0x3823, 0x18},
++	{0x3826, 0x04},
++	{0x3827, 0x90},
++	{0x3829, 0x07},
++	{0x3832, 0x00},
++	{0x3c80, 0x00},
++	{0x3c87, 0x01},
++	{0x3c8c, 0x19},
++	{0x3c8d, 0x1c},
++	{0x3c90, 0x00},
++	{0x3c91, 0x00},
++	{0x3c92, 0x00},
++	{0x3c93, 0x00},
++	{0x3c94, 0x40},
++	{0x3c95, 0x54},
++	{0x3c96, 0x34},
++	{0x3c97, 0x04},
++	{0x3c98, 0x00},
++	{0x3d8c, 0x73},
++	{0x3d8d, 0xc0},
++	{0x3f00, 0x0b},
++	{0x3f03, 0x00},
++	{0x4001, 0xe0},
++	{0x4008, 0x00},
++	{0x4009, 0x0d},
++	{0x4011, 0xf0},
++	{0x4017, 0x08},
++	{0x4050, 0x04},
++	{0x4051, 0x0b},
++	{0x4052, 0x00},
++	{0x4053, 0x80},
++	{0x4054, 0x00},
++	{0x4055, 0x80},
++	{0x4056, 0x00},
++	{0x4057, 0x80},
++	{0x4058, 0x00},
++	{0x4059, 0x80},
++	{0x405e, 0x00},
++	{0x4500, 0x07},
++	{0x4503, 0x00},
++	{0x450a, 0x04},
++	{0x4800, 0x60},
++	{0x4809, 0x04},
++	{0x480c, 0x12},
++	{0x481f, 0x30},
++	{0x4833, 0x10},
++	{0x4837, 0x1c},
++	{0x4902, 0x01},
++	{0x4d00, 0x03},
++	{0x4d01, 0xc9},
++	{0x4d02, 0xbc},
++	{0x4d03, 0xd7},
++	{0x4d04, 0xf0},
++	{0x4d05, 0xa2},
++	{0x5000, 0xff},
++	{0x5001, 0x07},
++	{0x5040, 0x39},
++	{0x5041, 0x10},
++	{0x5042, 0x10},
++	{0x5043, 0x84},
++	{0x5044, 0x62},
++	{0x5180, 0x00},
++	{0x5181, 0x10},
++	{0x5182, 0x02},
++	{0x5183, 0x0f},
++	{0x5200, 0x1b},
++	{0x520b, 0x07},
++	{0x520c, 0x0f},
++	{0x5300, 0x04},
++	{0x5301, 0x0C},
++	{0x5302, 0x0C},
++	{0x5303, 0x0f},
++	{0x5304, 0x00},
++	{0x5305, 0x70},
++	{0x5306, 0x00},
++	{0x5307, 0x80},
++	{0x5308, 0x00},
++	{0x5309, 0xa5},
++	{0x530a, 0x00},
++	{0x530b, 0xd3},
++	{0x530c, 0x00},
++	{0x530d, 0xf0},
++	{0x530e, 0x01},
++	{0x530f, 0x10},
++	{0x5310, 0x01},
++	{0x5311, 0x20},
++	{0x5312, 0x01},
++	{0x5313, 0x20},
++	{0x5314, 0x01},
++	{0x5315, 0x20},
++	{0x5316, 0x08},
++	{0x5317, 0x08},
++	{0x5318, 0x10},
++	{0x5319, 0x88},
++	{0x531a, 0x88},
++	{0x531b, 0xa9},
++	{0x531c, 0xaa},
++	{0x531d, 0x0a},
++	{0x5405, 0x02},
++	{0x5406, 0x67},
++	{0x5407, 0x01},
++	{0x5408, 0x4a},
++	{REG_NULL, 0x00},
++};
++
++/*Init settings for 13MP resolution*/
++static const struct regval ov13855_4224x3136[] = {
++	{0x0103, 0x01},
++	{0x0300, 0x02},
++	{0x0301, 0x00},
++	{0x0302, 0x5a},
++	{0x0303, 0x01},
++	{0x0303, 0x00},
++	{0x0304, 0x00},
++	{0x0305, 0x01},
++	{0x030b, 0x06},
++	{0x030c, 0x02},
++	{0x030d, 0x88},
++	{0x0312, 0x11},
++	{0x3022, 0x41},
++	{0x3012, 0x40},
++	{0x3013, 0x72},
++	{0x3016, 0x72},
++	{0x301b, 0xF0},
++	{0x301f, 0xd0},
++	{0x3106, 0x15},
++	{0x3107, 0x23},
++	{0x3500, 0x00},
++	{0x3501, 0x80},
++	{0x3502, 0x00},
++	{0x3508, 0x02},
++	{0x3509, 0x00},
++	{0x350a, 0x00},
++	{0x350e, 0x00},
++	{0x3510, 0x00},
++	{0x3511, 0x02},
++	{0x3512, 0x00},
++	{0x3600, 0x2b},
++	{0x3601, 0x52},
++	{0x3602, 0x60},
++	{0x3612, 0x05},
++	{0x3613, 0xa4},
++	{0x3620, 0x80},
++	{0x3621, 0x10},
++	{0x3622, 0x30},
++	{0x3624, 0x1c},
++	{0x3640, 0x10},
++	{0x3641, 0x70},
++	{0x3660, 0x04},
++	{0x3661, 0x80},
++	{0x3662, 0x12},
++	{0x3664, 0x73},
++	{0x3665, 0xa7},
++	{0x366e, 0xff},
++	{0x366f, 0xf4},
++	{0x3674, 0x00},
++	{0x3679, 0x0c},
++	{0x367f, 0x01},
++	{0x3680, 0x0c},
++	{0x3681, 0x50},
++	{0x3682, 0x50},
++	{0x3683, 0xa9},
++	{0x3684, 0xa9},
++	{0x3706, 0x40},
++	{0x3709, 0x5f},
++	{0x3714, 0x24},
++	{0x371a, 0x3e},
++	{0x3737, 0x04},
++	{0x3738, 0xcc},
++	{0x3739, 0x12},
++	{0x373d, 0x26},
++	{0x3764, 0x20},
++	{0x3765, 0x20},
++	{0x37a1, 0x36},
++	{0x37a8, 0x3b},
++	{0x37ab, 0x31},
++	{0x37c2, 0x04},
++	{0x37c3, 0xf1},
++	{0x37c5, 0x00},
++	{0x37d8, 0x03},
++	{0x37d9, 0x0c},
++	{0x37da, 0xc2},
++	{0x37dc, 0x02},
++	{0x37e0, 0x00},
++	{0x37e1, 0x0a},
++	{0x37e2, 0x14},
++	{0x37e3, 0x04},
++	{0x37e4, 0x2A},
++	{0x37e5, 0x03},
++	{0x37e6, 0x04},
++	{0x3800, 0x00},
++	{0x3801, 0x00},
++	{0x3802, 0x00},
++	{0x3803, 0x08},
++	{0x3804, 0x10},
++	{0x3805, 0x9f},
++	{0x3806, 0x0c},
++	{0x3807, 0x57},
++	{0x3808, 0x10},
++	{0x3809, 0x80},
++	{0x380a, 0x0c},
++	{0x380b, 0x40},
++	{0x380c, 0x08},
++	{0x380c, 0x04},
++	{0x380d, 0xc4},
++	{0x380d, 0x62},
++	{0x380e, 0x0c},
++	{0x380f, 0x8e},
++	{0x3811, 0x10},
++	{0x3813, 0x08},
++	{0x3814, 0x01},
++	{0x3815, 0x01},
++	{0x3816, 0x01},
++	{0x3817, 0x01},
++	{0x3820, 0xa8},
++	{0x3821, 0x00},
++	{0x3822, 0xc2},
++	{0x3823, 0x18},
++	{0x3826, 0x11},
++	{0x3827, 0x1c},
++	{0x3829, 0x03},
++	{0x3832, 0x00},
++	{0x3c80, 0x00},
++	{0x3c87, 0x01},
++	{0x3c8c, 0x19},
++	{0x3c8d, 0x1c},
++	{0x3c90, 0x00},
++	{0x3c91, 0x00},
++	{0x3c92, 0x00},
++	{0x3c93, 0x00},
++	{0x3c94, 0x40},
++	{0x3c95, 0x54},
++	{0x3c96, 0x34},
++	{0x3c97, 0x04},
++	{0x3c98, 0x00},
++	{0x3d8c, 0x73},
++	{0x3d8d, 0xc0},
++	{0x3f00, 0x0b},
++	{0x3f03, 0x00},
++	{0x4001, 0xe0},
++	{0x4008, 0x00},
++	{0x4009, 0x0f},
++	{0x4011, 0xf0},
++	{0x4017, 0x08},
++	{0x4050, 0x04},
++	{0x4051, 0x0b},
++	{0x4052, 0x00},
++	{0x4053, 0x80},
++	{0x4054, 0x00},
++	{0x4055, 0x80},
++	{0x4056, 0x00},
++	{0x4057, 0x80},
++	{0x4058, 0x00},
++	{0x4059, 0x80},
++	{0x405e, 0x00},
++	{0x4500, 0x07},
++	{0x4503, 0x00},
++	{0x450a, 0x04},
++	{0x4800, 0x60},
++	{0x4809, 0x04},
++	{0x480c, 0x12},
++	{0x481f, 0x30},
++	{0x4833, 0x10},
++	{0x4837, 0x1c},
++	{0x4837, 0x0e},
++	{0x4902, 0x01},
++	{0x4d00, 0x03},
++	{0x4d01, 0xc9},
++	{0x4d02, 0xbc},
++	{0x4d03, 0xd7},
++	{0x4d04, 0xf0},
++	{0x4d05, 0xa2},
++	{0x5000, 0xff},
++	{0x5001, 0x07},
++	{0x5040, 0x39},
++	{0x5041, 0x10},
++	{0x5042, 0x10},
++	{0x5043, 0x84},
++	{0x5044, 0x62},
++	{0x5180, 0x00},
++	{0x5181, 0x10},
++	{0x5182, 0x02},
++	{0x5183, 0x0f},
++	{0x5200, 0x1b},
++	{0x520b, 0x07},
++	{0x520c, 0x0f},
++	{0x5300, 0x04},
++	{0x5301, 0x0C},
++	{0x5302, 0x0C},
++	{0x5303, 0x0f},
++	{0x5304, 0x00},
++	{0x5305, 0x70},
++	{0x5306, 0x00},
++	{0x5307, 0x80},
++	{0x5308, 0x00},
++	{0x5309, 0xa5},
++	{0x530a, 0x00},
++	{0x530b, 0xd3},
++	{0x530c, 0x00},
++	{0x530d, 0xf0},
++	{0x530e, 0x01},
++	{0x530f, 0x10},
++	{0x5310, 0x01},
++	{0x5311, 0x20},
++	{0x5312, 0x01},
++	{0x5313, 0x20},
++	{0x5314, 0x01},
++	{0x5315, 0x20},
++	{0x5316, 0x08},
++	{0x5317, 0x08},
++	{0x5318, 0x10},
++	{0x5319, 0x88},
++	{0x531a, 0x88},
++	{0x531b, 0xa9},
++	{0x531c, 0xaa},
++	{0x531d, 0x0a},
++	{0x5405, 0x02},
++	{0x5406, 0x67},
++	{0x5407, 0x01},
++	{0x5408, 0x4a},
++
++	{REG_NULL, 0x00},
++};
++
++static const struct ov13855_mode supported_modes[] = {
++	{
++		.width = 2112,
++		.height = 1568,
++		.reg_list = ov13855_2112x1568,
++	},{
++		.width = 4224,
++		.height = 3136,
++		.reg_list = ov13855_4224x3136,
++	},
++};
++
++#ifdef OV13855_SYS_DEBUG
++
++#define MAXENTRIES 20
++
++struct kobject *kobj_ov13855;
++int sysregaddr = 0, sysregvalue = 0, countreg=0;
++struct regval dumpvalues[MAXENTRIES+2];
++
++static ssize_t  sysfs_reg_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf);
++static ssize_t  sysfs_reg_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count);
++static ssize_t  sysfs_regvalue_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf);
++static ssize_t  sysfs_regvalue_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count);
++
++struct kobj_attribute ov13855_reg_write = __ATTR(sysregaddr, 0660, sysfs_reg_show, sysfs_reg_store);
++struct kobj_attribute ov13855_regvalue_write = __ATTR(sysregvalue, 0660, sysfs_regvalue_show, sysfs_regvalue_store);
++
++static ssize_t sysfs_regvalue_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf)
++{
++	pr_info("ov13855 sysfs read\n");
++	return sprintf(buf, "%x", sysregvalue);
++}
++
++static ssize_t sysfs_regvalue_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count)
++{
++	int i=0, flag = 1;
++
++	pr_info("ov13855 sysfs write\n");
++	sscanf(buf,"%x",&sysregvalue);
++
++	if(countreg < MAXENTRIES) {
++		dumpvalues[countreg].addr = sysregaddr;
++		dumpvalues[countreg].val = sysregvalue;
++		countreg++;
++	}
++
++	return count;
++}
++
++
++static ssize_t sysfs_reg_show(struct kobject *kobj,
++		struct kobj_attribute *attr, char *buf)
++{
++	pr_info("Sysfs - Read!!!\n");
++	return sprintf(buf, "%x", sysregaddr);
++}
++
++static ssize_t sysfs_reg_store(struct kobject *kobj,
++		struct kobj_attribute *attr,const char *buf, size_t count)
++{
++	pr_info("Sysfs - reg Write!!!\n");
++	sscanf(buf,"%x",&sysregaddr);
++	return count;
++}
++
++#endif
++
++/* Write registers up to 4 at a time */
++static int ov13855_write_reg(struct i2c_client *client, u16 reg,
++			     u32 len, u32 val)
++{
++	u32 buf_i, val_i;
++	u8 buf[6];
++	u8 *val_p;
++	__be32 val_be;
++
++	if (len > 4)
++		return -EINVAL;
++
++	buf[0] = reg >> 8;
++	buf[1] = reg & 0xff;
++
++	val_be = cpu_to_be32(val);
++	val_p = (u8 *)&val_be;
++	buf_i = 2;
++	val_i = 4 - len;
++
++	while (val_i < 4)
++		buf[buf_i++] = val_p[val_i++];
++
++	if (i2c_master_send(client, buf, len + 2) != len + 2)
++		return -EIO;
++
++	return 0;
++}
++
++static int ov13855_write_array(struct i2c_client *client,
++			       const struct regval *regs)
++{
++	u32 i;
++	int ret = 0;
++
++	for (i = 0; ret == 0 && regs[i].addr != REG_NULL; i++)
++		ret = ov13855_write_reg(client, regs[i].addr,
++					OV13855_REG_VALUE_08BIT,
++					regs[i].val);
++
++	return ret;
++}
++
++/* Read registers up to 4 at a time */
++static int ov13855_read_reg(struct i2c_client *client, u16 reg,
++			    unsigned int len, u32 *val)
++{
++	struct i2c_msg msgs[2];
++	u8 *data_be_p;
++	__be32 data_be = 0;
++	__be16 reg_addr_be = cpu_to_be16(reg);
++	int ret;
++
++	if (len > 4 || !len)
++		return -EINVAL;
++
++	data_be_p = (u8 *)&data_be;
++	/* Write register address */
++	msgs[0].addr = client->addr;
++	msgs[0].flags = 0;
++	msgs[0].len = 2;
++	msgs[0].buf = (u8 *)&reg_addr_be;
++
++	/* Read data from register */
++	msgs[1].addr = client->addr;
++	msgs[1].flags = I2C_M_RD;
++	msgs[1].len = len;
++	msgs[1].buf = &data_be_p[4 - len];
++
++	ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
++	if (ret != ARRAY_SIZE(msgs))
++		return -EIO;
++
++	*val = be32_to_cpu(data_be);
++
++	return 0;
++}
++
++static struct ov13855 *to_ov13855(const struct i2c_client *client)
++{
++	return container_of(i2c_get_clientdata(client), struct ov13855, subdev);
++}
++
++/*@ov13855_enable_test_pattern - This enables the test pattern
++   Valid values for pattern are 1 - 4
++ Return value - 0 on success, negative on failure*/
++static int ov13855_enable_test_pattern(struct i2c_client *client, u32 pattern)
++{
++	u32 val;
++	val = (pattern - 1) | 0x80;
++
++	return ov13855_write_reg(client,
++				 OV13855_REG_TEST_PATTERN,
++				 OV13855_REG_VALUE_08BIT,
++				 val);
++}
++
++/*@ov13855_start_stream - writing mode register settings
++ and streaming register
++ Return value - 0 on success, negative on failure*/
++
++static int ov13855_start_stream(struct i2c_client *client)
++{
++	int ret = 0;
++	struct ov13855 *sensor = to_ov13855(client);
++	const struct regval *reg_list = supported_modes[sensor->mode].reg_list;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	if(sensor->streaming)
++	{
++		pr_debug("OV13855: Already streaming \n");
++		return ret;
++	}
++
++	ret = ov13855_write_reg(client,
++				 OV13855_REG_CTRL_MODE,
++				 OV13855_REG_VALUE_08BIT,
++				 OV13855_MODE_STREAMING);
++	if(!ret)
++	{
++		pr_debug("%s: streaming started \n", __func__);
++		sensor->streaming = 1;
++		msleep(100);
++	}
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	return ret;
++}
++
++static int ov13855_stop_stream(struct i2c_client *client)
++{
++	struct ov13855 *sensor = to_ov13855(client);
++	int ret = 0;
++
++	if(!sensor->streaming) {
++		return ret;
++	}
++
++	ret = ov13855_write_reg(client,
++				 OV13855_REG_CTRL_MODE,
++				 OV13855_REG_VALUE_08BIT,
++				 OV13855_MODE_SW_STANDBY);
++	if(!ret)
++	{
++		pr_debug("%s: streaming stopped \n", __func__);
++		sensor->streaming = 0;
++	}
++	return ret;
++
++}
++
++/* Calculate the delay in us by clock rate and clock cycles */
++static inline u32 ov13855_cal_delay(u32 cycles)
++{
++        return DIV_ROUND_UP(cycles, OV13855_XVCLK_FREQ / 1000 / 1000);
++}
++
++/*@ov13855_power_on - Control reset and power down lines */
++static void ov13855_power_on(int rst_gpio, int pwn_gpio)
++{
++	u32 delay_us;
++
++	gpio_set_value(pwn_gpio, 0);
++	usleep_range(3000, 5000);
++
++	gpio_set_value(rst_gpio, 0);
++	usleep_range(3000, 5000);
++
++	gpio_set_value(pwn_gpio, 1);
++	usleep_range(3000, 5000);
++
++	gpio_set_value(rst_gpio, 1);
++	usleep_range(3000, 5000);
++
++	/* 8192 cycles prior to first SCCB transaction */
++        delay_us = ov13855_cal_delay(8192);
++        usleep_range(delay_us, delay_us * 2);
++
++}
++
++static void ov13855_power_off(int rst_gpio, int pwn_gpio)
++{
++	msleep(10);
++	gpio_set_value(rst_gpio, 0);
++	usleep_range(3000, 5000);
++	gpio_set_value(pwn_gpio, 0);
++	usleep_range(3000, 5000);
++}
++
++static int ov13855_check_sensor_id(struct i2c_client *client)
++{
++	u32 id = 0;
++	int ret;
++
++	ret = ov13855_read_reg(client, OV13855_REG_CHIP_ID,
++			       OV13855_REG_VALUE_24BIT, &id);
++	printk(KERN_ALERT "OV13855, register 0x300A: 0x%x\n", id);
++	if (id != CHIP_ID) {
++		pr_err("Unexpected sensor id(%06x), ret(%d)\n", id, ret);
++		return -ENODEV;
++	}
++
++	ov13855_regs = ov13855_2112x1568;
++	pr_info("Detected OV13855: %06x sensor\n", CHIP_ID);
++
++	return 0;
++}
++
++
++
++static int ov13855_write_init_settings(struct i2c_client *client,
++					const struct regval *settings)
++{
++	int retval = 0;
++
++	retval = ov13855_write_array(client, settings);
++	if (retval) {
++		pr_err("OV13855 global settings failed !\n");
++		return retval;
++	}
++	msleep(5);
++	return retval;
++}
++
++static int ov13855_enum_framesizes(struct v4l2_subdev *sd,
++			       struct v4l2_subdev_pad_config *cfg,
++			       struct v4l2_subdev_frame_size_enum *fse)
++{
++	if (fse->index > 2)
++                return -EINVAL;
++	fse->max_width = supported_modes[fse->index].width;
++	fse->min_width = supported_modes[fse->index].width;
++	fse->max_height = supported_modes[fse->index].height;
++	fse->min_height = supported_modes[fse->index].height;
++	return 0;
++}
++
++static int ov13855_get_fmt(struct v4l2_subdev *sd,
++			  struct v4l2_subdev_pad_config *cfg,
++			  struct v4l2_subdev_format *format)
++{
++	struct v4l2_mbus_framefmt *mf = &format->format;
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13855 *sensor = to_ov13855(client);
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	memset(mf, 0, sizeof(struct v4l2_mbus_framefmt));
++
++	mf->code = ov13855_colour_fmts[0].code;
++	mf->colorspace = ov13855_colour_fmts[0].colorspace;
++	mf->width = sensor->pix.width;
++	mf->height = sensor->pix.height;
++	mf->field = V4L2_FIELD_NONE;
++
++	return 0;
++}
++
++static int ov13855_s_power(struct v4l2_subdev *sd, int on)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13855 *sensor = to_ov13855(client);
++
++	pr_debug("%s: %d\n", __func__, on);
++	if (on) {
++		clk_prepare_enable(sensor->sensor_clk);
++		ov13855_power_on(sensor->rst_gpio, sensor->pwn_gpio);
++	} else if (!on) {
++		clk_disable_unprepare(sensor->sensor_clk);
++		ov13855_power_off(sensor->rst_gpio, sensor->pwn_gpio);
++	}
++
++	return 0;
++}
++
++
++static int ov13855_enum_code(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_pad_config *cfg,
++				 struct v4l2_subdev_mbus_code_enum *code)
++{
++	if (code->pad || code->index >= ARRAY_SIZE(ov13855_colour_fmts))
++		return -EINVAL;
++
++	code->code = ov13855_colour_fmts[code->index].code;
++	return 0;
++}
++
++static int ov13855_enum_frameintervals(struct v4l2_subdev *sd,
++		struct v4l2_subdev_pad_config *cfg,
++		struct v4l2_subdev_frame_interval_enum *fival)
++{
++	if(fival->index > 2)
++		return -EINVAL;
++	fival->interval.numerator = 1;
++	fival->interval.denominator = DEFAULT_FPS;
++
++	return 0;
++}
++
++
++static int ov13855_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13855 *sensor = to_ov13855(client);
++	struct v4l2_captureparm *cparm = &a->parm.capture;
++	int ret = 0;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	switch (a->type) {
++	/*Need to verify below settings further*/
++	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
++	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
++		pr_debug("%s: %d\n", __func__, __LINE__);
++		memset(a, 0, sizeof(*a));
++		a->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
++		cparm->capability = sensor->streamcap.capability;
++		cparm->timeperframe = sensor->streamcap.timeperframe;
++		cparm->capturemode = sensor->streamcap.capturemode;
++		ret = 0;
++		break;
++	/*These cases not applicable now*/
++	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
++	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
++	case V4L2_BUF_TYPE_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_VBI_OUTPUT:
++	case V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
++		ret = -EINVAL;
++		break;
++
++	default:
++		pr_debug("   type is unknown - %d\n", a->type);
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static int ov13855_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
++{
++	int ret = 0;
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13855 *sensor = to_ov13855(client);
++	struct v4l2_fract *timeperframe = &a->parm.capture.timeperframe;
++
++	switch (a->type) {
++	/* This is the only case currently handled. */
++	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
++	/*Need to set fps as per request */
++		pr_debug("%s: %d\n", __func__, __LINE__);
++		sensor->streamcap.timeperframe = *timeperframe;
++		sensor->streamcap.capturemode =
++				(u32)a->parm.capture.capturemode;
++		break;
++	/* These cases not applicable for now*/
++	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
++	case V4L2_BUF_TYPE_VIDEO_OVERLAY:
++	case V4L2_BUF_TYPE_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_VBI_OUTPUT:
++	case V4L2_BUF_TYPE_SLICED_VBI_CAPTURE:
++	case V4L2_BUF_TYPE_SLICED_VBI_OUTPUT:
++		pr_debug("   type is not " \
++			"V4L2_BUF_TYPE_VIDEO_CAPTURE but %d\n",
++			a->type);
++		ret = -EINVAL;
++		break;
++
++	default:
++		pr_debug("   type is unknown - %d\n", a->type);
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++
++static int ov13855_s_stream(struct v4l2_subdev *sd, int enable)
++{
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13855 *sensor = to_ov13855(client);
++	int retval;
++
++	pr_info("s_stream: %d\n", enable);
++	if (enable) {
++	/*if valid pattern value then enable test pattern, else go for
++	 * normal streaming. Change ENABLE_TEST_PATTERN with value 1
++	 * to 4 to enable test pattern */
++		if(ENABLE_TEST_PATTERN > 0 && ENABLE_TEST_PATTERN <= 4)
++			ov13855_enable_test_pattern(client,
++						ENABLE_TEST_PATTERN);
++		retval = ov13855_start_stream(client);
++		if (retval) {
++			pr_err("OV13855 start stream failed !\n");
++			return retval;
++		}
++
++		retval = ov13855_write_reg(client, OV13855_VCHANNEL,
++					OV13855_REG_VALUE_08BIT, sensor->csi_vc);
++		if(retval) {
++			pr_err("%s: set virtual channel failed\n", __func__);
++			return retval;
++		}
++
++	}
++	else {
++		retval = ov13855_stop_stream(client);
++		if (retval) {
++			pr_err("OV13855 stop stream failed !\n");
++			return retval;
++		}
++	}
++
++	return 0;
++}
++
++static int ov13855_set_fmt(struct v4l2_subdev *sd,
++			  struct v4l2_subdev_pad_config *cfg,
++			  struct v4l2_subdev_format *format)
++{
++	int retval = 0, ret;
++	struct i2c_client *client = v4l2_get_subdevdata(sd);
++	struct ov13855 *sensor = to_ov13855(client);
++	int i = 0;
++
++	if(format->format.width == OV13855_RES_HIGH_WIDTH &&
++		format->format.height == OV13855_RES_HIGH_HEIGHT)
++	{
++		sensor->mode = 1;
++		ov13855_regs = ov13855_4224x3136;
++		sensor->pix.width = OV13855_RES_HIGH_WIDTH;
++		sensor->pix.height = OV13855_RES_HIGH_HEIGHT;
++	}
++	else if(format->format.width == OV13855_RES_LOW_WIDTH &&
++		format->format.height == OV13855_RES_LOW_HEIGHT)
++	{
++		sensor->mode = 0;
++		ov13855_regs = ov13855_2112x1568;
++		sensor->pix.width = OV13855_RES_LOW_WIDTH;
++		sensor->pix.height = OV13855_RES_LOW_HEIGHT;
++	}
++	else
++	{
++		printk(KERN_INFO "OV13855: Unsupported resolution passed\n");
++		return -1;
++	}
++
++	retval = ov13855_write_init_settings(client, ov13855_regs);
++
++#ifdef OV13855_SYS_DEBUG
++	printk(KERN_INFO "OV13855 sysfs reg dump\n");
++	dumpvalues[countreg].addr = REG_NULL;
++	dumpvalues[countreg].val = 0;
++
++	printk(KERN_INFO "countreg size: 0x%x\n", countreg);
++	for(; dumpvalues[i].addr != REG_NULL; i++)
++	{
++		printk(KERN_INFO "addr: 0x%x, val: 0x%x\n", dumpvalues[i].addr,
++				dumpvalues[i].val);
++	}
++
++	ret = ov13855_write_array(client, dumpvalues);
++        if(ret)
++        {
++		printk(KERN_INFO "failed to write sysfs reg\n");
++        }
++#endif
++
++	return retval;
++}
++
++
++static int ov13855_link_setup(struct media_entity *entity,
++                           const struct media_pad *local,
++                           const struct media_pad *remote, u32 flags)
++{
++        return 0;
++}
++
++static struct v4l2_subdev_video_ops ov13855_subdev_video_ops = {
++	.g_parm = ov13855_g_parm,
++	.s_parm = ov13855_s_parm,
++	.s_stream = ov13855_s_stream,
++};
++
++static const struct v4l2_subdev_pad_ops ov13855_subdev_pad_ops = {
++	.enum_frame_size       = ov13855_enum_framesizes,
++	.enum_frame_interval   = ov13855_enum_frameintervals,
++	.enum_mbus_code        = ov13855_enum_code,
++	.set_fmt               = ov13855_set_fmt,
++	.get_fmt               = ov13855_get_fmt,
++};
++
++static struct v4l2_subdev_core_ops ov13855_subdev_core_ops = {
++	.s_power	= ov13855_s_power,
++};
++
++static struct v4l2_subdev_ops ov13855_subdev_ops = {
++	.core	= &ov13855_subdev_core_ops,
++	.video	= &ov13855_subdev_video_ops,
++	.pad	= &ov13855_subdev_pad_ops,
++};
++
++static const struct media_entity_operations ov13855_sd_media_ops = {
++	.link_setup = ov13855_link_setup,
++};
++
++static int ov13855_probe(struct i2c_client *client,
++			 const struct i2c_device_id *id)
++{
++	struct pinctrl *pinctrl;
++	struct device *dev = &client->dev;
++	struct v4l2_subdev *sd;
++	int ret, rst_gpio, pwn_gpio;
++	struct ov13855 *sensor;
++
++	sensor = devm_kzalloc(dev, sizeof(*sensor), GFP_KERNEL);
++
++	pr_info("OV13855: ov13855_probe called\n");
++
++	pinctrl = devm_pinctrl_get_select_default(dev);
++	if (IS_ERR(pinctrl))
++		dev_warn(dev, "No pin available\n");
++
++	sensor->mode = 0;
++	sensor->streaming = 0;
++
++	rst_gpio = of_get_named_gpio(dev->of_node, "rst-gpios", 0);
++	if (!gpio_is_valid(rst_gpio)) {
++		dev_err(dev, "no sensor reset pin available");
++		return -EINVAL;
++	}
++
++	ret = devm_gpio_request_one(dev, rst_gpio, GPIOF_OUT_INIT_LOW,
++					"ov13855_reset");
++	if (ret < 0) {
++		dev_err(dev, "failed to acquire sensor reset pin");
++		return ret;
++	}
++	sensor->rst_gpio = rst_gpio;
++
++	pwn_gpio = of_get_named_gpio(dev->of_node, "pwn-gpios", 0);
++	if (!gpio_is_valid(pwn_gpio)) {
++		dev_err(dev, "no sensor power pin available");
++		return -EINVAL;
++	}
++
++	ret = devm_gpio_request_one(dev, pwn_gpio, GPIOF_OUT_INIT_LOW,
++					"ov13855_pwdn");
++	if (ret < 0) {
++		dev_err(dev, "failed to acquire sensor power pin");
++		return ret;
++	}
++	sensor->pwn_gpio = pwn_gpio;
++
++	sensor->sensor_clk = devm_clk_get(dev, "csi_mclk");
++	if (IS_ERR(sensor->sensor_clk)) {
++                sensor->sensor_clk = NULL;
++                dev_err(dev, "clock-frequency missing or invalid\n");
++                return PTR_ERR(sensor->sensor_clk);
++        }
++
++	ret = of_property_read_u32(dev->of_node, "mclk",
++					&(sensor->mclk));
++	if (ret) {
++		dev_err(dev, "mclk missing or invalid\n");
++		return ret;
++	}
++
++	ret = of_property_read_u32(dev->of_node, "mclk_source",
++					(u32 *) &(sensor->mclk_source));
++	if (ret) {
++		dev_err(dev, "mclk_source missing or invalid\n");
++		return ret;
++	}
++
++	ret = of_property_read_u32(dev->of_node, "virtual_channel",
++					&(sensor->csi_vc));
++	if (ret) {
++		dev_err(dev, "csi id missing or invalid\n");
++		return ret;
++	}
++
++	ret = clk_prepare_enable(sensor->sensor_clk);
++	if (ret < 0) {
++		dev_err(dev, "Failed to enable xvclk\n");
++		return ret;
++	}
++
++	sensor->i2c_client = client;
++
++	/*Only can handle 8bit mode for now*/
++	sensor->pix.pixelformat = V4L2_PIX_FMT_SBGGR8;
++	sensor->pix.width = OV13855_RES_LOW_WIDTH;
++        sensor->pix.height = OV13855_RES_LOW_HEIGHT;
++	sensor->streamcap.capability = V4L2_MODE_HIGHQUALITY |
++                                           V4L2_CAP_TIMEPERFRAME;
++        sensor->streamcap.capturemode = 0;
++        sensor->streamcap.timeperframe.denominator = DEFAULT_FPS;
++        sensor->streamcap.timeperframe.numerator = 1;
++
++	ov13855_power_on(sensor->rst_gpio, sensor->pwn_gpio);
++
++	ret = ov13855_check_sensor_id(client);
++	if (ret)
++	{
++		dev_err(dev, "ov13855 mipi not found\n");
++		clk_disable_unprepare(sensor->sensor_clk);
++		goto err_free_handler;
++	}
++
++	sd = &sensor->subdev;
++	v4l2_i2c_subdev_init(sd, client, &ov13855_subdev_ops);
++
++	sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
++	sd->entity.function = MEDIA_ENT_F_CAM_SENSOR;
++	sensor->pads[OV13855_SENS_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
++
++	ret = media_entity_pads_init(&sd->entity, OV13855_SENS_PADS_NUM,
++							sensor->pads);
++	sd->entity.ops = &ov13855_sd_media_ops;
++	if (ret < 0)
++		return ret;
++
++	ret = v4l2_async_register_subdev(sd);
++	if (ret < 0) {
++		dev_err(&client->dev,
++				"%s--Async register failed, ret=%d\n", __func__, ret);
++		media_entity_cleanup(&sd->entity);
++	}
++
++    clk_disable_unprepare(sensor->sensor_clk);
++	ov13855_power_off(sensor->rst_gpio, sensor->pwn_gpio);
++
++#ifdef OV13855_SYS_DEBUG
++	kobj_ov13855 = kobject_create_and_add("ov13855_debug", kernel_kobj);
++
++	/*Creating sysfs file for ov13855 register write*/
++	if(sysfs_create_file(kobj_ov13855, &ov13855_reg_write.attr)) {
++		pr_err("Cannot create sysfs file......\n");
++		kobject_put(kobj_ov13855);
++		sysfs_remove_file(kernel_kobj, &ov13855_reg_write.attr);
++	}
++
++	if(sysfs_create_file(kobj_ov13855, &ov13855_regvalue_write.attr)) {
++		pr_err("Cannot create sysfs file......\n");
++		kobject_put(kobj_ov13855);
++		sysfs_remove_file(kernel_kobj, &ov13855_regvalue_write.attr);
++	}
++	dumpvalues[countreg].addr = REG_NULL;
++	dumpvalues[countreg].val = 0;
++#endif
++
++	pr_info("OV13855: ov13855_probe successful\n");
++
++	return 0;
++
++err_free_handler:
++
++	return ret;
++}
++
++static int ov13855_remove(struct i2c_client *client)
++{
++	struct v4l2_subdev *sd = i2c_get_clientdata(client);
++	struct ov13855 *sensor = to_ov13855(client);
++
++	v4l2_async_unregister_subdev(sd);
++
++	clk_disable_unprepare(sensor->sensor_clk);
++
++	ov13855_power_off(sensor->rst_gpio, sensor->pwn_gpio);
++	v4l2_async_unregister_subdev(sd);
++
++	clk_disable_unprepare(sensor->sensor_clk);
++
++	return 0;
++}
++
++static const struct of_device_id ov13855_of_match[] = {
++	{ .compatible = "ovti,ov13855" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, ov13855_of_match);
++
++static const struct i2c_device_id ov13855_match_id[] = {
++        { "ov13855_mipi", 0 },
++        { },
++};
++
++static struct i2c_driver ov13855_i2c_driver = {
++        .driver = {
++                .name = OV13855_NAME,
++                .of_match_table = of_match_ptr(ov13855_of_match),
++        },
++        .probe          = ov13855_probe,
++        .remove         = ov13855_remove,
++        .id_table       = ov13855_match_id,
++};
++
++module_i2c_driver(ov13855_i2c_driver);
++
++MODULE_DESCRIPTION("ov13855 sensor driver");
++MODULE_LICENSE("GPL v2");
++
+diff --git a/drivers/media/i2c/ov13858.c b/drivers/media/i2c/ov13858.c
+index 236ad2c816b7..6dd8de63e6bc 100644
+--- a/drivers/media/i2c/ov13858.c
++++ b/drivers/media/i2c/ov13858.c
+@@ -1,13 +1,22 @@
+ // SPDX-License-Identifier: GPL-2.0
+ // Copyright (c) 2017 Intel Corporation.
+ 
++#ifdef CONFIG_ACPI
+ #include <linux/acpi.h>
++#endif
+ #include <linux/i2c.h>
+ #include <linux/module.h>
+ #include <linux/pm_runtime.h>
++#include <linux/version.h>
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-device.h>
+-#include <media/v4l2-fwnode.h>
++#include <media/v4l2-event.h>
++#include <linux/clk.h>
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++
++#define OV13858_XCLK_MIN  6000000
++#define OV13858_XCLK_MAX 64000000
+ 
+ #define OV13858_REG_VALUE_08BIT		1
+ #define OV13858_REG_VALUE_16BIT		2
+@@ -82,6 +91,8 @@
+ /* Number of frames to skip */
+ #define OV13858_NUM_OF_SKIP_FRAMES	2
+ 
++#define DPRINT(x)	do { dev_info(x, "%s:%d\n", __FUNCTION__, __LINE__); } while (0)
++
+ struct ov13858_reg {
+ 	u16 address;
+ 	u8 val;
+@@ -1027,6 +1038,9 @@ static const struct ov13858_mode supported_modes[] = {
+ };
+ 
+ struct ov13858 {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
++	struct i2c_client *i2c_client;
++#endif
+ 	struct v4l2_subdev sd;
+ 	struct media_pad pad;
+ 
+@@ -1044,6 +1058,10 @@ struct ov13858 {
+ 	/* Mutex for serialized access */
+ 	struct mutex mutex;
+ 
++	int power_count;
++	struct clk *xclk;
++	u32 xclk_freq;
++
+ 	/* Streaming on/off */
+ 	bool streaming;
+ };
+@@ -1274,6 +1292,37 @@ static const struct v4l2_ctrl_ops ov13858_ctrl_ops = {
+ 	.s_ctrl = ov13858_set_ctrl,
+ };
+ 
++static int ov13858_s_power(struct v4l2_subdev *sd, int on)
++{
++	struct ov13858 *ov13858 = to_ov13858(sd);
++	struct i2c_client *client = v4l2_get_subdevdata(&ov13858->sd);
++	int ret = 0;
++
++	DPRINT(&client->dev);
++	mutex_lock(&ov13858->mutex);
++
++	if (ov13858->power_count == !on) {
++		//ret = ov13858_set_power(ov13858, !!on);
++
++		ret = clk_prepare_enable(ov13858->xclk);
++		if (ret)
++			goto out;
++	}
++
++	/* Update the power count. */
++	ov13858->power_count += on ? 1 : -1;
++	WARN_ON(ov13858->power_count < 0);
++out:
++	mutex_unlock(&ov13858->mutex);
++
++	if (on && !ret && ov13858->power_count == 1) {
++		/* restore controls */
++		ret = v4l2_ctrl_handler_setup(&ov13858->ctrl_handler);
++	}
++
++	return ret;
++}
++
+ static int ov13858_enum_mbus_code(struct v4l2_subdev *sd,
+ 				  struct v4l2_subdev_pad_config *cfg,
+ 				  struct v4l2_subdev_mbus_code_enum *code)
+@@ -1557,6 +1606,13 @@ static int ov13858_identify_module(struct ov13858 *ov13858)
+ 	return 0;
+ }
+ 
++static const struct v4l2_subdev_core_ops ov13858_core_ops = {
++	.s_power = ov13858_s_power,
++	.log_status = v4l2_ctrl_subdev_log_status,
++	.subscribe_event = v4l2_ctrl_subdev_subscribe_event,
++	.unsubscribe_event = v4l2_event_subdev_unsubscribe,
++};
++
+ static const struct v4l2_subdev_video_ops ov13858_video_ops = {
+ 	.s_stream = ov13858_set_stream,
+ };
+@@ -1576,9 +1632,18 @@ static const struct v4l2_subdev_ops ov13858_subdev_ops = {
+ 	.video = &ov13858_video_ops,
+ 	.pad = &ov13858_pad_ops,
+ 	.sensor = &ov13858_sensor_ops,
++	.core = &ov13858_core_ops,
+ };
+ 
++static int ov13858_link_setup(struct media_entity *entity,
++			   const struct media_pad *local,
++			   const struct media_pad *remote, u32 flags)
++{
++	return 0;
++}
++
+ static const struct media_entity_operations ov13858_subdev_entity_ops = {
++	.link_setup = ov13858_link_setup,
+ 	.link_validate = v4l2_subdev_link_validate,
+ };
+ 
+@@ -1590,7 +1655,6 @@ static const struct v4l2_subdev_internal_ops ov13858_internal_ops = {
+ static int ov13858_init_controls(struct ov13858 *ov13858)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(&ov13858->sd);
+-	struct v4l2_fwnode_device_properties props;
+ 	struct v4l2_ctrl_handler *ctrl_hdlr;
+ 	s64 exposure_max;
+ 	s64 vblank_def;
+@@ -1602,7 +1666,7 @@ static int ov13858_init_controls(struct ov13858 *ov13858)
+ 	int ret;
+ 
+ 	ctrl_hdlr = &ov13858->ctrl_handler;
+-	ret = v4l2_ctrl_handler_init(ctrl_hdlr, 10);
++	ret = v4l2_ctrl_handler_init(ctrl_hdlr, 8);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1668,15 +1732,6 @@ static int ov13858_init_controls(struct ov13858 *ov13858)
+ 		goto error;
+ 	}
+ 
+-	ret = v4l2_fwnode_device_parse(&client->dev, &props);
+-	if (ret)
+-		goto error;
+-
+-	ret = v4l2_ctrl_new_fwnode_properties(ctrl_hdlr, &ov13858_ctrl_ops,
+-					      &props);
+-	if (ret)
+-		goto error;
+-
+ 	ov13858->sd.ctrl_handler = ctrl_hdlr;
+ 
+ 	return 0;
+@@ -1694,21 +1749,27 @@ static void ov13858_free_controls(struct ov13858 *ov13858)
+ 	mutex_destroy(&ov13858->mutex);
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
++static int ov13858_probe(struct i2c_client *client)
++#else
+ static int ov13858_probe(struct i2c_client *client,
+ 			 const struct i2c_device_id *devid)
++#endif
+ {
+ 	struct ov13858 *ov13858;
+ 	int ret;
+ 	u32 val = 0;
+-
++/*
+ 	device_property_read_u32(&client->dev, "clock-frequency", &val);
+ 	if (val != 19200000)
+ 		return -EINVAL;
+-
++*/
+ 	ov13858 = devm_kzalloc(&client->dev, sizeof(*ov13858), GFP_KERNEL);
+ 	if (!ov13858)
+ 		return -ENOMEM;
+-
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
++	ov13858->i2c_client = client;
++#endif
+ 	/* Initialize subdev */
+ 	v4l2_i2c_subdev_init(&ov13858->sd, client, &ov13858_subdev_ops);
+ 
+@@ -1719,6 +1780,22 @@ static int ov13858_probe(struct i2c_client *client,
+ 		return ret;
+ 	}
+ 
++	 /* get system clock (xclk) */
++        ov13858->xclk = devm_clk_get(&client->dev, "csi_mclk");
++        if (IS_ERR(ov13858->xclk)) {
++                dev_err(&client->dev, "failed to get csi_mclk\n");
++                return PTR_ERR(ov13858->xclk);
++        }
++
++        ov13858->xclk_freq = clk_get_rate(ov13858->xclk);
++        if (ov13858->xclk_freq < OV13858_XCLK_MIN ||
++            ov13858->xclk_freq > OV13858_XCLK_MAX) {
++                dev_err(&client->dev, "xclk frequency out of range: %d Hz\n",
++                        ov13858->xclk_freq);
++                return -EINVAL;
++        }
++	dev_info(&client->dev, "xclk is %d\n", ov13858->xclk_freq);
++
+ 	/* Set default mode to max resolution */
+ 	ov13858->cur_mode = &supported_modes[0];
+ 
+@@ -1728,7 +1805,7 @@ static int ov13858_probe(struct i2c_client *client,
+ 
+ 	/* Initialize subdev */
+ 	ov13858->sd.internal_ops = &ov13858_internal_ops;
+-	ov13858->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
++	ov13858->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_HAS_EVENTS;
+ 	ov13858->sd.entity.ops = &ov13858_subdev_entity_ops;
+ 	ov13858->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
+ 
+@@ -1798,13 +1875,30 @@ static const struct acpi_device_id ov13858_acpi_ids[] = {
+ MODULE_DEVICE_TABLE(acpi, ov13858_acpi_ids);
+ #endif
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id ov13858_dt_ids[] = {
++	{ .compatible = "ovti,ov13858" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, ov13858_dt_ids);
++#endif
++
+ static struct i2c_driver ov13858_i2c_driver = {
+ 	.driver = {
+ 		.name = "ov13858",
+ 		.pm = &ov13858_pm_ops,
++#ifdef CONFIG_ACPI
+ 		.acpi_match_table = ACPI_PTR(ov13858_acpi_ids),
++#endif
++#ifdef CONFIG_OF
++		.of_match_table	= ov13858_dt_ids,
++#endif
+ 	},
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
++	.probe_new = ov13858_probe,
++#else
+ 	.probe = ov13858_probe,
++#endif
+ 	.remove = ov13858_remove,
+ 	.id_table = ov13858_id_table,
+ };
+diff --git a/drivers/media/platform/mxc/capture/mx6s_capture.c b/drivers/media/platform/mxc/capture/mx6s_capture.c
+index 433f2d124d2c..706c9017c118 100644
+--- a/drivers/media/platform/mxc/capture/mx6s_capture.c
++++ b/drivers/media/platform/mxc/capture/mx6s_capture.c
+@@ -260,12 +260,54 @@ static struct mx6s_fmt formats[] = {
+ 		.pixelformat	= V4L2_PIX_FMT_YUV32,
+ 		.mbus_code	= MEDIA_BUS_FMT_AYUV8_1X32,
+ 		.bpp		= 4,
++	}, {
++		.name		= "RAWRGB8 (SRGGB8)",
++		.fourcc		= V4L2_PIX_FMT_SRGGB8,
++		.pixelformat	= V4L2_PIX_FMT_SRGGB8,
++		.mbus_code	= MEDIA_BUS_FMT_SRGGB8_1X8,
++		.bpp		= 1,
++	}, {
++		.name		= "RAWRGB8 (SGRBG8)",
++		.fourcc		= V4L2_PIX_FMT_SGRBG8,
++		.pixelformat	= V4L2_PIX_FMT_SGRBG8,
++		.mbus_code	= MEDIA_BUS_FMT_SGRBG8_1X8,
++		.bpp		= 1,
++	}, {
++		.name		= "RAWRGB8 (SGBRG8)",
++		.fourcc		= V4L2_PIX_FMT_SGBRG8,
++		.pixelformat	= V4L2_PIX_FMT_SGBRG8,
++		.mbus_code	= MEDIA_BUS_FMT_SGBRG8_1X8,
++		.bpp		= 1,
+ 	}, {
+ 		.name		= "RAWRGB8 (SBGGR8)",
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR8,
+ 		.pixelformat	= V4L2_PIX_FMT_SBGGR8,
+ 		.mbus_code	= MEDIA_BUS_FMT_SBGGR8_1X8,
+ 		.bpp		= 1,
++	}, {
++		.name		= "RAWRGB10 (SRGGB10)",
++		.fourcc		= V4L2_PIX_FMT_SRGGB10,
++		.pixelformat	= V4L2_PIX_FMT_SRGGB10,
++		.mbus_code	= MEDIA_BUS_FMT_SRGGB10_1X10,
++		.bpp		= 2,
++	}, {
++		.name		= "RAWRGB10 (SGRBG10)",
++		.fourcc		= V4L2_PIX_FMT_SGRBG10,
++		.pixelformat	= V4L2_PIX_FMT_SGRBG10,
++		.mbus_code	= MEDIA_BUS_FMT_SGRBG10_1X10,
++		.bpp		= 2,
++	}, {
++		.name		= "RAWRGB8 (SGBRG10)",
++		.fourcc		= V4L2_PIX_FMT_SGBRG10,
++		.pixelformat	= V4L2_PIX_FMT_SGBRG10,
++		.mbus_code	= MEDIA_BUS_FMT_SGBRG10_1X10,
++		.bpp		= 2,
++	}, {
++		.name		= "RAWRGB8 (SBGGR10)",
++		.fourcc		= V4L2_PIX_FMT_SBGGR10,
++		.pixelformat	= V4L2_PIX_FMT_SBGGR10,
++		.mbus_code	= MEDIA_BUS_FMT_SBGGR10_1X10,
++		.bpp		= 2,
+ 	}
+ };
+ 
+@@ -837,7 +879,14 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
+ 
+ 	switch (csi_dev->fmt->pixelformat) {
+ 	case V4L2_PIX_FMT_YUV32:
++	case V4L2_PIX_FMT_SRGGB8:
++	case V4L2_PIX_FMT_SGRBG8:
++	case V4L2_PIX_FMT_SGBRG8:
+ 	case V4L2_PIX_FMT_SBGGR8:
++	case V4L2_PIX_FMT_SRGGB10:
++	case V4L2_PIX_FMT_SGRBG10:
++	case V4L2_PIX_FMT_SGBRG10:
++	case V4L2_PIX_FMT_SBGGR10:
+ 		width = pix->width;
+ 		break;
+ 	case V4L2_PIX_FMT_UYVY:
+@@ -868,9 +917,18 @@ static int mx6s_configure_csi(struct mx6s_csi_dev *csi_dev)
+ 		case V4L2_PIX_FMT_YUYV:
+ 			cr18 |= BIT_MIPI_DATA_FORMAT_YUV422_8B;
+ 			break;
++		case V4L2_PIX_FMT_SRGGB8:
++		case V4L2_PIX_FMT_SGRBG8:
++		case V4L2_PIX_FMT_SGBRG8:
+ 		case V4L2_PIX_FMT_SBGGR8:
+ 			cr18 |= BIT_MIPI_DATA_FORMAT_RAW8;
+ 			break;
++		case V4L2_PIX_FMT_SRGGB10:
++		case V4L2_PIX_FMT_SGRBG10:
++		case V4L2_PIX_FMT_SGBRG10:
++		case V4L2_PIX_FMT_SBGGR10:
++			cr18 |= BIT_MIPI_DATA_FORMAT_RAW10;
++			break;
+ 		default:
+ 			pr_debug("   fmt not supported\n");
+ 			return -EINVAL;
+diff --git a/drivers/media/platform/mxc/capture/mxc_mipi_csi.c b/drivers/media/platform/mxc/capture/mxc_mipi_csi.c
+index 069a0b9bb961..23abf9b7032a 100644
+--- a/drivers/media/platform/mxc/capture/mxc_mipi_csi.c
++++ b/drivers/media/platform/mxc/capture/mxc_mipi_csi.c
+@@ -318,10 +318,38 @@ static const struct csis_pix_format mipi_csis_formats[] = {
+ 		.code = MEDIA_BUS_FMT_VYUY8_2X8,
+ 		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_YCBCR422_8BIT,
+ 		.data_alignment = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
++		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW8,
++		.data_alignment = 8,
++	}, {
++		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
++		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW8,
++		.data_alignment = 8,
++	}, {
++		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
++		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW8,
++		.data_alignment = 8,
+ 	}, {
+ 		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
+ 		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW8,
+ 		.data_alignment = 8,
++	}, {
++		.code = MEDIA_BUS_FMT_SRGGB10_1X10,
++		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW10,
++		.data_alignment = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_SGRBG10_1X10,
++		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW10,
++		.data_alignment = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_SGBRG10_1X10,
++		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW10,
++		.data_alignment = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_SBGGR10_1X10,
++		.fmt_reg = MIPI_CSIS_ISPCFG_FMT_RAW10,
++		.data_alignment = 16,
+ 	}
+ };
+ 
+diff --git a/drivers/media/platform/mxc/capture/ov5647_mipi.c b/drivers/media/platform/mxc/capture/ov5647_mipi.c
+index 7869d45a425f..2e9005013832 100644
+--- a/drivers/media/platform/mxc/capture/ov5647_mipi.c
++++ b/drivers/media/platform/mxc/capture/ov5647_mipi.c
+@@ -1439,7 +1439,7 @@ static int ov5647_enum_frameintervals(struct v4l2_subdev *sd,
+ 
+ 	if (fie->width == 0 || fie->height == 0 ||
+ 	    fie->code == 0) {
+-		pr_warning("Please assign pixel format, width and height.\n");
++		pr_info("Please assign pixel format, width and height.\n");
+ 		return -EINVAL;
+ 	}
+ 
+@@ -1642,13 +1642,13 @@ static int ov5647_probe(struct i2c_client *client,
+ 
+ 	retval = ov5647_read_reg(OV5647_CHIP_ID_HIGH_BYTE, &chip_id_high);
+ 	if (retval < 0 || chip_id_high != 0x56) {
+-		pr_warning("camera ov5647_mipi is not found\n");
++		pr_info("camera ov5647_mipi is not found\n");
+ 		clk_disable_unprepare(ov5647_data.sensor_clk);
+ 		return -ENODEV;
+ 	}
+ 	retval = ov5647_read_reg(OV5647_CHIP_ID_LOW_BYTE, &chip_id_low);
+ 	if (retval < 0 || chip_id_low != 0x47) {
+-		pr_warning("camera ov5647_mipi is not found\n");
++		pr_info("camera ov5647_mipi is not found\n");
+ 		clk_disable_unprepare(ov5647_data.sensor_clk);
+ 		return -ENODEV;
+ 	}
+@@ -1656,7 +1656,7 @@ static int ov5647_probe(struct i2c_client *client,
+ 	retval = init_device();
+ 	if (retval < 0) {
+ 		clk_disable_unprepare(ov5647_data.sensor_clk);
+-		pr_warning("camera ov5647 init failed\n");
++		pr_info("camera ov5647 init failed\n");
+ 		ov5647_power_down(1);
+ 		return retval;
+ 	}
+-- 
+2.25.1
+

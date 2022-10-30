@@ -1,0 +1,105 @@
+From a04f873d7165603fc935155db7caf2fb569ff9fd Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Wed, 19 Oct 2022 00:14:01 +0530
+Subject: [PATCH 2/2] u-boot: modify Kconfig/Makefile to build lec-imx8mm
+
+---
+ arch/arm/dts/Makefile           | 57 +++++++++++++++++----------------
+ arch/arm/mach-imx/imx8m/Kconfig |  7 ++++
+ 2 files changed, 36 insertions(+), 28 deletions(-)
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 24a387fb60..9fdf7e9ad5 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -855,34 +855,35 @@ dtb-$(CONFIG_ARCH_IMX8) += \
+ 
+ dtb-$(CONFIG_ARCH_IMX8M) += \
+ 	imx8mm-evk.dtb \
+-	imx8mm-evk-qca-wifi.dtb \
+-	imx8mm-ddr4-evk.dtb \
+-	imx8mm-ddr3l-val.dtb \
+-	imx8mm-ddr4-val.dtb \
+-	imx8mm-venice.dtb \
+-	imx8mm-venice-gw71xx-0x.dtb \
+-	imx8mm-venice-gw72xx-0x.dtb \
+-	imx8mm-venice-gw73xx-0x.dtb \
+-	imx8mm-verdin.dtb \
+-	phycore-imx8mm.dtb \
+-	imx8mn-ddr3l-evk.dtb \
+-	imx8mn-ddr4-evk.dtb \
+-	imx8mn-evk.dtb \
+-	imx8mq-ddr3l-val.dtb \
+-	imx8mq-ddr4-val.dtb \
+-	imx8mq-evk.dtb \
+-	imx8mm-beacon-kit.dtb \
+-	imx8mn-beacon-kit.dtb \
+-	imx8mq-phanbell.dtb \
+-	imx8mp-ddr4-evk.dtb \
+-	imx8mp-evk.dtb \
+-	imx8mp-phyboard-pollux-rdk.dtb \
+-	imx8mq-pico-pi.dtb \
+-	imx8mm-ddr4-ab2.dtb \
+-	imx8mm-ab2.dtb \
+-	imx8mn-ddr4-ab2.dtb \
+-	imx8mn-ddr3l-ab2.dtb \
+-	imx8mn-ab2.dtb
++	uboot-lec8mm.dtb \
++#	imx8mm-evk-qca-wifi.dtb \
++#	imx8mm-ddr4-evk.dtb \
++#	imx8mm-ddr3l-val.dtb \
++#	imx8mm-ddr4-val.dtb \
++#	imx8mm-venice.dtb \
++#	imx8mm-venice-gw71xx-0x.dtb \
++#	imx8mm-venice-gw72xx-0x.dtb \
++#	imx8mm-venice-gw73xx-0x.dtb \
++#	imx8mm-verdin.dtb \
++#	phycore-imx8mm.dtb \
++#	imx8mn-ddr3l-evk.dtb \
++#	imx8mn-ddr4-evk.dtb \
++#	imx8mn-evk.dtb \
++#	imx8mq-ddr3l-val.dtb \
++#	imx8mq-ddr4-val.dtb \
++#	imx8mq-evk.dtb \
++#	imx8mm-beacon-kit.dtb \
++#	imx8mn-beacon-kit.dtb \
++#	imx8mq-phanbell.dtb \
++#	imx8mp-ddr4-evk.dtb \
++#	imx8mp-evk.dtb \
++#	imx8mp-phyboard-pollux-rdk.dtb \
++#	imx8mq-pico-pi.dtb \
++#	imx8mm-ddr4-ab2.dtb \
++#	imx8mm-ab2.dtb \
++#	imx8mn-ddr4-ab2.dtb \
++#	imx8mn-ddr3l-ab2.dtb \
++#	imx8mn-ab2.dtb \
+ 
+ dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb \
+ 	imxrt1020-evk.dtb
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index 245b085499..c0d7f3222f 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -169,6 +169,12 @@ config TARGET_PICO_IMX8MQ
+ 	bool "Support Technexion Pico iMX8MQ"
+ 	select IMX8MQ
+ 	select IMX8M_LPDDR4
++	
++config TARGET_LEC_IMX8MM
++	bool "Adlink lec-imx8mm LPDDR4 board"
++	select IMX8MM
++	select SUPPORT_SPL
++	select IMX8M_LPDDR4	
+ 
+ config TARGET_IMX8MP_DDR4_EVK
+ 	bool "imx8mp DDR4 EVK board"
+@@ -276,5 +282,6 @@ source "board/beacon/imx8mm/Kconfig"
+ source "board/beacon/imx8mn/Kconfig"
+ source "board/phytec/phycore_imx8mm/Kconfig"
+ source "board/phytec/phycore_imx8mp/Kconfig"
++source "board/adlink/lec-imx8mm/Kconfig"
+ 
+ endif
+-- 
+2.25.1
+

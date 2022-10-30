@@ -2,9 +2,12 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 LOCALVERSION_private = "-lts-5.10.y-adlink"
 SRCBRANCH_private = "lf-5.10.y-adlink"
+
+
 KERNEL_SRC_private = "git://github.com/ADLINK/linux-adlink.git;protocol=https"
+
 SRC_URI_private = "${KERNEL_SRC};branch=${SRCBRANCH};user=${PRIVATE_USER}:${PRIVATE_TOKEN};"
-SRCREV_private = "925f549eadf84f591d0233357c8adfaa52f9d480"
+SRCREV_private = "a68e31b63f864ff71cd4adb40fbc9e1edc75c250"
 
 EXTRA_SRC = "${@d.getVarFlag('KERNEL_SRC_PATCHES', d.getVar('MACHINE'), True)}"
 SRC_URI_append = " ${EXTRA_SRC}"

@@ -1,0 +1,35 @@
+From 2043f2308905a652328de781cc63bb49019946b8 Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Fri, 21 Oct 2022 11:31:40 +0530
+Subject: [PATCH 3/5] PCIe reset delay time to 120ms ,Support lspci can show
+ root port when PCIe bus no any device
+
+---
+ drivers/pci/controller/dwc/pci-imx6.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pci/controller/dwc/pci-imx6.c b/drivers/pci/controller/dwc/pci-imx6.c
+index d3ca0d9fe028..ed47b937d313 100644
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -1190,7 +1190,7 @@ static void imx6_pcie_deassert_core_reset(struct imx6_pcie *imx6_pcie)
+ 	if (gpio_is_valid(imx6_pcie->reset_gpio)) {
+ 		gpio_set_value_cansleep(imx6_pcie->reset_gpio,
+ 					imx6_pcie->gpio_active_high);
+-		msleep(20);
++		msleep(120);
+ 		gpio_set_value_cansleep(imx6_pcie->reset_gpio,
+ 					!imx6_pcie->gpio_active_high);
+ 	}
+@@ -1922,7 +1922,7 @@ static int imx6_pcie_host_init(struct pcie_port *pp)
+ 
+ 	dw_pcie_setup_rc(pp);
+ 	pci_imx_set_msi_en(pp);
+-	if (imx6_pcie_establish_link(imx6_pcie))
++	if (imx6_pcie_establish_link(imx6_pcie) && (!imx6_pcie_cz_enabled))
+ 		return -ENODEV;
+ 	msleep(100);
+ 	dw_pcie_msi_init(pp);
+-- 
+2.25.1
+
