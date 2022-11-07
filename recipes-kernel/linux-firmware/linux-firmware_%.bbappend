@@ -11,7 +11,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRCREV_adlink-sd8997 = "d1659d1d1af646533e0e79feaf55a6aed6e0fad8"
 ADLINK_BRANCH = "p207"
-ADLINK_FIRMWARE_SRC = "git://github.com/ADLINK/nxp-w8997-fwimage.git;protocol=https;branch=${ADLINK_BRANCH};user=${PA_USER}:${PA_TOKEN}"
+ADLINK_FIRMWARE_SRC = "git://github.com/ADLINK/nxp-w8997-fwimage.git;protocol=https;branch=${ADLINK_BRANCH};"
 SRC_URI += "\
     ${ADLINK_FIRMWARE_SRC};name=adlink-sd8997;destsuffix=adlink-sd8997 \
     file://fcc-wifi_mod_para.conf \
