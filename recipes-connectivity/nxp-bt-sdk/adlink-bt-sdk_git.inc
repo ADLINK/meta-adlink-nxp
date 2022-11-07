@@ -6,7 +6,7 @@ ADLINK_SRC ?= "git://github.com/ADLINK/mwifiex-adlink.git"
 
 # Kernel 5.4
 SRCBRANCH = "adlink-imx_5.4.70.2.3.0"
-SRC_URI = "${ADLINK_SRC};branch=${SRCBRANCH};protocol=https;user=${PA_USER}:${PA_TOKEN};"
+SRC_URI = "${ADLINK_SRC};branch=${SRCBRANCH};protocol=https;"
 SRCREV = "61561d1070350058a0a809624c3c283d7bc7f474"
 
 S = "${WORKDIR}/git"
