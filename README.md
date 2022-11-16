@@ -213,5 +213,5 @@
 
 <br>
 
-Please feel free to send us (email: ryanzj.huang@adlinktech.com) patches for this layer or report any bugs found in this layer. 
-<br> For hardware support, please contact your local representative.
+Please feel free to ask qusetions on ADLINK AAE technical site: https://www.adlinktech.com/en/Askanexpert 
+<br>For hardware support, please contact your local representative.
