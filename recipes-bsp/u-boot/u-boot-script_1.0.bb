@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 SUMMARY = "u-boot boot.scr.uimg"
 DESCRIPTION = "Boot script for launching bootable disk images"

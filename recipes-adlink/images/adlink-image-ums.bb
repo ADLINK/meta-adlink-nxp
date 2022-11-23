@@ -9,15 +9,15 @@ suitable for production."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-IMAGE_FSTYPES_append = " wic wic.xz"
-IMAGE_FSTYPES_remove = "tar tar.bz2 ext4"
+IMAGE_FSTYPES:append = " wic wic.xz"
+IMAGE_FSTYPES:remove = "tar tar.bz2 ext4"
 WKS_FILE = "adlink-imx8-imxboot-fit.wks.in"
 WKS_FILE_DEPENDS_mx8 += "imx-boot u-boot-script"
 IMAGE_BOOT_FILES = "boot.scr.uimg;boot.scr"
-IMAGE_BOOT_FILES_append_arm = " u-boot-${MACHINE}.${UBOOT_SUFFIX};u-boot.img boot.scr.uimg;boot.scr"
+IMAGE_BOOT_FILES:append:arm = " u-boot-${MACHINE}.${UBOOT_SUFFIX};u-boot.img boot.scr.uimg;boot.scr"
 
 # We do not want to install anything, only need the wic packaging"
-IMAGE_INSTALL_remove = "packagegroup-core-boot packagegroup-base-extended"
+IMAGE_INSTALL:remove = "packagegroup-core-boot packagegroup-base-extended"
 
 # Do not pollute the initrd image with rootfs features
 IMAGE_FEATURES = ""

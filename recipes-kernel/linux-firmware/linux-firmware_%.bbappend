@@ -3,7 +3,7 @@
 # Support additional firmware for nxp 88w8997 sdio wifi/bt module
 #
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 # SDIO-UART W8997 Firmware version 16.92.10.p219.5 (from meta-imx)
 
@@ -19,7 +19,7 @@ SRC_URI += "\
 
 SD8997_FWDIR := "${@bb.utils.contains('DISTRO_FEATURES', 'fcc', 'FwImageFcc', 'FwImage', d)}"
 
-do_install_append () {
+do_install:append () {
     if [ "${SD8997_FWDIR}" = "FwImageFcc" ]; then
         # Install NXP Connectivity sd8997 fcc verification firmware
         install -d ${D}/lib/firmware/nxp
@@ -41,6 +41,6 @@ do_install_append () {
 
 LICENSE_${PN}-nxp89xx = "Firmware-Marvell"
 
-FILES_${PN}-nxp89xx_append = " \
+FILES_${PN}-nxp89xx:append = " \
     ${nonarch_base_libdir}/firmware/nxp/ \
 "

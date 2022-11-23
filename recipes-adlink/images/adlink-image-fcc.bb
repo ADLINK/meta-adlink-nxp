@@ -9,8 +9,8 @@ suitable for production."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-IMAGE_FSTYPES_append = " wic wic.xz"
-IMAGE_FSTYPES_remove = "tar tar.bz2 ext4"
+IMAGE_FSTYPES:append = " wic wic.xz"
+IMAGE_FSTYPES:remove = "tar tar.bz2 ext4"
 
 # We do not want to install much
 PACKAGE_INSTALL = "packagegroup-core-boot \
@@ -37,7 +37,7 @@ IMAGE_LINGUAS = ""
 
 LICENSE = "MIT"
 
-inherit distro_features_check
+inherit features_check
 REQUIRED_DISTRO_FEATURES = "fcc"
 
 inherit core-image

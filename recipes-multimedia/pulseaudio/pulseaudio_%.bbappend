@@ -1,5 +1,5 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}/imx:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/imx:"
 
-SRC_URI_append = " \
+SRC_URI:append = " \
                file://default.pa \ 
 		"

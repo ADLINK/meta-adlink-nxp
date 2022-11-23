@@ -67,7 +67,7 @@
 	};
 
 	sound-hdmi {
-		compatible = "fsl,imx-audio-cdnhdmi";
+		compatible = "fsl,imx-audio-hdmi";
 		model = "audio-hdmi";
 		audio-cpu = <&aud2htx>;
 		hdmi-out;
@@ -113,9 +113,14 @@
 	};
 
 	sound-xcvr {
-		compatible = "fsl,imx-audio-xcvr";
+		compatible = "fsl,imx-audio-card";
 		model = "imx-audio-xcvr";
-		cpu-dai = <&xcvr>;
+		pri-dai-link {
+			link-name = "XCVR PCM";
+			cpu {
+				sound-dai = <&xcvr>;
+			};
+		};
 	};
 
 	lvds_backlight: lvds_backlight {
@@ -776,7 +781,6 @@
 	ext_osc = <1>;
 	clocks = <&clk IMX8MP_CLK_HSIO_AXI_DIV>,
 		 <&clk IMX8MP_CLK_PCIE_AUX>,
-		 <&clk IMX8MP_CLK_PCIE_PHY>,
 		 <&clk IMX8MP_CLK_PCIE_ROOT>;
 	clock-names = "pcie", "pcie_aux", "pcie_phy", "pcie_bus";
 	assigned-clocks = <&clk IMX8MP_CLK_HSIO_AXI_SRC>,
@@ -787,9 +791,7 @@
 };
 
 &pcie_phy{
-	clocks = <&clk IMX8MP_CLK_PCIE_PHY>;
 	clock-names = "phy";
-	assigned-clocks = <&clk IMX8MP_CLK_PCIE_PHY>;
 	assigned-clock-parents = <&clk IMX8MP_CLK_24M>;
 	ext_osc = <1>;
 	status = "okay";

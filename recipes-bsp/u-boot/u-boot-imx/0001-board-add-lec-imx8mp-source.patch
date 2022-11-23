@@ -1,43 +1,6 @@
-From e42d6f7ce3914a7c30b9fc2f64a90fd935d5d0e0 Mon Sep 17 00:00:00 2001
-From: "po.cheng" <po.cheng@adlinktech.com>
-Date: Mon, 2 Aug 2021 16:44:54 +0800
-Subject: [PATCH 1/6] board: add lec-imx8mp source
-
-Signed-off-by: po.cheng <po.cheng@adlinktech.com>
----
- board/adlink/common/Kconfig                   |   28 +
- board/adlink/common/Makefile                  |   25 +
- board/adlink/common/mmc.c                     |   51 +
- board/adlink/common/tcpc.c                    | 1036 +++++++++
- board/adlink/common/tcpc.h                    |  469 ++++
- board/adlink/lec-imx8mp/Kconfig               |   36 +
- board/adlink/lec-imx8mp/Makefile              |   15 +
- board/adlink/lec-imx8mp/lec-imx8mp.c          |  599 ++++++
- ..._timing_MT53D1024M32D4DT-053_WTD_1500MHz.c | 1885 +++++++++++++++++
- ...4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c | 1885 +++++++++++++++++
- ...4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c | 1885 +++++++++++++++++
- ...dr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c | 1863 ++++++++++++++++
- board/adlink/lec-imx8mp/spl.c                 |  276 +++
- include/configs/lec-imx8mp.h                  |  311 +++
- 14 files changed, 10364 insertions(+)
- create mode 100644 board/adlink/common/Kconfig
- create mode 100644 board/adlink/common/Makefile
- create mode 100644 board/adlink/common/mmc.c
- create mode 100644 board/adlink/common/tcpc.c
- create mode 100644 board/adlink/common/tcpc.h
- create mode 100644 board/adlink/lec-imx8mp/Kconfig
- create mode 100644 board/adlink/lec-imx8mp/Makefile
- create mode 100644 board/adlink/lec-imx8mp/lec-imx8mp.c
- create mode 100644 board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
- create mode 100644 board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
- create mode 100644 board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
- create mode 100644 board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
- create mode 100644 board/adlink/lec-imx8mp/spl.c
- create mode 100644 include/configs/lec-imx8mp.h
-
 diff --git a/board/adlink/common/Kconfig b/board/adlink/common/Kconfig
 new file mode 100644
-index 000000000000..3be92e984e0e
+index 0000000000..3be92e984e
 --- /dev/null
 +++ b/board/adlink/common/Kconfig
 @@ -0,0 +1,28 @@
@@ -71,7 +34,7 @@ index 000000000000..3be92e984e0e
 +	  Enable USB type-c port controller (TCPC) driver
 diff --git a/board/adlink/common/Makefile b/board/adlink/common/Makefile
 new file mode 100644
-index 000000000000..9f86829c45fb
+index 0000000000..9f86829c45
 --- /dev/null
 +++ b/board/adlink/common/Makefile
 @@ -0,0 +1,25 @@
@@ -102,7 +65,7 @@ index 000000000000..9f86829c45fb
 +endif
 diff --git a/board/adlink/common/mmc.c b/board/adlink/common/mmc.c
 new file mode 100644
-index 000000000000..ab1652d6972c
+index 0000000000..ab1652d697
 --- /dev/null
 +++ b/board/adlink/common/mmc.c
 @@ -0,0 +1,51 @@
@@ -159,7 +122,7 @@ index 000000000000..ab1652d6972c
 +}
 diff --git a/board/adlink/common/tcpc.c b/board/adlink/common/tcpc.c
 new file mode 100644
-index 000000000000..f7d6ea66d3b1
+index 0000000000..f7d6ea66d3
 --- /dev/null
 +++ b/board/adlink/common/tcpc.c
 @@ -0,0 +1,1036 @@
@@ -1201,7 +1164,7 @@ index 000000000000..f7d6ea66d3b1
 +}
 diff --git a/board/adlink/common/tcpc.h b/board/adlink/common/tcpc.h
 new file mode 100644
-index 000000000000..ff749518a8bd
+index 0000000000..ff749518a8
 --- /dev/null
 +++ b/board/adlink/common/tcpc.h
 @@ -0,0 +1,469 @@
@@ -1676,7 +1639,7 @@ index 000000000000..ff749518a8bd
 +#endif /* __TCPCI_H */
 diff --git a/board/adlink/lec-imx8mp/Kconfig b/board/adlink/lec-imx8mp/Kconfig
 new file mode 100644
-index 000000000000..e8e5e7dc3077
+index 0000000000..e8e5e7dc30
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/Kconfig
 @@ -0,0 +1,36 @@
@@ -1718,7 +1681,7 @@ index 000000000000..e8e5e7dc3077
 +endif
 diff --git a/board/adlink/lec-imx8mp/Makefile b/board/adlink/lec-imx8mp/Makefile
 new file mode 100644
-index 000000000000..4d60b9ef865a
+index 0000000000..4d60b9ef86
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/Makefile
 @@ -0,0 +1,15 @@
@@ -1739,16 +1702,17 @@ index 000000000000..4d60b9ef865a
 +endif #CONFIG_SPL_BUILD
 diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
 new file mode 100644
-index 000000000000..e4b0c5ba0d07
+index 0000000000..f517e366d8
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
-@@ -0,0 +1,599 @@
+@@ -0,0 +1,617 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright 2019 NXP
 + */
 +
 +#include <common.h>
++#include <efi_loader.h>
 +#include <errno.h>
 +#include <miiphy.h>
 +#include <netdev.h>
@@ -1785,6 +1749,23 @@ index 000000000000..e4b0c5ba0d07
 +static iomux_v3_cfg_t const wdog_pads[] = {
 +	MX8MP_PAD_GPIO1_IO02__WDOG1_WDOG_B  | MUX_PAD_CTRL(WDOG_PAD_CTRL),
 +};
++
++#if CONFIG_IS_ENABLED(EFI_HAVE_CAPSULE_SUPPORT)
++struct efi_fw_image fw_images[] = {
++	{
++		.image_type_id = IMX_BOOT_IMAGE_GUID,
++		.fw_name = u"IMX8MP-EVK-RAW",
++		.image_index = 1,
++	},
++};
++
++struct efi_capsule_update_info update_info = {
++	.dfu_string = "mmc 2=flash-bin raw 0 0x2000 mmcpart 1",
++	.images = fw_images,
++};
++
++u8 num_image_type_guids = ARRAY_SIZE(fw_images);
++#endif /* EFI_HAVE_CAPSULE_SUPPORT */
 +
 +#ifdef CONFIG_NAND_MXS
 +
@@ -2344,7 +2325,7 @@ index 000000000000..e4b0c5ba0d07
 +#endif
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
 new file mode 100644
-index 000000000000..fd452428b220
+index 0000000000..fd452428b2
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
 @@ -0,0 +1,1885 @@
@@ -4235,7 +4216,7 @@ index 000000000000..fd452428b220
 +
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
 new file mode 100644
-index 000000000000..c6806da8834e
+index 0000000000..c6806da883
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
 @@ -0,0 +1,1885 @@
@@ -6126,7 +6107,7 @@ index 000000000000..c6806da8834e
 +#endif
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
 new file mode 100644
-index 000000000000..d74b8be17f66
+index 0000000000..d74b8be17f
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
 @@ -0,0 +1,1885 @@
@@ -8017,7 +7998,7 @@ index 000000000000..d74b8be17f66
 +
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
 new file mode 100644
-index 000000000000..4714a0e12de0
+index 0000000000..4714a0e12d
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
 @@ -0,0 +1,1863 @@
@@ -9886,10 +9867,10 @@ index 000000000000..4714a0e12de0
 +
 diff --git a/board/adlink/lec-imx8mp/spl.c b/board/adlink/lec-imx8mp/spl.c
 new file mode 100644
-index 000000000000..9d2abc352c8b
+index 0000000000..837018fd26
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/spl.c
-@@ -0,0 +1,276 @@
+@@ -0,0 +1,278 @@
 +/*
 + * Copyright 2018-2019 NXP
 + *
@@ -10067,17 +10048,19 @@ index 000000000000..9d2abc352c8b
 +
 +int power_init_board(void)
 +{
-+	struct pmic *p;
++	struct udevice *dev;
 +	int ret;
 +
-+	ret = power_pca9450_init(0);
-+	if (ret)
-+		printf("power init failed");
-+	p = pmic_get("PCA9450");
-+	pmic_probe(p);
++	ret = pmic_get("pca9450@25", &dev);
++	if (ret == -ENODEV) {
++		puts("No pca9450@25\n");
++		return 0;
++	}
++	if (ret != 0)
++		return ret;
 +
 +	/* BUCKxOUT_DVS0/1 control BUCK123 output */
-+	pmic_reg_write(p, PCA9450_BUCK123_DVS, 0x29);
++	pmic_reg_write(dev, PCA9450_BUCK123_DVS, 0x29);
 +
 +#ifdef CONFIG_IMX8M_LPDDR4
 +	/*
@@ -10086,23 +10069,23 @@ index 000000000000..9d2abc352c8b
 +	 * Enable DVS control through PMIC_STBY_REQ and
 +	 * set B1_ENMODE=1 (ON by PMIC_ON_REQ=H)
 +	 */
-+	pmic_reg_write(p, PCA9450_BUCK1OUT_DVS0, 0x1C);
-+	pmic_reg_write(p, PCA9450_BUCK1OUT_DVS1, 0x14);
-+	pmic_reg_write(p, PCA9450_BUCK1CTRL, 0x59);
++	pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS0, 0x1C);
++	pmic_reg_write(dev, PCA9450_BUCK1OUT_DVS1, 0x14);
++	pmic_reg_write(dev, PCA9450_BUCK1CTRL, 0x59);
 +
 +	/* Kernel uses OD/OD freq for SOC */
 +	/* To avoid timing risk from SOC to ARM,increase VDD_ARM to OD voltage 0.95v */
-+	pmic_reg_write(p, PCA9450_BUCK2OUT_DVS0, 0x1C);
++	pmic_reg_write(dev, PCA9450_BUCK2OUT_DVS0, 0x1C);
 +#elif defined(CONFIG_IMX8M_DDR4)
 +	/* DDR4 runs at 3200MTS, uses default ND 0.85v for VDD_SOC and VDD_ARM */
-+	pmic_reg_write(p, PCA9450_BUCK1CTRL, 0x59);
++	pmic_reg_write(dev, PCA9450_BUCK1CTRL, 0x59);
 +
 +	/* Set NVCC_DRAM to 1.2v for DDR4 */
-+	pmic_reg_write(p, PCA9450_BUCK6OUT, 0x18);
++	pmic_reg_write(dev, PCA9450_BUCK6OUT, 0x18);
 +#endif
 +
 +	/* set WDOG_B_CFG to cold reset */
-+	pmic_reg_write(p, PCA9450_RESET_CTRL, 0xA1);
++	pmic_reg_write(dev, PCA9450_RESET_CTRL, 0xA1);
 +
 +	return 0;
 +}
@@ -10168,10 +10151,10 @@ index 000000000000..9d2abc352c8b
 +
 diff --git a/include/configs/lec-imx8mp.h b/include/configs/lec-imx8mp.h
 new file mode 100644
-index 000000000000..17bae817f085
+index 0000000000..22923b73fe
 --- /dev/null
 +++ b/include/configs/lec-imx8mp.h
-@@ -0,0 +1,311 @@
+@@ -0,0 +1,265 @@
 +/* SPDX-License-Identifier: GPL-2.0+ */
 +/*
 + * Copyright 2019 NXP
@@ -10181,34 +10164,35 @@ index 000000000000..17bae817f085
 +#define __IMX8MP_EVK_H
 +
 +#include <linux/sizes.h>
++#include <linux/stringify.h>
 +#include <asm/arch/imx-regs.h>
-+
 +#include "imx_env.h"
 +
++#define CONFIG_SYS_BOOTM_LEN		(32 * SZ_1M)
 +
-+#define CONFIG_SPL_MAX_SIZE		(152 * 1024)
++#define CONFIG_SPL_MAX_SIZE		(176 * 1024)
 +#define CONFIG_SYS_MONITOR_LEN		(512 * 1024)
-+#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
-+#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300
-+#define CONFIG_SYS_MMCSD_FS_BOOT_PARTITION	1
 +#define CONFIG_SYS_UBOOT_BASE	(QSPI0_AMBA_BASE + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512)
 +
 +#ifdef CONFIG_SPL_BUILD
-+#define CONFIG_SPL_STACK		0x187FF0
-+#define CONFIG_SPL_BSS_START_ADDR      0x0095e000
-+#define CONFIG_SPL_BSS_MAX_SIZE        0x2000	/* 8 KB */
-+#define CONFIG_SYS_SPL_MALLOC_START    0x42200000
-+#define CONFIG_SYS_SPL_MALLOC_SIZE     SZ_512K	/* 512 KB */
++#define CONFIG_SPL_STACK		0x96dff0
++#define CONFIG_SPL_BSS_START_ADDR      0x96e000
++#define CONFIG_SPL_BSS_MAX_SIZE		SZ_8K	/* 8 KB */
++#define CONFIG_SYS_SPL_MALLOC_START	0x42200000
++#define CONFIG_SYS_SPL_MALLOC_SIZE	SZ_512K	/* 512 KB */
 +
-+#define CONFIG_MALLOC_F_ADDR		0x184000 /* malloc f used before GD_FLG_FULL_MALLOC_INIT set */
-+
++/* For RAW image gives a error info not panic */
 +#define CONFIG_SPL_ABORT_ON_RAW_IMAGE
 +
-+#define CONFIG_POWER
-+#define CONFIG_POWER_I2C
-+#define CONFIG_POWER_PCA9450
++#if defined(CONFIG_NAND_BOOT)
++#define CONFIG_SPL_NAND_BASE
++#define CONFIG_SPL_NAND_IDENT
++#define CONFIG_SYS_NAND_U_BOOT_OFFS 	0x4000000 /* Put the FIT out of first 64MB boot area */
 +
-+#define CONFIG_SYS_I2C
++/* Set a redundant offset in nand FIT mtdpart. The new uuu will burn full boot image (not only FIT part) to the mtdpart, so we check both two offsets */
++#define CONFIG_SYS_NAND_U_BOOT_OFFS_REDUND \
++	(CONFIG_SYS_NAND_U_BOOT_OFFS + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512 - 0x8400)
++#endif
 +
 +#endif
 +
@@ -10219,45 +10203,48 @@ index 000000000000..17bae817f085
 +#define CONFIG_REMAKE_ELF
 +/* ENET Config */
 +/* ENET1 */
++
 +#if defined(CONFIG_CMD_NET)
 +#define CONFIG_ETHPRIME                 "eth1" /* Set eqos to primary since we use its MDIO */
 +
 +#define CONFIG_FEC_XCV_TYPE             RGMII
 +#define CONFIG_FEC_MXC_PHYADDR          1
-+#define FEC_QUIRK_ENET_MAC
 +
 +#define DWC_NET_PHYADDR			1
-+#ifdef CONFIG_DWC_ETH_QOS
-+#define CONFIG_SYS_NONCACHED_MEMORY     (1 * SZ_1M)     /* 1M */
-+#endif
 +
 +#define PHY_ANEG_TIMEOUT 20000
 +
 +#endif
 +
-+#if defined(CONFIG_LPDDR4_2GB) || defined(CONFIG_LPDDR4_2GK)
-+#define PHYS_SDRAM_SIZE_ENV		"PHYS_SDRAM_SIZE_ENV=2G\0"	/* 2 GB */
-+#elif defined(CONFIG_LPDDR4_4GB)
-+#define PHYS_SDRAM_SIZE_ENV		"PHYS_SDRAM_SIZE_ENV=4G\0"	/* 4 GB */
-+#elif defined(CONFIG_LPDDR4_8GB)
-+#define PHYS_SDRAM_SIZE_ENV		"PHYS_SDRAM_SIZE_ENV=8G\0"	/* 8 GB */
++#ifdef CONFIG_DISTRO_DEFAULTS
++#define BOOT_TARGET_DEVICES(func) \
++	func(USB, usb, 0) \
++	func(MMC, mmc, 1) \
++	func(MMC, mmc, 2)
++
++#include <config_distro_bootcmd.h>
++#else
++#define BOOTENV
 +#endif
++
++#define JH_ROOT_DTB    "imx8mp-evk-root.dtb"
 +
 +#define JAILHOUSE_ENV \
 +	"jh_clk= \0 " \
-+	"jh_mmcboot=setenv fdt_file imx8mp-evk-root.dtb;" \
-+		"setenv jh_clk clk_ignore_unused; " \
++	"jh_root_dtb=" JH_ROOT_DTB "\0" \
++	"jh_mmcboot=setenv fdtfile ${jh_root_dtb};" \
++		"setenv jh_clk clk_ignore_unused mem=1920MB; " \
 +			   "if run loadimage; then " \
 +				   "run mmcboot; " \
 +			   "else run jh_netboot; fi; \0" \
-+	"jh_netboot=setenv fdt_file imx8mp-evk-root.dtb; setenv jh_clk clk_ignore_unused; run netboot; \0 "
++	"jh_netboot=setenv fdtfile ${jh_root_dtb}; setenv jh_clk clk_ignore_unused mem=1920MB; run netboot; \0 "
 +
 +#define CONFIG_MFG_ENV_SETTINGS \
 +	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
 +	"initrd_addr=0x43800000\0" \
 +	"initrd_high=0xffffffffffffffff\0" \
 +	"emmc_dev=2\0"\
-+	"sd_dev=1\0" \
++	"sd_dev=1\0"
 +
 +
 +#ifdef CONFIG_NAND_BOOT
@@ -10269,6 +10256,7 @@ index 000000000000..17bae817f085
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +	CONFIG_MFG_ENV_SETTINGS \
 +	"splashimage=0x50000000\0" \
++	"fdt_addr_r=0x43000000\0"			\
 +	"fdt_addr=0x43000000\0"			\
 +	"fdt_high=0xffffffffffffffff\0" \
 +	"mtdparts=" MFG_NAND_PARTITION "\0" \
@@ -10278,46 +10266,50 @@ index 000000000000..17bae817f085
 +		MFG_NAND_PARTITION \
 +		"\0" \
 +	"bootcmd=nand read ${loadaddr} 0x5000000 0x2000000;"\
-+		"nand read ${fdt_addr} 0x7000000 0x100000;"\
-+		"booti ${loadaddr} - ${fdt_addr}"
++		"nand read ${fdt_addr_r} 0x7000000 0x100000;"\
++		"booti ${loadaddr} - ${fdt_addr_r}"
 +
 +#else
 +#define CONFIG_EXTRA_ENV_SETTINGS		\
 +	CONFIG_MFG_ENV_SETTINGS \
 +	JAILHOUSE_ENV \
-+	PHYS_SDRAM_SIZE_ENV \
-+	"script=boot.scr\0" \
++	BOOTENV \
++	"prepare_mcore=setenv mcore_clk clk-imx8mp.mcore_booted;\0" \
++	"scriptaddr=0x43500000\0" \
++	"kernel_addr_r=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
++	"bsp_script=boot.scr\0" \
 +	"image=Image\0" \
 +	"splashimage=0x50000000\0" \
 +	"console=ttymxc1,115200\0" \
++	"fdt_addr_r=0x43000000\0"			\
 +	"fdt_addr=0x43000000\0"			\
++	"boot_fdt=try\0" \
 +	"fdt_high=0xffffffffffffffff\0"		\
 +	"boot_fit=no\0" \
-+	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
-+	"initrd_addr=0x43800000\0"		\
-+	"initrd_high=0xffffffffffffffff\0" \
++	"fdtfile=" CONFIG_DEFAULT_FDT_FILE "\0" \
++	"bootm_size=0x10000000\0" \
 +	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-+	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
++	"mmcpart=1\0" \
 +	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 +	"mmcautodetect=yes\0" \
-+	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot} mem=${PHYS_SDRAM_SIZE_ENV}\0 " \
-+	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
++	"mmcargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} root=${mmcroot}\0 " \
++	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bsp_script};\0" \
 +	"bootscript=echo Running bootscript from mmc ...; " \
 +		"source\0" \
 +	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
-+	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
++	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr_r} ${fdtfile}\0" \
 +	"mmcboot=echo Booting from mmc ...; " \
 +		"run mmcargs; " \
 +		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
 +			"bootm ${loadaddr}; " \
 +		"else " \
 +			"if run loadfdt; then " \
-+				"booti ${loadaddr} - ${fdt_addr}; " \
++				"booti ${loadaddr} - ${fdt_addr_r}; " \
 +			"else " \
 +				"echo WARN: Cannot load the DT; " \
 +			"fi; " \
 +		"fi;\0" \
-+	"netargs=setenv bootargs ${jh_clk} console=${console} " \
++	"netargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} " \
 +		"root=/dev/nfs " \
 +		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
 +	"netboot=echo Booting from net ...; " \
@@ -10331,15 +10323,14 @@ index 000000000000..17bae817f085
 +		"if test ${boot_fit} = yes || test ${boot_fit} = try; then " \
 +			"bootm ${loadaddr}; " \
 +		"else " \
-+			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-+				"booti ${loadaddr} - ${fdt_addr}; " \
++			"if ${get_cmd} ${fdt_addr_r} ${fdtfile}; then " \
++				"booti ${loadaddr} - ${fdt_addr_r}; " \
 +			"else " \
 +				"echo WARN: Cannot load the DT; " \
 +			"fi; " \
-+		"fi;\0"
-+
-+#define CONFIG_BOOTCOMMAND \
-+	   "mmc dev ${mmcdev}; if mmc rescan; then " \
++		"fi;\0" \
++	"bsp_bootcmd=echo Running BSP bootcmd ...; " \
++		"mmc dev ${mmcdev}; if mmc rescan; then " \
 +		   "if run loadbootscript; then " \
 +			   "run bootscript; " \
 +		   "else " \
@@ -10352,9 +10343,6 @@ index 000000000000..17bae817f085
 +#endif
 +
 +/* Link Definitions */
-+#define CONFIG_LOADADDR			0x40480000
-+
-+#define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
 +
 +#define CONFIG_SYS_INIT_RAM_ADDR	0x40000000
 +#define CONFIG_SYS_INIT_RAM_SIZE	0x80000
@@ -10363,16 +10351,7 @@ index 000000000000..17bae817f085
 +#define CONFIG_SYS_INIT_SP_ADDR \
 +	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 +
-+#define CONFIG_ENV_OVERWRITE
-+#define CONFIG_ENV_SPI_BUS		CONFIG_SF_DEFAULT_BUS
-+#define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
-+#define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
-+#define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
-+
 +#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
-+
-+/* Size of malloc() pool */
-+#define CONFIG_SYS_MALLOC_LEN		SZ_32M
 +
 +/* Totally 2/4/8 (default 6GB) DDR */
 +#define CONFIG_SYS_SDRAM_BASE		0x40000000
@@ -10401,16 +10380,9 @@ index 000000000000..17bae817f085
 +#endif
 +#endif
 +
-+#undef CONFIG_SYS_MEMTEST_START
-+#define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM
-+#undef CONFIG_SYS_MEMTEST_END
-+#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + \
-+					(PHYS_SDRAM_SIZE >> 1))
-+
 +#define CONFIG_MXC_UART_BASE		UART2_BASE_ADDR
 +
 +/* Monitor Command Prompt */
-+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 +#define CONFIG_SYS_CBSIZE		2048
 +#define CONFIG_SYS_MAXARGS		64
 +#define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE
@@ -10418,7 +10390,6 @@ index 000000000000..17bae817f085
 +					sizeof(CONFIG_SYS_PROMPT) + 16)
 +
 +#define CONFIG_IMX_BOOTAUX
-+#define CONFIG_FSL_USDHC
 +
 +#ifdef CONFIG_TARGET_IMX8MP_DDR4_EVK
 +#define CONFIG_SYS_FSL_USDHC_NUM	1
@@ -10427,62 +10398,25 @@ index 000000000000..17bae817f085
 +#endif
 +#define CONFIG_SYS_FSL_ESDHC_ADDR	0
 +
-+#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
-+
-+#ifdef CONFIG_FSL_FSPI
-+#define FSL_FSPI_FLASH_SIZE		SZ_32M
-+#define FSL_FSPI_FLASH_NUM		1
-+#define FSPI0_BASE_ADDR			0x30bb0000
-+#define FSPI0_AMBA_BASE			0x0
-+#define CONFIG_FSPI_QUAD_SUPPORT
-+
-+#define CONFIG_SYS_FSL_FSPI_AHB
-+#endif
-+
 +#ifdef CONFIG_NAND_MXS
 +#define CONFIG_CMD_NAND_TRIMFFS
 +
 +/* NAND stuff */
 +#define CONFIG_SYS_MAX_NAND_DEVICE     1
 +#define CONFIG_SYS_NAND_BASE           0x20000000
-+#define CONFIG_SYS_NAND_5_ADDR_CYCLE
-+#define CONFIG_SYS_NAND_ONFI_DETECTION
 +#define CONFIG_SYS_NAND_USE_FLASH_BBT
 +#endif /* CONFIG_NAND_MXS */
 +
 +#define CONFIG_SYS_I2C_SPEED		100000
 +
 +/* USB configs */
-+#ifndef CONFIG_SPL_BUILD
-+#define CONFIG_CMD_USB
-+#define CONFIG_USB_STORAGE
-+
-+#define CONFIG_CMD_USB_MASS_STORAGE
-+#define CONFIG_USB_GADGET_MASS_STORAGE
-+#define CONFIG_USB_FUNCTION_MASS_STORAGE
-+#endif
 +
 +#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
 +#define CONFIG_USBD_HS
 +#define CONFIG_USB_GADGET_VBUS_DRAW 2
-+
-+#ifdef CONFIG_DM_VIDEO
-+#define CONFIG_VIDEO_LOGO
-+#define CONFIG_SPLASH_SCREEN
-+#define CONFIG_SPLASH_SCREEN_ALIGN
-+#define CONFIG_CMD_BMP
-+#define CONFIG_BMP_16BPP
-+#define CONFIG_BMP_24BPP
-+#define CONFIG_BMP_32BPP
-+#define CONFIG_VIDEO_BMP_RLE8
-+#define CONFIG_VIDEO_BMP_LOGO
-+#endif
 +
 +#ifdef CONFIG_ANDROID_SUPPORT
 +#include "imx8mp_evk_android.h"
 +#endif
 +
 +#endif
--- 
-2.25.1
-

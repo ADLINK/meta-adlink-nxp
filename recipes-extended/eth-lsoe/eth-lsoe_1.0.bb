@@ -34,4 +34,4 @@ FILES_${PN} += "${sysconfdir}/systemd/system/multi-user.target.wants/"
 
 RDEPENDS_${PN} += "bash i2c-tools"
 
-LICENSE_FLAGS_WHITELIST += "commercial_adlink"
+LICENSE_FLAGS_ACCEPTED += "commercial_adlink"
