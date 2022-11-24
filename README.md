@@ -15,7 +15,7 @@
 
 **Supported features & interfaces**
 
-* Linux Kernel version: 5.10.35
+* Linux Kernel version: 5.15.35
 * 40 Pin expansion Header with Eclipse Mraa library and Eclipse UPM library which supports C/C++, Python, JAVA and JavaScript
 * SEMA 4.0 (Smart Embedded Management Agent) support the functions such as CPU temperature, voltage monitoring total up time, … etc.
 * 2D / 3D Graphics Acceleration which supports Wayland
@@ -35,7 +35,7 @@
 
 **How to build Yocto Image**
 
-* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki) for more details.
+* In Progress.
 
 #### How to flash image to your storage
 
