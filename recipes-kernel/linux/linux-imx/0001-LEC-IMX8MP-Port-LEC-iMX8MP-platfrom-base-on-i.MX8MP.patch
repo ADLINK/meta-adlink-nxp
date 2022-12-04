@@ -1,3 +1,10 @@
+From 4a1d1c599fb1cf4c0c677ff60eb7a6581dfd6e12 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar@adlinktech.com>
+Date: Sun, 4 Dec 2022 11:18:32 +0530
+Subject: [PATCH 1/2] LEC-IMX8MP: Port LEC-iMX8MP platfrom base on i.MX8MP
+
+Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
+
 diff --git a/arch/arm64/boot/dts/adlink/imx8mp-pinfunc.h b/arch/arm64/boot/dts/adlink/imx8mp-pinfunc.h
 new file mode 100644
 index 000000000000..a60017a18cd8
@@ -5635,82 +5642,6 @@ index 000000000000..9e6bd66a4f6e
 +MODULE_DESCRIPTION("ov13855 sensor driver");
 +MODULE_LICENSE("GPL v2");
 +
-diff --git a/drivers/mxc/hantro_845/hantrodec_845s.c b/drivers/mxc/hantro_845/hantrodec_845s.c
-index 9d2ee0fe2633..ed2190174c2c 100755
---- a/drivers/mxc/hantro_845/hantrodec_845s.c
-+++ b/drivers/mxc/hantro_845/hantrodec_845s.c
-@@ -306,7 +306,7 @@ static int hantro_power_on_disirq(hantrodec_t *hantrodev)
- 	//spin_lock_irq(&owner_lock);
- 	mutex_lock(&hantrodev->dev_mutex);
- 	disable_irq(hantrodev->irq);
--	pm_runtime_get_sync(hantrodev->dev);
-+	//pm_runtime_get_sync(hantrodev->dev);
- 	enable_irq(hantrodev->irq);
- 	mutex_unlock(&hantrodev->dev_mutex);
- 	//spin_unlock_irq(&owner_lock);
-@@ -1360,11 +1360,11 @@ static long hantrodec_ioctl(struct file *filp, unsigned int cmd, unsigned long a
- 			ctx->core_id = id;
- 			if (id == 0 && cores > 1) {
- 				/*power off g2*/
--				pm_runtime_put_sync(hantrodec_data[1].dev);
-+				//pm_runtime_put_sync(hantrodec_data[1].dev);
- 				hantro_clk_disable(&hantrodec_data[1].clk);
- 			} else if (id == 1) {
- 				/*power off g1*/
--				pm_runtime_put_sync(hantrodec_data[0].dev);
-+				//pm_runtime_put_sync(hantrodec_data[0].dev);
- 				hantro_clk_disable(&hantrodec_data[0].clk);
- 			}
- 		}
-@@ -1544,11 +1544,11 @@ static int hantrodec_release(struct inode *inode, struct file *filp)
- 
- 	if (ctx->core_id == HANTRO_CORE_ID_INVALID) {
- 		for (n = 0; n < cores; n++) {
--			pm_runtime_put_sync(hantrodec_data[n].dev);
-+			//pm_runtime_put_sync(hantrodec_data[n].dev);
- 			hantro_clk_disable(&hantrodec_data[n].clk);
- 		}
- 	} else if (ctx->core_id < HXDEC_MAX_CORES) {
--		pm_runtime_put_sync(hantrodec_data[ctx->core_id].dev);
-+		//pm_runtime_put_sync(hantrodec_data[ctx->core_id].dev);
- 		hantro_clk_disable(&hantrodec_data[ctx->core_id].clk);
- 	}
- 
-@@ -1960,7 +1960,7 @@ static int hantro_dev_probe(struct platform_device *pdev)
- 	pr_debug("hantro: dec, bus clock: 0x%lX, 0x%lX\n", clk_get_rate(hantrodec_data[id].clk.dec),
- 				clk_get_rate(hantrodec_data[id].clk.bus));
- 
--	pm_runtime_enable(&pdev->dev);
-+	//pm_runtime_enable(&pdev->dev);
- 
- 	err = hantrodec_init(pdev, id);
- 	if (err != 0) {
-@@ -1995,13 +1995,13 @@ static int hantro_dev_remove(struct platform_device *pdev)
- 	hantrodec_t *dev = platform_get_drvdata(pdev);
- 
- 	hantro_clk_enable(&dev->clk);
--	pm_runtime_get_sync(&pdev->dev);
-+	//pm_runtime_get_sync(&pdev->dev);
- #ifdef CONFIG_DEVICE_THERMAL_HANTRO
- 	thermal_cooling_device_unregister(hantrodec_data[dev->core_id].cooling);
- #endif
- 	hantrodec_cleanup(dev->core_id);
--	pm_runtime_put_sync(&pdev->dev);
--	pm_runtime_disable(&pdev->dev);
-+	//pm_runtime_put_sync(&pdev->dev);
-+	//pm_runtime_disable(&pdev->dev);
- 	hantro_clk_disable(&dev->clk);
- 	if (!IS_ERR(dev->clk.dec))
- 		clk_put(dev->clk.dec);
-@@ -2031,7 +2031,7 @@ static int __maybe_unused hantro_suspend(struct device *dev)
- 		DecStoreRegs(hantrodev);
- 	}
- 
--	pm_runtime_put_sync_suspend(dev);   //power off
-+	//pm_runtime_put_sync_suspend(dev);   //power off
- 	return 0;
- }
- static int __maybe_unused hantro_resume(struct device *dev)
 diff --git a/drivers/net/phy/dp83867.c b/drivers/net/phy/dp83867.c
 index d097097c93c3..f114678ebce2 100644
 --- a/drivers/net/phy/dp83867.c
@@ -7300,3 +7231,6 @@ index 76a80a41615b..b6c9af40205c 100644
  	return -EOPNOTSUPP;
  }
  
+-- 
+2.34.1
+

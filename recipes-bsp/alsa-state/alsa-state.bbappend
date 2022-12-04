@@ -1,2 +1,1 @@
-
-FILESEXTRAPATHS:prepend:mx8mp := "${THISDIR}/${PN}/imx:"
+FILESEXTRAPATHS:prepend:lec-imx8mp := "${THISDIR}/${PN}:"
