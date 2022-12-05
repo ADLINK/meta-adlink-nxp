@@ -1,7 +1,7 @@
 
 # ADLINK Yocto Project Release layers
 BBLAYERS += "${BSPDIR}/sources/meta-adlink-nxp"
-#BBLAYERS += "${BSPDIR}/sources/meta-adlink-sema"
+BBLAYERS += "${BSPDIR}/sources/meta-adlink-sema"
 BBLAYERS += "${BSPDIR}/sources/meta-adlink-demo"
 
 # Additional from open-embedded for meta-adlink-demo xfce recipes
