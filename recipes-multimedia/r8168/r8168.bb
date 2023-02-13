@@ -13,7 +13,8 @@ SRCREV = "f23ea15728bdfd81651f071cabadb69f3a8dc118"
 SRC_URI = "git://github.com/AdlinkCCoE/r8168.git;branch=${SRCBRANCH};protocol=http \
            "
 
-SRC_URI_append ="file://Makefile"
+SRC_URI_append ="file://Makefile \
+		 file://blacklist.conf "
 
 S = "${WORKDIR}/git"
 
@@ -22,3 +23,12 @@ do_compile_prepend() {
 	rm -r ${WORKDIR}/git/Makefile
 	cp ${WORKDIR}/Makefile ${WORKDIR}/git/Makefile
 }
+
+MODPROBE_CONFFILE = "blacklist.conf"
+
+do_install_append () {
+  install -d ${D}${sysconfdir}/modprobe.d
+  install -m 644 ${WORKDIR}/${MODPROBE_CONFFILE} ${D}${sysconfdir}/modprobe.d/
+}
+
+FILES_${PN} += "${sysconfdir}/modprobe.d"

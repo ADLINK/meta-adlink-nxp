@@ -16,6 +16,7 @@ IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE I
 DISTRO_FEATURES_append = " sensors benchmarks adlink wifi"
 MACHINE_FEATURES_append = " wifi bluetooth"
 
+IMAGE_INSTALL_append = " r8168"
 
 RELEASE_VERSION ?= "LEC-iMX8MM-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
 MACHINE_FEATURES_remove += "optee"
