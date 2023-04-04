@@ -11,7 +11,7 @@ index 0170c9c897..db6cd56aa8 100644
 +	uboot-lec8mp.dtb
  
  dtb-$(CONFIG_ARCH_IMX9) += \
- 	imx93-11x11-evk.dtb
+ 	imx93-11x11-evk.dtb \
 diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
 index a225a9784f..9fb89ac0a2 100644
 --- a/arch/arm/mach-imx/imx8m/Kconfig
