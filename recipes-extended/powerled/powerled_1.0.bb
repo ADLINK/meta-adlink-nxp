@@ -28,10 +28,10 @@ do_install () {
 	install -m 0755 ${S}/powerled.sh ${D}${bindir}/
 }
 
-FILES_${PN} += "${bindir}"
-FILES_${PN} += "${systemd_unitdir}/system/"
-FILES_${PN} += "${sysconfdir}/systemd/system/multi-user.target.wants/"
+FILES:${PN} += "${bindir}"
+FILES:${PN} += "${systemd_unitdir}/system/"
+FILES:${PN} += "${sysconfdir}/systemd/system/multi-user.target.wants/"
 
-RDEPENDS_${PN} += "bash i2c-tools"
+RDEPENDS:${PN} += "bash i2c-tools"
 
 LICENSE_FLAGS_ACCEPTED += "commercial_adlink"

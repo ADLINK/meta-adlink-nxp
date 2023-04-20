@@ -13,7 +13,7 @@ I2C_BUS=${1:-5}
 I2C_ADDR=${2:-0x70}
 REG_DIR=${3:-0x0f}
 REG_DATA=${4:-0x11}
-REG_DATA_MASK=${5:-0x10}
+REG_DATA_MASK=${5:-0x20}
 
 # direction on ioexpander
 DIRECTION=$( i2cget -f -y $I2C_BUS $I2C_ADDR $REG_DIR )

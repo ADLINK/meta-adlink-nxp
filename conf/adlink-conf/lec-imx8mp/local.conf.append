@@ -1,7 +1,7 @@
 
 CONNECTIVITY_CHECK_URIS = "https://www.google.com"
 
-CORE_IMAGE_EXTRA_INSTALL += "packagegroup-adlink"
+CORE_IMAGE_EXTRA_INSTALL:append = " packagegroup-adlink"
 
 PACKAGECONFIG:append:pn-opencv_mx8 = " test"
 TOOLCHAIN_TARGET_TASK:append = " onnxruntime-dev"

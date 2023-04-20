@@ -4,7 +4,7 @@ SECTION = "app"
 LICENSE = "GPLv3"
 LICENSE_FLAGS = "commercial_adlink"
 
-LIC_FILES_CHKSUM = "file://eth-lsoe.sh;md5=cae76ed22cf954b84cc5fdd7b9e90136"
+LIC_FILES_CHKSUM = "file://eth-lsoe.sh;md5=6e9f42f91eda4399f05483511b59b7bf"
 
 SRC_URI = " \
     file://eth-lsoe.sh \
@@ -28,10 +28,10 @@ do_install () {
 	install -m 0755 ${S}/eth-lsoe.sh ${D}${bindir}/
 }
 
-FILES_${PN} += "${bindir}"
-FILES_${PN} += "${systemd_unitdir}/system/"
-FILES_${PN} += "${sysconfdir}/systemd/system/multi-user.target.wants/"
+FILES:${PN} += "${bindir}"
+FILES:${PN} += "${systemd_unitdir}/system/"
+FILES:${PN} += "${sysconfdir}/systemd/system/multi-user.target.wants/"
 
-RDEPENDS_${PN} += "bash i2c-tools"
+RDEPENDS:${PN} += "bash i2c-tools"
 
 LICENSE_FLAGS_ACCEPTED += "commercial_adlink"
