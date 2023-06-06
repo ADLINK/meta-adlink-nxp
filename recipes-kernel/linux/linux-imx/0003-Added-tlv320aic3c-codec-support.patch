@@ -1,0 +1,395 @@
+From 415655e9f27f5139c370e6906034780aeb11562b Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Tue, 6 Jun 2023 22:50:55 +0530
+Subject: [PATCH 3/3] Added tlv320aic3c codec support
+
+---
+ arch/arm64/boot/dts/adlink/Makefile |   3 +-
+ sound/soc/codecs/tlv320aic3x.c      |  56 +++----
+ sound/soc/fsl/Kconfig               |  14 ++
+ sound/soc/fsl/Makefile              |   2 +
+ sound/soc/fsl/imx-tlv320aic3x.c     | 249 ++++++++++++++++++++++++++++
+ 5 files changed, 295 insertions(+), 29 deletions(-)
+ create mode 100644 sound/soc/fsl/imx-tlv320aic3x.c
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index cd77dc65ac79..e369c0c32c56 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -3,4 +3,5 @@
+ dtb-$(CONFIG_ARCH_MXC) += lec-imx8mp.dtb \
+ 			lec-imx8mp-hydis-hv150ux2.dtb \
+ 			lec-imx8mp-auoB101UAN01-mipi-panel.dtb \
+-			lec-imx8mp-wifi.dtb
++			lec-imx8mp-wifi.dtb \
++			lec-imx8mp-tlv320aic3x.dtb 
+diff --git a/sound/soc/codecs/tlv320aic3x.c b/sound/soc/codecs/tlv320aic3x.c
+index 7731593a5509..f8064971e127 100644
+--- a/sound/soc/codecs/tlv320aic3x.c
++++ b/sound/soc/codecs/tlv320aic3x.c
+@@ -90,34 +90,34 @@ struct aic3x_priv {
+ };
+ 
+ static const struct reg_default aic3x_reg[] = {
+-	{   0, 0x00 }, {   1, 0x00 }, {   2, 0x00 }, {   3, 0x10 },
+-	{   4, 0x04 }, {   5, 0x00 }, {   6, 0x00 }, {   7, 0x00 },
+-	{   8, 0x00 }, {   9, 0x00 }, {  10, 0x00 }, {  11, 0x01 },
+-	{  12, 0x00 }, {  13, 0x00 }, {  14, 0x00 }, {  15, 0x80 },
+-	{  16, 0x80 }, {  17, 0xff }, {  18, 0xff }, {  19, 0x78 },
+-	{  20, 0x78 }, {  21, 0x78 }, {  22, 0x78 }, {  23, 0x78 },
+-	{  24, 0x78 }, {  25, 0x00 }, {  26, 0x00 }, {  27, 0xfe },
+-	{  28, 0x00 }, {  29, 0x00 }, {  30, 0xfe }, {  31, 0x00 },
+-	{  32, 0x18 }, {  33, 0x18 }, {  34, 0x00 }, {  35, 0x00 },
+-	{  36, 0x00 }, {  37, 0x00 }, {  38, 0x00 }, {  39, 0x00 },
+-	{  40, 0x00 }, {  41, 0x00 }, {  42, 0x00 }, {  43, 0x80 },
+-	{  44, 0x80 }, {  45, 0x00 }, {  46, 0x00 }, {  47, 0x00 },
+-	{  48, 0x00 }, {  49, 0x00 }, {  50, 0x00 }, {  51, 0x04 },
+-	{  52, 0x00 }, {  53, 0x00 }, {  54, 0x00 }, {  55, 0x00 },
+-	{  56, 0x00 }, {  57, 0x00 }, {  58, 0x04 }, {  59, 0x00 },
+-	{  60, 0x00 }, {  61, 0x00 }, {  62, 0x00 }, {  63, 0x00 },
+-	{  64, 0x00 }, {  65, 0x04 }, {  66, 0x00 }, {  67, 0x00 },
+-	{  68, 0x00 }, {  69, 0x00 }, {  70, 0x00 }, {  71, 0x00 },
+-	{  72, 0x04 }, {  73, 0x00 }, {  74, 0x00 }, {  75, 0x00 },
+-	{  76, 0x00 }, {  77, 0x00 }, {  78, 0x00 }, {  79, 0x00 },
+-	{  80, 0x00 }, {  81, 0x00 }, {  82, 0x00 }, {  83, 0x00 },
+-	{  84, 0x00 }, {  85, 0x00 }, {  86, 0x00 }, {  87, 0x00 },
+-	{  88, 0x00 }, {  89, 0x00 }, {  90, 0x00 }, {  91, 0x00 },
+-	{  92, 0x00 }, {  93, 0x00 }, {  94, 0x00 }, {  95, 0x00 },
+-	{  96, 0x00 }, {  97, 0x00 }, {  98, 0x00 }, {  99, 0x00 },
+-	{ 100, 0x00 }, { 101, 0x00 }, { 102, 0x02 }, { 103, 0x00 },
+-	{ 104, 0x00 }, { 105, 0x00 }, { 106, 0x00 }, { 107, 0x00 },
+-	{ 108, 0x00 }, { 109, 0x00 },
++    {   0, 0x00 }, {   1, 0x00 }, {   2, 0x00 }, {   3, 0x00 },
++    {   4, 0x03 }, {   5, 0x09 }, {   6, 0x08 }, {   7, 0x00 },
++    {   8, 0x00 }, {   9, 0x00 }, {  10, 0x00 }, {  11, 0x08 },
++    {  12, 0x02 }, {  13, 0x00 }, {  14, 0x80 }, {  15, 0x80 },
++    {  16, 0x80 }, {  17, 0xff }, {  18, 0x08 }, {  19, 0x02 },
++    {  20, 0x80 }, {  21, 0x78 }, {  22, 0x78 }, {  23, 0x78 },
++    {  24, 0x78 }, {  25, 0x00 }, {  26, 0x00 }, {  27, 0xfe },
++    {  28, 0x00 }, {  29, 0x00 }, {  30, 0xfe }, {  31, 0x00 },
++    {  32, 0x18 }, {  33, 0x18 }, {  34, 0x00 }, {  35, 0x00 },
++    {  36, 0x00 }, {  37, 0x00 }, {  38, 0x00 }, {  39, 0x00 },
++    {  40, 0x00 }, {  41, 0x00 }, {  42, 0x00 }, {  43, 0x80 },
++    {  44, 0x80 }, {  45, 0x00 }, {  46, 0x00 }, {  47, 0x00 },
++    {  48, 0x00 }, {  49, 0x00 }, {  50, 0x00 }, {  51, 0x04 },
++    {  52, 0x00 }, {  53, 0x00 }, {  54, 0x00 }, {  55, 0x00 },
++    {  56, 0x00 }, {  57, 0x00 }, {  58, 0x04 }, {  59, 0x00 },
++    {  60, 0x00 }, {  61, 0x00 }, {  62, 0x00 }, {  63, 0x00 },
++    {  64, 0x00 }, {  65, 0x04 }, {  66, 0x00 }, {  67, 0x00 },
++    {  68, 0x00 }, {  69, 0x00 }, {  70, 0x00 }, {  71, 0x00 },
++    {  72, 0x04 }, {  73, 0x00 }, {  74, 0x00 }, {  75, 0x00 },
++    {  76, 0x00 }, {  77, 0x00 }, {  78, 0x00 }, {  79, 0x00 },
++    {  80, 0x00 }, {  81, 0x00 }, {  82, 0x00 }, {  83, 0x00 },
++    {  84, 0x00 }, {  85, 0x00 }, {  86, 0x00 }, {  87, 0x00 },
++    {  88, 0x00 }, {  89, 0x00 }, {  90, 0x00 }, {  91, 0x00 },
++    {  92, 0x00 }, {  93, 0x00 }, {  94, 0x00 }, {  95, 0x00 },
++    {  96, 0x00 }, {  97, 0x00 }, {  98, 0x00 }, {  99, 0x00 },
++    { 100, 0x00 }, { 101, 0x00 }, { 102, 0x02 }, { 103, 0x00 },
++    { 104, 0x00 }, { 105, 0x00 }, { 106, 0x00 }, { 107, 0x00 },
++    { 108, 0x00 }, { 109, 0x00 },
+ };
+ 
+ static bool aic3x_volatile_reg(struct device *dev, unsigned int reg)
+diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
+index c70e9c4eed08..cef9fce21510 100644
+--- a/sound/soc/fsl/Kconfig
++++ b/sound/soc/fsl/Kconfig
+@@ -314,6 +314,20 @@ config SND_SOC_IMX_SPDIF
+ 	  Say Y if you want to add support for SoC audio on an i.MX board with
+ 	  a S/DPDIF.
+ 
++config SND_SOC_IMX_TLV320AIC3X
++	tristate "SoC Audio support for i.MX6 boards with tlv320aic3x audio codec"
++	depends on OF && I2C
++	select SND_SOC_TLV320AIC3X
++	select SND_SOC_IMX_PCM_DMA
++	select SND_SOC_IMX_AUDMUX
++	select SND_SOC_FSL_SAI
++	select SND_SOC_FSL_UTILS
++	select SND_KCTL_JACK
++    help
++	  SoC audio for i.MX8M boards with codec TLV320AIC3x attached over
++	  SSI interface.
++	  Say Y if you want to add support for SoC audio on LEC-iMX8MP boards.
++
+ config SND_SOC_FSL_ASOC_CARD
+ 	tristate "Generic ASoC Sound Card with ASRC support"
+ 	depends on OF && I2C
+diff --git a/sound/soc/fsl/Makefile b/sound/soc/fsl/Makefile
+index 63e6912675ea..b368a6af9d16 100644
+--- a/sound/soc/fsl/Makefile
++++ b/sound/soc/fsl/Makefile
+@@ -20,6 +20,7 @@ snd-soc-fsl-ssi-y := fsl_ssi.o
+ snd-soc-fsl-ssi-$(CONFIG_DEBUG_FS) += fsl_ssi_dbg.o
+ snd-soc-fsl-spdif-objs := fsl_spdif.o
+ snd-soc-fsl-esai-objs := fsl_esai.o fsl_esai_mix.o
++snd-soc-imx-tlv320aic3x-objs := imx-tlv320aic3x.o
+ snd-soc-fsl-micfil-objs := fsl_micfil.o
+ snd-soc-fsl-utils-objs := fsl_utils.o
+ snd-soc-fsl-dma-objs := fsl_dma.o
+@@ -30,6 +31,7 @@ snd-soc-fsl-aud2htx-objs := fsl_aud2htx.o
+ snd-soc-fsl-rpmsg-objs := fsl_rpmsg.o
+ snd-soc-fsl-esai-client-objs := fsl_esai_client.o
+ 
++obj-${CONFIG_SND_SOC_IMX_TLV320AIC3X} += snd-soc-imx-tlv320aic3x.o
+ obj-$(CONFIG_SND_SOC_FSL_AUDMIX) += snd-soc-fsl-audmix.o
+ obj-$(CONFIG_SND_SOC_FSL_ASOC_CARD) += snd-soc-fsl-asoc-card.o
+ snd-soc-fsl-hdmi-objs := fsl_hdmi.o
+diff --git a/sound/soc/fsl/imx-tlv320aic3x.c b/sound/soc/fsl/imx-tlv320aic3x.c
+new file mode 100644
+index 000000000000..6509377a6077
+--- /dev/null
++++ b/sound/soc/fsl/imx-tlv320aic3x.c
+@@ -0,0 +1,249 @@
++/*
++ * 2014 Variscite, Ltd. All Rights Reserved.
++ *
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * 2012 Variscite, Ltd. All Rights Reserved.
++ * Based on imx-wm8962.c
++ * Copyright (C) 2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012 Linaro Ltd.
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/i2c.h>
++#include <linux/clk.h>
++#include <sound/soc.h>
++
++#include "../codecs/tlv320aic3x.h"
++#include "imx-audmux.h"
++
++#define DAI_NAME_SIZE	32
++
++struct imx_tlv320aic3x_data {
++	struct snd_soc_dai_link dai;
++	struct snd_soc_card card;
++	char codec_dai_name[DAI_NAME_SIZE];
++	char platform_name[DAI_NAME_SIZE];
++	struct clk *codec_clk;
++	unsigned int clk_frequency;
++};
++static int imx_tlv320aic3x_dai_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct imx_tlv320aic3x_data *data = container_of(rtd->card,
++					struct imx_tlv320aic3x_data, card);
++	struct snd_soc_dai *codec_dai = asoc_rtd_to_cpu(rtd, 0);				
++	struct device *dev = rtd->card->dev;
++	int ret;
++
++	ret = snd_soc_dai_set_sysclk(codec_dai, 0,
++				     data->clk_frequency, SND_SOC_CLOCK_IN);
++	if (ret) {
++		dev_err(dev, "could not set codec driver clock params\n");
++		return ret;
++	}
++
++	return 0;
++}
++
++static const struct snd_soc_dapm_widget imx_tlv320aic3x_dapm_widgets[] = {
++	SND_SOC_DAPM_MIC("Mic Jack", NULL),
++	SND_SOC_DAPM_LINE("Line In Jack", NULL),
++	SND_SOC_DAPM_HP("Headphone Jack", NULL),
++	SND_SOC_DAPM_SPK("Line Out Jack", NULL),
++	SND_SOC_DAPM_SPK("Ext Spk", NULL),
++};
++
++static int imx_tlv320aic3x_audmux_config(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	int int_port, ext_port;
++	int ret;
++
++	ret = of_property_read_u32(np, "mux-int-port", &int_port);
++	if (ret) {
++		dev_err(&pdev->dev, "mux-int-port missing or invalid\n");
++		return ret;
++	}
++	ret = of_property_read_u32(np, "mux-ext-port", &ext_port);
++	if (ret) {
++		dev_err(&pdev->dev, "mux-ext-port missing or invalid\n");
++		return ret;
++	}
++
++	/*
++	 * The port numbering in the hardware manual starts at 1, while
++	 * the audmux API expects it starts at 0.
++	 */
++	int_port--;
++	ext_port--;
++	ret = imx_audmux_v2_configure_port(int_port,
++			IMX_AUDMUX_V2_PTCR_SYN |
++			IMX_AUDMUX_V2_PTCR_TFSEL(ext_port) |
++			IMX_AUDMUX_V2_PTCR_TCSEL(ext_port) |
++			IMX_AUDMUX_V2_PTCR_TFSDIR |
++			IMX_AUDMUX_V2_PTCR_TCLKDIR,
++			IMX_AUDMUX_V2_PDCR_RXDSEL(ext_port));
++	if (ret) {
++		dev_err(&pdev->dev, "audmux internal port setup failed\n");
++		return ret;
++	}
++	ret = imx_audmux_v2_configure_port(ext_port,
++			IMX_AUDMUX_V2_PTCR_SYN,
++			IMX_AUDMUX_V2_PDCR_RXDSEL(int_port));
++	if (ret) {
++		dev_err(&pdev->dev, "audmux external port setup failed\n");
++		return ret;
++	}
++
++	return 0;
++}
++
++static int imx_tlv320aic3x_probe(struct platform_device *pdev)
++{
++	struct device_node *cpu_np, *codec_np;
++	struct platform_device *cpu_pdev;
++	struct i2c_client *codec_dev;
++	struct imx_tlv320aic3x_data *data;
++	struct snd_soc_dai_link_component *comp;
++	int ret;
++
++	cpu_np = of_parse_phandle(pdev->dev.of_node, "cpu-dai", 0);
++	codec_np = of_parse_phandle(pdev->dev.of_node, "audio-codec", 0);
++	if (!cpu_np || !codec_np) {
++		dev_err(&pdev->dev, "phandle missing or invalid\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++
++	if (strstr(cpu_np->name, "ssi")) {
++		ret = imx_tlv320aic3x_audmux_config(pdev);
++		if (ret)
++			goto fail;
++	}
++
++	cpu_pdev = of_find_device_by_node(cpu_np);
++	if (!cpu_pdev) {
++		dev_err(&pdev->dev, "failed to find SSI platform device\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++	codec_dev = of_find_i2c_device_by_node(codec_np);
++	if (!codec_dev) {
++		dev_err(&pdev->dev, "failed to find codec platform device\n");
++		return -EINVAL;
++	}
++
++	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
++	comp = devm_kzalloc(&pdev->dev, 3 * sizeof(*comp), GFP_KERNEL);
++	if (!data || !comp) {
++		ret = -ENOMEM;
++		goto fail;
++	}
++
++	data->codec_clk = clk_get(&codec_dev->dev, NULL);
++	if (IS_ERR(data->codec_clk)) {
++		/* assuming clock enabled by default */
++		data->codec_clk = NULL;
++		ret = of_property_read_u32(codec_np, "clock-frequency",
++					&data->clk_frequency);
++		if (ret) {
++			dev_err(&codec_dev->dev,
++				"clock-frequency missing or invalid\n");
++			goto fail;
++		}
++	} else {
++		data->clk_frequency = clk_get_rate(data->codec_clk);
++		clk_prepare_enable(data->codec_clk);
++	}
++
++	data->dai.cpus		= &comp[0];
++	data->dai.codecs	= &comp[1];
++	data->dai.platforms	= &comp[2];
++	data->dai.num_cpus	= 1;
++	data->dai.num_codecs	= 1;
++	data->dai.num_platforms	= 1;
++	data->dai.name = "HiFi";
++	data->dai.stream_name = "HiFi";
++	data->dai.codecs->dai_name = "tlv320aic3x-hifi";
++	data->dai.codecs->of_node = codec_np;
++	data->dai.cpus->of_node = cpu_np;
++	data->dai.platforms->of_node = cpu_np;
++	data->dai.init = &imx_tlv320aic3x_dai_init;
++	data->dai.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++			    SND_SOC_DAIFMT_CBM_CFM;
++
++	data->card.dev = &pdev->dev;
++	ret = snd_soc_of_parse_card_name(&data->card, "model");
++	if (ret)
++		goto clk_fail;
++	ret = snd_soc_of_parse_audio_routing(&data->card, "audio-routing");
++	if (ret)
++		goto clk_fail;
++
++	data->card.num_links = 1;
++	data->card.owner = THIS_MODULE;
++	data->card.dai_link = &data->dai;
++	data->card.dapm_widgets = imx_tlv320aic3x_dapm_widgets;
++	data->card.num_dapm_widgets = ARRAY_SIZE(imx_tlv320aic3x_dapm_widgets);
++
++	ret = snd_soc_register_card(&data->card);
++	if (ret) {
++		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
++		goto clk_fail;
++	}
++
++	platform_set_drvdata(pdev, data);
++clk_fail:
++	clk_put(data->codec_clk);
++fail:
++	if (cpu_np)
++		of_node_put(cpu_np);
++	if (codec_np)
++		of_node_put(codec_np);
++
++	return ret;
++}
++
++static int imx_tlv320aic3x_remove(struct platform_device *pdev)
++{
++	struct imx_tlv320aic3x_data *data = platform_get_drvdata(pdev);
++
++	if (data->codec_clk) {
++		clk_disable_unprepare(data->codec_clk);
++		clk_put(data->codec_clk);
++	}
++	snd_soc_unregister_card(&data->card);
++
++	return 0;
++}
++
++static const struct of_device_id imx_tlv320aic3x_dt_ids[] = {
++	{ .compatible = "fsl,imx-audio-tlv320aic3x", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, imx_tlv320aic3x_dt_ids);
++
++static struct platform_driver imx_tlv320aic3x_driver = {
++	.driver = {
++		.name = "imx-tlv320aic3x",
++		.owner = THIS_MODULE,
++		.of_match_table = imx_tlv320aic3x_dt_ids,
++	},
++	.probe = imx_tlv320aic3x_probe,
++	.remove = imx_tlv320aic3x_remove,
++};
++module_platform_driver(imx_tlv320aic3x_driver);
++
++MODULE_AUTHOR("ron.d@variscite.com. Variscite Ltd.");
++MODULE_DESCRIPTION("Variscite i.MX TLV320aic3x ASoC machine driver");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:imx-tlv320aic3x");
+-- 
+2.25.1
+
