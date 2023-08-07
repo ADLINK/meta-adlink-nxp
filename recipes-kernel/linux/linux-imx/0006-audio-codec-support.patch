@@ -1,0 +1,38 @@
+From deb2bcacaa8309710ccda883508124932a7bea90 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dinesh.v@adlinktech.com>
+Date: Mon, 31 Jul 2023 15:47:46 +0530
+Subject: [PATCH] audio-codec-support
+
+---
+ sound/soc/fsl/Kconfig           | 1 -
+ sound/soc/fsl/imx-tlv320aic3x.c | 2 +-
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
+index cef9fce21510..8127925029b0 100644
+--- a/sound/soc/fsl/Kconfig
++++ b/sound/soc/fsl/Kconfig
+@@ -317,7 +317,6 @@ config SND_SOC_IMX_SPDIF
+ config SND_SOC_IMX_TLV320AIC3X
+ 	tristate "SoC Audio support for i.MX6 boards with tlv320aic3x audio codec"
+ 	depends on OF && I2C
+-	select SND_SOC_TLV320AIC3X
+ 	select SND_SOC_IMX_PCM_DMA
+ 	select SND_SOC_IMX_AUDMUX
+ 	select SND_SOC_FSL_SAI
+diff --git a/sound/soc/fsl/imx-tlv320aic3x.c b/sound/soc/fsl/imx-tlv320aic3x.c
+index 6509377a6077..4dcaef80216a 100644
+--- a/sound/soc/fsl/imx-tlv320aic3x.c
++++ b/sound/soc/fsl/imx-tlv320aic3x.c
+@@ -44,7 +44,7 @@ static int imx_tlv320aic3x_dai_init(struct snd_soc_pcm_runtime *rtd)
+ 	struct device *dev = rtd->card->dev;
+ 	int ret;
+ 
+-	ret = snd_soc_dai_set_sysclk(codec_dai, 0,
++	ret = snd_soc_dai_set_sysclk(asoc_rtd_to_codec(rtd, 0), 0,
+ 				     data->clk_frequency, SND_SOC_CLOCK_IN);
+ 	if (ret) {
+ 		dev_err(dev, "could not set codec driver clock params\n");
+-- 
+2.41.0
+

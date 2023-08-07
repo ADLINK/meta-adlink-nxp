@@ -36,7 +36,7 @@
 
     sound-tlv320aic3x {
 	    compatible = "fsl,imx-audio-tlv320aic3x";
-  	    model = "tlv320aic3x-audio";
+	    model = "tlv320aic3x";
   	    cpu-dai = <&sai3>;
             audio-codec = < &audiocodec >;
             audio-routing =
