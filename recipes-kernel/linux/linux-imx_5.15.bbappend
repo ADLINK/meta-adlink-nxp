@@ -29,6 +29,12 @@ do_copy_source () {
         fi
         bbnote "copy kernel dts: $dtsfile"
         cp -f ${WORKDIR}/$dtsfile ${S}/arch/arm64/boot/dts/adlink/
+        if [ -f ${S}/arch/arm64/boot/dts/adlink/Makefile ]; then
+          if ! grep -q $dtbname ${S}/arch/arm64/boot/dts/adlink/Makefile; then
+            bbnote "Makefile: add $dtbname"
+            echo "dtb-\$(CONFIG_ARCH_MXC) += ${dtsfile%%.*}.dtb" >> ${S}/arch/arm64/boot/dts/adlink/Makefile
+          fi
+        fi
       fi
     done
   fi
