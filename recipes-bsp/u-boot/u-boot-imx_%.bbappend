@@ -21,6 +21,12 @@ do_copy_source () {
     if [ -f ${WORKDIR}/$dtsname ]; then
       bbnote "u-boot dts: ${dtsname}"
       cp -f ${WORKDIR}/$dtsname ${S}/arch/arm/dts/
+      if [ -f ${S}/arch/arm/dts/Makefile ]; then
+        if ! grep -q $dtbname ${S}/arch/arm/dts/Makefile; then
+          bbnote "Makefile: add ${dtbname}"
+          sed -e 's,dtb-$(CONFIG_ARCH_IMX8M) += \\,dtb-$(CONFIG_ARCH_IMX8M) += \\\n\t'${dtbname}' \\,g' -i ${S}/arch/arm/dts/Makefile
+        fi
+      fi
     fi
   done
 }
