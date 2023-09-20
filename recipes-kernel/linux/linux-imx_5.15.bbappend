@@ -7,7 +7,6 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 #SRCREV_private = "925f549eadf84f591d0233357c8adfaa52f9d480"
 
 EXTRA_SRC = "${@d.getVarFlag('KERNEL_SRC_PATCHES', d.getVar('MACHINE'), True)}"
-EXTRA_SRC += "file://0006-audio-codec-support.patch"
 SRC_URI:append = " ${EXTRA_SRC}"
 
 do_copy_source () {
