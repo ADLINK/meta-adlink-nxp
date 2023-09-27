@@ -11,7 +11,7 @@
 #include <dt-bindings/leds/common.h>
 
 / {
-	model = "ADLINK MXA-200 gateway board";
+	model = "ADLINK Smart Panel - IMX8MP board";
 	compatible = "fsl,imx8mp-evk", "fsl,imx8mp";
 	chosen {
 		stdout-path = &uart2;
@@ -22,45 +22,11 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_gpio_led>;
 
-		wifi_led {
-			label = "wifi_led";
-			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-			function = LED_FUNCTION_WLAN;
-			linux,default-trigger = "hci0-power";
-			default-state = "off";
-			status = "okay";
+		status_led {
+			label = "green:sys-status";
+			gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
+			default-state = "on"; /* LED GREEN */
 		};
-		
-		wwan_led {
-			label = "wwan_led";
-			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-			function = LED_FUNCTION_WAN;
-			linux,default-trigger = "wwan";
-			default-state = "off";
-			status = "okay";
-		};	
-		
-		user_led {
-			label = "user_led";
-			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
-			status = "okay";
-		};	
-	};
-
-	gpio_switch:gpio_switch{
-			compatible = "mxa,gpio-switch";
-			usb-hub-enable;
-			usb-mux-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
-			hub-reset-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-			hwid1-gpios = <&gpio5 5 GPIO_ACTIVE_LOW>;
-			hwid2-gpios = <&gpio4 31 GPIO_ACTIVE_LOW>;
-			hwid3-gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
-			com1-mode0-gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>;
-			com1-mode1-gpios = <&gpio5 4 GPIO_ACTIVE_LOW>;
-			com2-mode0-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
-			com2-mode1-gpios = <&gpio3 24 GPIO_ACTIVE_LOW>;
-			status = "okay";
 	};
 
 	memory@40000000 {
@@ -74,6 +40,54 @@
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
 		clock-frequency = <25000000>;
+	};
+
+	reg_bl_en: regulator-bl-en {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_reg_bl_en>;
+		regulator-name = "bl-en";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+	};
+
+	reg_bl_pwr: regulator-bl-pwr {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_reg_bl_pwr>;
+		regulator-name = "bl-pwr";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+	};
+
+	reg_lvds_vdd_en: regulator-lvds-vdd-en {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_reg_lvds_vdd_en>;
+		regulator-name = "lvds-vdd-en";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio4 27 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+	};
+
+	reg_usb0_pwr_en: regulator-usb0pwren {
+		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb0_pwr_en>;
+		regulator-name = "usb0-pwr-en";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
 	};
 
 	reg_usdhc2_vmmc: regulator-usdhc2 {
@@ -101,6 +115,40 @@
 				<192000>;
 		status = "okay";
 	};
+
+	lvds_backlight: lvds_backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm2 0 100000 0>;
+		status = "okay";
+
+		brightness-levels = < 0  1  2  3  4  5  6  7  8  9
+							10 11 12 13 14 15 16 17 18 19
+							20 21 22 23 24 25 26 27 28 29
+							30 31 32 33 34 35 36 37 38 39
+							40 41 42 43 44 45 46 47 48 49
+							50 51 52 53 54 55 56 57 58 59
+							60 61 62 63 64 65 66 67 68 69
+							70 71 72 73 74 75 76 77 78 79
+							80 81 82 83 84 85 86 87 88 89
+							90 91 92 93 94 95 96 97 98 99
+							100>;
+		default-brightness-level = <80>;
+	};
+
+	gpio_switch:gpio_switch {
+			compatible = "mxa,gpio-switch";
+			usb-hub-enable;
+			usb-mux-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+			hub-reset-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+			hwid1-gpios = <&gpio5 5 GPIO_ACTIVE_LOW>;
+			hwid2-gpios = <&gpio4 31 GPIO_ACTIVE_LOW>;
+			hwid3-gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
+			com1-mode0-gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>;
+			com1-mode1-gpios = <&gpio5 4 GPIO_ACTIVE_LOW>;
+			com2-mode0-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
+			com2-mode1-gpios = <&gpio3 24 GPIO_ACTIVE_LOW>;
+			status = "okay";
+	};
 };
 
 &A53_0 {
@@ -120,6 +168,12 @@
 };
 
 &aud2htx {
+	status = "okay";
+};
+
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_bl_pwm2>;
 	status = "okay";
 };
 
@@ -343,6 +397,13 @@
         interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
 	};
 
+	/* PCIe CLK GEN: PI6CG33202C-ZDIEX */
+	/* pcieclk0: pi6cg33202@51 { 
+		reg = <0x51>;
+        quartz-load-femtofarads = <12500>;
+		compatible = "pi,6cg33202";
+	}; */
+
 };
 
 &i2c3 {
@@ -351,21 +412,49 @@
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
 
-    /* TPM: ST33HTPH2X32AHD5 */
-    tpm: st33htph77@2e {
-        reg = <0x2e>;
-        compatible = "st,st33htpm-i2c";
-        pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_tpm>;
-        /* MX8MP_IOMUXC_GPIO1_IO11__GPIO1_IO11 (TPM_INT_N) */
-        interrupt-parent = <&gpio1>;
-        interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
-        /* MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06 (TPM_RST#) */
-        tpm-reset = <&gpio1 6 GPIO_ACTIVE_LOW>;
-        reset-assert-us = <200000>;
-	status = "okay";
-    };
+	/* TPM: ST33HTPH2X32AHD5 */
+	tpm: st33htph77@2e {
+		#gpio-cells = <2>;
+		#interrupt-cells = <2>;
+		compatible = "st,st33htpm-i2c";
+		reg = <0x2e>;
 
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_tpm_irq &pinctrl_tpm_rst>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
+		tpm-reset = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <200000>;
+		status = "okay";
+	};
+};
+
+&i2c6 {
+    /* SX1509 */
+    gpio6: i2c6_gpioext0@3f {
+        /* GPIO Expander 0 Mapping :
+         * - 0: CN_DI0
+         * - 1: CN_DI1
+         * - 2: CN_DI2
+         * - 3: CN_DI3
+         * - 4: CN_DO0
+         * - 5: CN_DO1
+         * - 6: CN_DO2
+         * - 7: CN_DO3
+         * - 8~15: N/A
+         */
+        #gpio-cells = <2>;
+        #interrupt-cells = <2>;
+        compatible = "semtech,sx1509q";
+        reg = <0x3f>;
+
+        semtech,probe-reset;
+        gpio-controller;
+        interrupt-controller;
+
+        interrupt-parent = <&gpio1>;
+        interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
+    };
 };
 
 &irqsteer_hdmi {
@@ -387,15 +476,6 @@
 &hdmiphy {
 	status = "okay";
 };
-#if 0
-&lcdif1 {
-	status = "okay";
-};
-
-&lcdif2 {
-	status = "okay";
-};
-#endif
 
 &lcdif3 {
 	status = "okay";
@@ -413,7 +493,7 @@
 	status = "okay";
 };
 
-&pcie{
+&pcie {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pcie>;
 	disable-gpio = <&gpio2 6 GPIO_ACTIVE_LOW>;
@@ -440,7 +520,7 @@
 	};
 };
 
-&pcie_ep{
+&pcie_ep {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pcie>;
 	ext_osc = <1>;
@@ -457,7 +537,7 @@
 	status = "disabled";
 };
 
-&pcie_phy{
+&pcie_phy {
 	ext_osc = <1>;
 	status = "okay";
 };
@@ -589,7 +669,7 @@
 			MX8MP_IOMUXC_HDMI_CEC__HDMIMIX_HDMI_CEC		0x40000019
 	        MX8MP_IOMUXC_GPIO1_IO07__GPIO1_IO07        0x00000106   //FUNCTION_INT
 	        MX8MP_IOMUXC_SAI3_RXD__GPIO4_IO30        0x00000104   //WWAN_RESET
-	        MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14        0x00000104   //M.2 B-key Reset
+
             MX8MP_IOMUXC_GPIO1_IO12__GPIO1_IO12        0x00000106   //HUB_RESET
             MX8MP_IOMUXC_GPIO1_IO15__GPIO1_IO15        0x00000104   //USER LED
             MX8MP_IOMUXC_SAI3_TXC__GPIO5_IO00          0x00000106   //HWID_3
@@ -604,12 +684,23 @@
 	        MX8MP_IOMUXC_SPDIF_TX__GPIO5_IO03          0x00000106	//GPIO_COM1_MODE0
 		>;
 	};
-	
-    pinctrl_tpm: tpmgrp {
-	    fsl,pins = <
-                MX8MP_IOMUXC_GPIO1_IO11__GPIO1_IO11           0x156
-           	MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06        0x156	//TPM reset
-            >;
+
+	pinctrl_bl_pwm2: blpwm2grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO11__PWM2_OUT	0x116
+		>;
+	};
+
+	pinctrl_tpm_irq: tpmirqgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14		0xd6	// TPM IRQ
+		>;
+	};
+
+	pinctrl_tpm_rst: tpmrstgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06		0x156	// TPM reset
+		>;
 	};
 
 	pinctrl_eqos: eqosgrp {
@@ -661,8 +752,7 @@
 
 	pinctrl_gpio_led: gpioledgrp {
 		fsl,pins = <
-            MX8MP_IOMUXC_GPIO1_IO14__GPIO1_IO14        0x19   //M.2 WIFI LED
-            MX8MP_IOMUXC_GPIO1_IO13__GPIO1_IO13        0x19   //M.2 WWAN LED
+			MX8MP_IOMUXC_NAND_READY_B__GPIO3_IO16	0x19
 		>;
 	};
 
@@ -699,6 +789,24 @@
 	pinctrl_pmic: pmicgrp {
 		fsl,pins = <
 			MX8MP_IOMUXC_GPIO1_IO03__GPIO1_IO03	0x000001c0
+		>;
+	};
+
+	pinctrl_reg_bl_en: regblengrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00	0x16
+		>;
+	};
+
+	pinctrl_reg_bl_pwr: regblpwrgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_SAI5_RXC__GPIO3_IO20	0x16
+		>;
+	};
+
+	pinctrl_reg_lvds_vdd_en: reglvdsvddengrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_SAI2_MCLK__GPIO4_IO27	0x16
 		>;
 	};
 
@@ -761,6 +869,12 @@
 		fsl,pins = <
 			MX8MP_IOMUXC_UART2_RXD__UART2_DCE_RX	0x140
 			MX8MP_IOMUXC_UART2_TXD__UART2_DCE_TX	0x140
+		>;
+	};
+
+	pinctrl_usb0_pwr_en: usb0_pwr_en_grp {
+		fsl,pins = <
+	        MX8MP_IOMUXC_GPIO1_IO14__GPIO1_IO14     0x16	//GPIO_USB_MUX_SEL(Need check boot status is high or low)
 		>;
 	};
 
