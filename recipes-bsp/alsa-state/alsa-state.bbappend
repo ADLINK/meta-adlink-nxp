@@ -1,2 +1,2 @@
 
-FILESEXTRAPATHS_prepend_mx8mp := "${THISDIR}/${PN}/imx:"
+FILESEXTRAPATHS_prepend_mx8 := "${THISDIR}/${PN}/imx:"

@@ -81,7 +81,7 @@
             compatible = "fsl,imx7d-evk-wm8960", "fsl,imx-audio-wm8960";
             model = "wm8960-audio";
             cpu-dai = <&sai1>;
-            audio-codec = <&codec>;
+            audio-codec = <&codec_wm8960>;
             //asrc-controller = <&easrc>;
             codec-master;
             /*
@@ -98,6 +98,18 @@
                     "Mic Jack", "MICB",
                     "Playback", "CPU-Playback",
                     "CPU-Capture", "Capture";
+        };
+
+        sound-rt5640 {
+            compatible = "fsl,imx-audio-rt5640";
+            model = "rt5640c";
+            cpu-dai = <&sai1>;
+            audio-codec = <&codec_rt5640>;
+            audio-routing =
+		    "Mic Jack", "MICBIAS1",
+		    "IN1P", "Mic Jack",
+		    "Headphone Jack", "HPOL",
+		    "Headphone Jack", "HPOR";
         };
 
 	/* 25MHz reference crystal */
@@ -325,16 +337,26 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c2>;
 	status = "okay";
-		
-    codec: wm8960@1a {
-        compatible = "wlf,wm8960";
-        reg = <0x1a>;
-        clocks = <&clk IMX8MM_CLK_SAI1_ROOT>;
-        clock-names = "mclk";
-        wlf,shared-lrclk;
-    status = "okay";
-    };
-	
+
+	codec_wm8960: wm8960@1a {
+		#sound-dai-cells = <0>;
+		compatible = "wlf,wm8960";
+		reg = <0x1a>;
+		clocks = <&clk IMX8MM_CLK_SAI1_ROOT>;
+		clock-names = "mclk";
+		wlf,shared-lrclk;
+		status = "okay";
+        };
+
+	codec_rt5640: rt5640@1c {
+		#sound-dai-cells = <0>;
+		compatible = "realtek,rt5640";
+		reg = <0x1c>;
+		clocks = <&clk IMX8MM_CLK_SAI1_ROOT>;
+		clock-names = "mclk";
+		status = "okay";
+	};
+
 	/* SX1509(2) U1001@IPi SMARC Plus */
 	gpio: i2c2_gpioext0@3e {
 		/* GPIO Expander 2 Mapping :
