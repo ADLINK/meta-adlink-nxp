@@ -1,0 +1,21 @@
+From 503a5771f44573615d67044b64e4c7daa6fd48a2 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar@adlinktech.com>
+Date: Fri, 15 Sep 2023 18:04:37 +0530
+Subject: [PATCH] lec-imx8mp: Modify DTB makefile to build dual display
+
+Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+index e369c0c32c563..f44ba9684a4f1 100644
+--- a/arch/arm64/boot/dts/adlink/Makefile
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -4,4 +4,5 @@ dtb-$(CONFIG_ARCH_MXC) += lec-imx8mp.dtb \
+ 			lec-imx8mp-hydis-hv150ux2.dtb \
+ 			lec-imx8mp-auoB101UAN01-mipi-panel.dtb \
+ 			lec-imx8mp-wifi.dtb \
+-			lec-imx8mp-tlv320aic3x.dtb 
++			lec-imx8mp-tlv320aic3x.dtb \
++			lec-imx8mp-tlv320-lvds.dtb
+-- 
+2.25.1
+

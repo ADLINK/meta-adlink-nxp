@@ -37,6 +37,8 @@ do_copy_source () {
       fi
     done
   fi
+
+  cp ${WORKDIR}/tlv320aic3x.dtsi ${S}/arch/arm64/boot/dts/adlink/
 }
 
 addtask copy_source before do_validate_branches after do_kernel_checkout
