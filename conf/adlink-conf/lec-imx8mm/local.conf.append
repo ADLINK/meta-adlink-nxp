@@ -1,9 +1,23 @@
+CONNECTIVITY_CHECK_URIS = "https://www.google.com"
+
+CORE_IMAGE_EXTRA_INSTALL += "packagegroup-adlink"
+
+
+
+
+IMAGE_FEATURES:append = " ssh-server-openssh"
+
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
 
-#BUILDTAG ??= "LEC-iMX8MM-0v1"
-RELEASE_VERSION ?= "LEC-iMX8MM-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
+DISTRO_FEATURES:append = " sensors benchmarks adlink wifi"
+MACHINE_FEATURES:append = " wifi bluetooth"
 
-INHERIT += "rm_work"
-BBMASK += "xfdesktop"
+IMAGE_INSTALL:append = " r8168"
+
+RELEASE_VERSION ?= "LEC-iMX8MM-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
+MACHINE_FEATURES:remove = "optee"
+DISTRO_FEATURES:remove = "optee"
+IMAGE_INSTALL:remove = "optee-test optee-os optee-client optee-examples"
+
 
