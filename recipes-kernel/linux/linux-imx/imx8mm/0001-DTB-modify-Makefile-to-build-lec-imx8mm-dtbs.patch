@@ -1,0 +1,28 @@
+From 3affeb5a1ea2a5487a44e7e72abc91505717c6ce Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Tue, 18 Oct 2022 15:55:15 +0530
+Subject: [PATCH] DTB-modify-Makefile-to-build-lec-imx8mm-dtbs
+
+---
+ arch/arm64/boot/dts/adlink/Makefile | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+ create mode 100755 arch/arm64/boot/dts/adlink/Makefile
+
+diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
+new file mode 100755
+index 000000000000..4e0f31836971
+--- /dev/null
++++ b/arch/arm64/boot/dts/adlink/Makefile
+@@ -0,0 +1,9 @@
++# SPDX-License-Identifier: GPL-2.0
++
++dtb-$(CONFIG_ARCH_MXC) += \
++     \
++    lec-imx8mm-auoB101UAN01-mipi-panel.dtb \
++    lec-imx8mm-ov5647.dtb \
++    lec-imx8mm-imx219.dtb \
++    lec-imx8mm-ov13855.dtb \
++    lec-imx8mm.dtb
+-- 
+2.25.1
+
