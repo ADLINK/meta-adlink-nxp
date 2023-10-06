@@ -1,0 +1,49 @@
+From 8c60a9b64ec3f47d40ed4ecbbb57cbc1e3e6311d Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Mon, 28 Aug 2023 11:52:58 +0530
+Subject: [PATCH 2/3] u-boot: modify Kconfig/Makefile to build lec-imx8mm
+
+---
+ arch/arm/dts/Makefile           | 1 +
+ arch/arm/mach-imx/imx8m/Kconfig | 7 +++++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 0170c9c897..c74e87bf72 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -964,6 +964,7 @@ dtb-$(CONFIG_ARCH_IMX8ULP) += \
+ 	imx8ulp-watch.dtb
+ 
+ dtb-$(CONFIG_ARCH_IMX8M) += \
++	uboot-lec8mm.dtb  \
+ 	imx8mm-ddr4-evk.dtb \
+ 	imx8mm-ddr4-ab2.dtb \
+ 	imx8mm-ddr3l-val.dtb \
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index a225a9784f..d885b2f81b 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -64,6 +64,12 @@ config TARGET_IMX8MQ_CM
+ 	select IMX8MQ
+ 	select IMX8M_LPDDR4
+ 
++config TARGET_LEC_IMX8MM
++	bool "Adlink lec-imx8mm LPDDR4 board"
++	select IMX8MM
++	select SUPPORT_SPL
++	select IMX8M_LPDDR4	
++ 
+ config TARGET_IMX8MQ_EVK
+ 	bool "imx8mq_evk"
+ 	select IMX8MQ
+@@ -366,5 +372,6 @@ source "board/technexion/pico-imx8mq/Kconfig"
+ source "board/variscite/imx8mn_var_som/Kconfig"
+ source "board/toradex/verdin-imx8mm/Kconfig"
+ source "board/toradex/verdin-imx8mp/Kconfig"
++source "board/adlink/lec-imx8mm/Kconfig"
+ 
+ endif
+-- 
+2.25.1
+
