@@ -13,3 +13,12 @@ RDEPENDS:packagegroup-adlink-tools:append:lec-imx8mp = " \
 "
 
 
+RDEPENDS:packagegroup-adlink-bluetooth:append:lec-imx8mm = " \
+    kernel-module-bt-sd8997 \
+"
+
+RDEPENDS:packagegroup-packagegroup-adlink-tools:append:lec-imx8mm  = " \
+    powerled \
+    eth-lsoe \
+    test-tools \
+"
