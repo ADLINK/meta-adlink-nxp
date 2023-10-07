@@ -6,14 +6,24 @@ SRC_URI:append = " ${EXTRA_SRC}"
 
 do_copy_source () {
   configs=$(echo "${IMX_KERNEL_CONFIG_AARCH64}" | xargs)
+  deltaconfigs=$(echo "${DELTA_KERNEL_DEFCONFIG}" | xargs)
   dtbes=$(echo "${KERNEL_DEVICETREE}" | xargs)
 
   # Copy config
   if [ -n "${configs}" ]; then
     for config in ${configs}; do
-      if [ -f ${WORKDIR}/${config} -a ! -f ${S}/arch/arm64/configs/${IMX_KERNEL_CONFIG_AARCH64} ]; then
+      if [ -f ${WORKDIR}/${config} -a ! -f ${S}/arch/arm64/configs/${config} ]; then
         bbnote "copy kernel config: $config"
         cp -f ${WORKDIR}/${config} ${S}/arch/arm64/configs/${config}
+      fi
+    done
+  fi
+
+  if [ -n "${deltaconfigs}" ]; then
+    for deltacfg in "${deltaconfigs}"; do
+      if [ -f ${WORKDIR}/${deltacfg} -a ! -f ${S}/arch/${ARCH}/configs/${deltacfg} ]; then
+        bbnote "copy kernel delta config: $deltacfg"
+        cp -f ${WORKDIR}/${deltacfg} ${S}/arch/arm64/configs/${deltacfg}
       fi
     done
   fi
