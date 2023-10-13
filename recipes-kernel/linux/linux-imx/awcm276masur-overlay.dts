@@ -1,0 +1,116 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2023 ADLINK Technology Corp.
+ *
+ * Author: Po Cheng <po.cheng@adlinktech.com>
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			usdhc1_pwrseq: usdhc1_pwrseq {
+				compatible = "mmc-pwrseq-simple";
+				reset-gpios = <&gpio2 6 1>; /* GPIO_ACTIVE_LOW = 1 */
+			};
+
+			reg_ex_sdio_3v: regulator-ex-sdio-3v {
+				compatible = "regulator-fixed";
+				regulator-name = "ex-sdio-3V";
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&usdhc1>;
+		__overlay__ {
+			pinctrl-names = "default", "state_100mhz", "state_200mhz";
+			pinctrl-0 = <&pinctrl_usdhc1>;
+			pinctrl-1 = <&pinctrl_usdhc1_100mhz>;
+			pinctrl-2 = <&pinctrl_usdhc1_200mhz>;
+			keep-power-in-suspend;
+			non-removable;
+			wakeup-source;
+			vmmc-supply = <&reg_ex_sdio_3v>;
+			mmc-pwrseq = <&usdhc1_pwrseq>;
+			fsl,sdio-async-interrupt-enabled;
+			status = "okay";
+
+			wifi_wake_host {
+				compatible = "nxp,wifi-wake-host";
+				interrupt-parent = <&gpio2>;
+				interrupts = <9 8>; /* IRQ_TYPE_LEVEL_LOW = 8 */
+				interrupt-names = "host-wake";
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&iomuxc>;
+		__overlay__ {
+			pinctrl_usdhc1: usdhc1grp {
+				fsl,pins = <
+					/* MX8MP_IOMUXC_SD1_CLK__USDHC1_CLK */
+					0x08C 0x2EC 0x000 0x0 0x0	0x190
+					/* MX8MP_IOMUXC_SD1_CMD__USDHC1_CMD	*/
+					0x090 0x2F0 0x000 0x0 0x0	0x1d0
+					/* MX8MP_IOMUXC_SD1_DATA0__USDHC1_DATA0 */
+					0x094 0x2F4 0x000 0x0 0x0	0x1d0
+					/* MX8MP_IOMUXC_SD1_DATA1__USDHC1_DATA1 */
+					0x098 0x2F8 0x000 0x0 0x0	0x1d0
+					/* MX8MP_IOMUXC_SD1_DATA2__USDHC1_DATA2 */
+					0x09C 0x2FC 0x000 0x0 0x0	0x1d0
+					/* MX8MP_IOMUXC_SD1_DATA3__USDHC1_DATA3 */
+					0x0A0 0x300 0x000 0x0 0x0	0x1d0
+					/* MX8MP_IOMUXC_SD1_RESET_B__GPIO2_IO10 */
+					0x0B4 0x314 0x000 0x5 0x0	0x10
+				>;
+			};
+
+			pinctrl_usdhc1_100mhz: usdhc1grp-100mhz {
+				fsl,pins = <
+					0x08C 0x2EC 0x000 0x0 0x0	0x194
+					0x090 0x2F0 0x000 0x0 0x0	0x1d4
+					0x094 0x2F4 0x000 0x0 0x0	0x1d4
+					0x098 0x2F8 0x000 0x0 0x0	0x1d4
+					0x09C 0x2FC 0x000 0x0 0x0	0x1d4
+					0x0A0 0x300 0x000 0x0 0x0	0x1d4
+					0x0B4 0x314 0x000 0x5 0x0	0x10
+				>;
+			};
+
+			pinctrl_usdhc1_200mhz: usdhc1grp-200mhz {
+				fsl,pins = <
+					0x08C 0x2EC 0x000 0x0 0x0	0x196
+					0x090 0x2F0 0x000 0x0 0x0	0x1d6
+					0x094 0x2F4 0x000 0x0 0x0	0x1d6
+					0x098 0x2F8 0x000 0x0 0x0	0x1d6
+					0x09C 0x2FC 0x000 0x0 0x0	0x1d6
+					0x0A0 0x300 0x000 0x0 0x0	0x1d6
+					0x0B4 0x314 0x000 0x5 0x0	0x10
+				>;
+			};
+		};
+	};
+
+	fragment@3 {
+		target = <&pcie>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@4 {
+		target = <&pcie_phy>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+};
+
