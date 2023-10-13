@@ -3,15 +3,40 @@
 #
 setenv set_overlays 'echo "EEPROM env variable: E_disp: ${E_disp}...";
 if test -n ${E_disp}; then
-  if test ${E_disp} = 10; then
+  if test ${E_disp} = 7; then
+    setenv overlays ${overlays} 7inch-overlay.dtbo;
+  elif test ${E_disp} = 7d; then
+    setenv overlays ${overlays} 7dsi-overlay.dtbo;
+  elif test ${E_disp} = 10; then
     setenv overlays ${overlays} 10inch-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_eth}; then
+  if test ${E_eth} = 1; then
+    setenv overlays ${overlays} eth0-overlay.dtbo;
+  fi
+fi;
+if test -n ${E_wl}; then
+  if test ${E_wl} = sur; then
+    setenv overlays ${overlays} awcm276masur-overlay.dtbo;
+  elif test ${E_wl} = pur; then
+    setenv overlays ${overlays} awcm276mapur-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_cma}; then
+  if test ${E_cma} = 950; then
+    setenv overlays ${overlays} cma950mb-overlay.dtbo;
+  elif test ${E_cma} = 750; then
+    setenv overlays ${overlays} cma750mb-overlay.dtbo;
+  elif test ${E_cma} = 400; then
+    setenv overlays ${overlays} cma400mb-overlay.dtbo;
   fi;
 fi;'
 
 #
 # set load_overlays commands to load dtbo
 #
-setenv load_overlays 'echo "DT overlay:";
+setenv load_overlays 'echo "DT overlays: ${overlays}";
 fdt address ${fdt_addr};
 fdt resize 8192;
 setexpr dtboaddr ${fdt_addr} + 0xF0000;
