@@ -12,13 +12,15 @@ PR = "r0"
 
 COMPATIBLE_MACHINE = "(mx6|mx7|mx8)"
 
-SRC_URI = "file://README file://boot.scr"
+UBOOT_BOOT_SCRIPT ?= "boot.scr"
+
+SRC_URI = "file://README file://${UBOOT_BOOT_SCRIPT}"
 
 S = "${WORKDIR}"
 
 do_compile () {
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
-		-n "boot script" -d ${S}/boot.scr \
+		-n "boot script" -d ${S}/${UBOOT_BOOT_SCRIPT} \
 		${S}/boot.scr.uimg
 }
 
