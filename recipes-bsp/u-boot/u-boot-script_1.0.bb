@@ -14,17 +14,23 @@ COMPATIBLE_MACHINE = "(mx6|mx7|mx8)"
 
 UBOOT_BOOT_SCRIPT ?= "boot.scr"
 
-SRC_URI = "file://README file://${UBOOT_BOOT_SCRIPT}"
+SRC_URI = "file://README \
+file://boot.scr \
+file://overlay.scr \
+"
 
 S = "${WORKDIR}"
 
 do_compile () {
-	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
-		-n "boot script" -d ${S}/${UBOOT_BOOT_SCRIPT} \
-		${S}/boot.scr.uimg
+	for script in ${S}/*.scr; do
+		mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
+			-n "boot script" -d ${script} \
+			${script}.uimg
+	done
 }
 
 do_install () {
 	install -d ${DEPLOY_DIR_IMAGE}
-	install -m 0644 ${S}/boot.scr.uimg ${DEPLOY_DIR_IMAGE}
+	install -m 0644 ${S}/*.uimg ${DEPLOY_DIR_IMAGE}
 }
+
