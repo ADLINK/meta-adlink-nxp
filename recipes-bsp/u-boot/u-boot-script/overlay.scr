@@ -6,12 +6,19 @@ if test -n ${E_disp}; then
   if test ${E_disp} = 10; then
     setenv overlays ${overlays} 10inch-overlay.dtbo;
   fi;
+fi;
+if test -n ${E_wl}; then
+  if test ${E_wl} = sur; then
+    setenv overlays ${overlays} awcm276masur-overlay.dtbo;
+  elif test ${E_wl} = pur; then
+    setenv overlays ${overlays} awcm276mapur-overlay.dtbo;
+  fi;
 fi;'
 
 #
 # set load_overlays commands to load dtbo
 #
-setenv load_overlays 'echo "DT overlay:";
+setenv load_overlays 'echo "DT overlays: ${overlays}";
 fdt address ${fdt_addr};
 fdt resize 8192;
 setexpr dtboaddr ${fdt_addr} + 0xF0000;
