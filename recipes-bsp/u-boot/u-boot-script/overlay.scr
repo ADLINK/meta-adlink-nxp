@@ -3,7 +3,9 @@
 #
 setenv set_overlays 'echo "EEPROM env variable: E_disp: ${E_disp}...";
 if test -n ${E_disp}; then
-  if test ${E_disp} = 10; then
+  if test ${E_disp} = 7; then
+    setenv overlays ${overlays} 7inch-overlay.dtbo;
+  elif test ${E_disp} = 10; then
     setenv overlays ${overlays} 10inch-overlay.dtbo;
   fi;
 fi;
