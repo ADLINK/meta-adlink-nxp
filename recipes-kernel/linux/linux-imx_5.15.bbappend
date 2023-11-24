@@ -32,7 +32,7 @@ do_copy_source () {
       fi
     done
   fi
-    if [ ${MACHINE} == "lec-imx8mp" ]; then
+    if [ ${MACHINE} = "lec-imx8mp" ]; then
      cp -f ${WORKDIR}/tlv320aic3x.dtsi ${S}/arch/arm64/boot/dts/adlink/
    fi  
   
