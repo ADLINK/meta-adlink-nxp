@@ -1,0 +1,464 @@
+diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
+index 19c7135784..26f8643ee9 100644
+--- a/arch/arm/mach-imx/imx8m/soc.c
++++ b/arch/arm/mach-imx/imx8m/soc.c
+@@ -33,7 +33,6 @@
+ #include <linux/bitops.h>
+ #include <asm/setup.h>
+ #include <asm/bootm.h>
+-#include <i2c.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -183,98 +182,15 @@ static struct mm_region imx8m_mem_map[] = {
+ 	}
+ };
+ 
+-#if defined(CONFIG_SPL_BUILD)
+-static uint32_t get_bomid(void)
+-{
+-	int ret;
+-	uint8_t data;
+-	struct udevice *bus;
+-	struct udevice *i2c_dev = NULL;
+-	volatile uint32_t *bomid = (void *)CONFIG_SYS_IMX8MP_SKU_ADDR;
+-
+-	ret = uclass_get_device_by_seq(UCLASS_I2C, 3, &bus);
+-	if (ret) {
+-		printf("%s: Can't find bus\n", __func__);
+-		return -EINVAL;
+-	}
+-
+-	ret = dm_i2c_probe(bus, 0x70, 0, &i2c_dev);
+-	if (ret) {
+-		printf("%s: Can't find device id=0x%x\n",
+-			__func__, 0x70);
+-		return -ENODEV;
+-	}
+-
+-	ret = dm_i2c_read(i2c_dev, 0x10, &data, 1);
+-	if (ret) {
+-		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+-		return -EIO;
+-	}
+-
+-	*bomid = ((data & 0x03) << 3) | ((data & 0x1C) >> 2);
+-	return *bomid;
+-}
+-#else
+-static uint32_t get_bomid(void)
+-{
+-	volatile uint32_t *bomid = (void *)CONFIG_SYS_IMX8MP_SKU_ADDR;
+-	return *bomid;
+-}
+-#endif
+-
+-uint8_t get_dram_sku(void)
+-{
+-	uint8_t size = 0;
+-	uint32_t bomid = get_bomid();
+-
+-	//printf("bomid: %d\n", bomid);
+-
+-	if(bomid < 24) {
+-		if(bomid < 12) {
+-			size = 2;
+-		}
+-		else {
+-			size = 3;
+-		}
+-	}
+-	else {
+-		size = 4;
+-	}
+-
+-	return size;
+-}
+-
+ struct mm_region *mem_map = imx8m_mem_map;
+ 
+ static unsigned int imx8m_find_dram_entry_in_mem_map(void)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(imx8m_mem_map); i++) {
+-		if (imx8m_mem_map[i].phys == CONFIG_SYS_SDRAM_BASE) {
+-			/* resetup dram size by sku */
+-			switch (get_dram_sku()) {
+-				case 4:  //8GB
+-					imx8m_mem_map[i].size = 0xC0000000;
+-					imx8m_mem_map[i+1].size = 0x140000000;
+-					break;
+-				case 3:  //4GB
+-					imx8m_mem_map[i].size = 0xC0000000;
+-					imx8m_mem_map[i+1].size = 0x40000000;
+-					break;
+-				case 2:	//2GB
+-					imx8m_mem_map[i].size = 0x80000000;
+-					break;
+-				case 1:	//1GB
+-					imx8m_mem_map[i].size = 0x40000000;
+-					break;
+-				case 0:	//512M
+-					imx8m_mem_map[i].size = 0x20000000;
+-					break;
+-			}
++	for (i = 0; i < ARRAY_SIZE(imx8m_mem_map); i++)
++		if (imx8m_mem_map[i].phys == CONFIG_SYS_SDRAM_BASE)
+ 			return i;
+-		}
+-	}
+ 
+ 	hang();	/* Entry not found, this must never happen. */
+ }
+@@ -315,7 +231,16 @@ __weak int board_phys_sdram_size(phys_size_t *size)
+ 	if (!size)
+ 		return -EINVAL;
+ 
+-#if 0
++#ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
++	//ECC DRAM consumes 1/8th of DDR size
++#if defined(CONFIG_LPDDR4_8GB)
++	*size = 0x1C0000000;
++#elif defined(CONFIG_LPDDR4_4GB)
++	*size = 0xE0000000;
++#elif defined(CONFIG_LPDDR4_2GB) || defined(CONFIG_LPDDR4_2GK)
++	*size = 0x70000000;
++#endif
++#else
+ 	*size = PHYS_SDRAM_SIZE;
+ 
+ #ifdef PHYS_SDRAM_2_SIZE
+@@ -323,45 +248,6 @@ __weak int board_phys_sdram_size(phys_size_t *size)
+ #endif
+ #endif
+ 
+-#ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-	//ECC DRAM consumes 1/8th of DDR size
+-	switch (get_dram_sku()) {
+-                case 4: //8GB
+-                        *size = 0x1C0000000;
+-                        break;
+-                case 3: //4GB
+-                        *size = 0xE0000000;
+-                        break;
+-                case 2: //2GB
+-                        *size = 0x70000000;
+-                        break;
+-                case 1: //1GB
+-                        *size = 0x38000000;
+-                        break;
+-                case 0: //512MB
+-                        *size = 0x1C000000;
+-                        break;
+-        }
+-#else
+-	switch (get_dram_sku()) {
+-                case 4: //8GB
+-                        *size = 0x200000000;
+-                        break;
+-                case 3: //4GB
+-                        *size = 0x100000000;
+-                        break;
+-                case 2: //2GB
+-                        *size = 0x80000000;
+-                        break;
+-                case 1: //1GB
+-                        *size = 0x40000000;
+-                        break;
+-                case 0: //512MB
+-                        *size = 0x20000000;
+-                        break;
+-        }
+-#endif
+-
+ 	return 0;
+ }
+ 
+diff --git a/board/adlink/lec-imx8mp/Kconfig b/board/adlink/lec-imx8mp/Kconfig
+index 536d2014c5..8da2060720 100644
+--- a/board/adlink/lec-imx8mp/Kconfig
++++ b/board/adlink/lec-imx8mp/Kconfig
+@@ -12,8 +12,27 @@ config SYS_CONFIG_NAME
+ config IMX_CONFIG
+ 	default "board/adlink/lec-imx8mp/imximage-8mp-lpddr4.cfg"
+ 
+-config SYS_IMX8MP_SKU_ADDR
+-	hex
++config IMX_DDRSIZE
++	bool "Define lec-imx8mp DDR Size"
++	depends on TARGET_LEC_IMX8MP
++
++choice
++	prompt "Select a lec-imx8mp DDR Size"
++	depends on IMX_DDRSIZE
++
++	config LPDDR4_2GB
++		bool "LPDDR4_2GB"
++
++        config LPDDR4_2GK
++		bool "LPDDR4_2GK"
++
++	config LPDDR4_4GB
++		bool "LPDDR4_4GB"
++
++	config LPDDR4_8GB
++		bool "LPDDR4_8GB"
++
++endchoice
+ 
+ source "board/adlink/common/Kconfig"
+ 
+diff --git a/board/adlink/lec-imx8mp/Makefile b/board/adlink/lec-imx8mp/Makefile
+index d532842507..49237a04a2 100644
+--- a/board/adlink/lec-imx8mp/Makefile
++++ b/board/adlink/lec-imx8mp/Makefile
+@@ -8,8 +8,8 @@ obj-y += lec-imx8mp.o
+ 
+ ifdef CONFIG_SPL_BUILD
+ obj-y += spl.o
+-obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.o
+-obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.o
+-obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.o
+-obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.o
++obj-$(CONFIG_LPDDR4_2GB) += lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.o
++obj-$(CONFIG_LPDDR4_2GK) += lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.o
++obj-$(CONFIG_LPDDR4_4GB) += lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.o
++obj-$(CONFIG_LPDDR4_8GB) += lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.o
+ endif
+diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
+index 73c2d5c20f..0bf1c42dd7 100644
+--- a/board/adlink/lec-imx8mp/lec-imx8mp.c
++++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
+@@ -531,6 +531,47 @@ static void setup_codec(void)
+ 		env_set("fdtfile", "lec-imx8mp-hydis-hv150ux2.dtb");
+ }
+ 
++static void fixup_boot_targets(void)
++{
++	uint32_t dev = 1;
++	uint32_t len;
++	char buf[64];
++	char sub[8];
++	char* boot_targets;
++	char* p;
++	char* q;
++	char* r;
++
++	p = boot_targets = env_get("boot_targets");
++	r = buf;
++
++	memset(buf, '\0', sizeof(buf));
++
++	if(mmc_get_env_dev() == 1)
++		dev = 2;
++
++	sprintf(sub, "mmc%d", dev);
++	len = strlen(sub);
++
++	while((q = strstr(p, sub)) != NULL)
++	{
++		uint32_t inc = q - p;
++		memcpy(r, p, inc);
++		p = q + len;
++		r += inc;
++
++		if(strstr(r - 1, " ") != NULL)
++			r -= 1;
++	}
++
++	q = boot_targets + strlen(boot_targets);
++
++	if(p != q)
++		memcpy(r, p, q - p);
++
++	env_set("boot_targets", buf);
++}
++
+ int board_late_init(void)
+ {
+ #ifdef CONFIG_ENV_IS_IN_MMC
+@@ -541,6 +582,7 @@ int board_late_init(void)
+ 	env_set("board_rev", "iMX8MP");
+ #endif
+ 	setup_codec();
++	fixup_boot_targets();
+ 
+ 	return 0;
+ }
+diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
+index a233e80fc5..621feac67e 100644
+--- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
++++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
+@@ -1858,7 +1858,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
+ };
+ 
+ /* ddr timing config params */
+-struct dram_timing_info dram_timing_4GB = {
++struct dram_timing_info dram_timing = {
+ 	.ddrc_cfg = ddr_ddrc_cfg,
+ 	.ddrc_cfg_num = ARRAY_SIZE(ddr_ddrc_cfg),
+ 	.ddrphy_cfg = ddr_ddrphy_cfg,
+@@ -1873,7 +1873,7 @@ struct dram_timing_info dram_timing_4GB = {
+ };
+ 
+ #ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-void board_dram_ecc_scrub_4GB(void)
++void board_dram_ecc_scrub(void)
+ {
+ 	/* add inline scrb function MPlus spcific */
+ 	/* scrub 0-1.75G */
+diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
+index 1c0ce520ac..71f83551c0 100644
+--- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
++++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
+@@ -1862,7 +1862,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
+ };
+ 
+ /* ddr timing config params */
+-struct dram_timing_info dram_timing_2GK = {
++struct dram_timing_info dram_timing = {
+ 	.ddrc_cfg = ddr_ddrc_cfg,
+ 	.ddrc_cfg_num = ARRAY_SIZE(ddr_ddrc_cfg),
+ 	.ddrphy_cfg = ddr_ddrphy_cfg,
+@@ -1877,7 +1877,7 @@ struct dram_timing_info dram_timing_2GK = {
+ };
+ 
+ #ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-void board_dram_ecc_scrub_2GK(void)
++void board_dram_ecc_scrub(void)
+ {
+ 	ddrc_inline_ecc_scrub(0x0,0x1bffffff);
+ 	ddrc_inline_ecc_scrub_end(0x0,0x1fffffff);
+diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
+index 15360a2941..ac670b672a 100644
+--- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
++++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
+@@ -1858,7 +1858,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
+ };
+ 
+ /* ddr timing config params */
+-struct dram_timing_info dram_timing_2GB = {
++struct dram_timing_info dram_timing = {
+ 	.ddrc_cfg = ddr_ddrc_cfg,
+ 	.ddrc_cfg_num = ARRAY_SIZE(ddr_ddrc_cfg),
+ 	.ddrphy_cfg = ddr_ddrphy_cfg,
+@@ -1873,7 +1873,7 @@ struct dram_timing_info dram_timing_2GB = {
+ };
+ 
+ #ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-void board_dram_ecc_scrub_2GB(void)
++void board_dram_ecc_scrub(void)
+ {
+ 	/* add inline scrb function MPlus spcific */
+ 	/* scrub 0-1.75G */
+diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
+index 5268686eea..d82b04fc85 100644
+--- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
++++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
+@@ -1847,7 +1847,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
+ };
+ 
+ /* ddr timing config params */
+-struct dram_timing_info dram_timing_8GB = {
++struct dram_timing_info dram_timing = {
+ 	.ddrc_cfg = ddr_ddrc_cfg,
+ 	.ddrc_cfg_num = ARRAY_SIZE(ddr_ddrc_cfg),
+ 	.ddrphy_cfg = ddr_ddrphy_cfg,
+diff --git a/board/adlink/lec-imx8mp/spl.c b/board/adlink/lec-imx8mp/spl.c
+index 8435f8528f..913e2868b9 100644
+--- a/board/adlink/lec-imx8mp/spl.c
++++ b/board/adlink/lec-imx8mp/spl.c
+@@ -56,44 +56,9 @@ int spl_board_boot_device(enum boot_device boot_dev_spl)
+ #endif
+ }
+ 
+-uint32_t get_dram_sku(void);
+-extern struct dram_timing_info dram_timing_8GB,
+-			dram_timing_4GB,
+-			dram_timing_2GK,
+-			dram_timing_2GB;
+-
+ void spl_dram_init(void)
+ {
+-	struct dram_timing_info *dram_timing[] = {
+-		NULL,
+-		NULL,
+-		&dram_timing_2GB,
+-		&dram_timing_4GB,
+-		&dram_timing_8GB
+-	};
+-
+-	ddr_init(dram_timing[get_dram_sku()]);
+-}
+-
+-void board_dram_ecc_scrub_2GB(void);
+-void board_dram_ecc_scrub_4GB(void);
+-
+-void board_dram_ecc_scrub(void)
+-{
+-#ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-	void (*ecc_board_type[]) (void) = {
+-		NULL,
+-		NULL,
+-		&board_dram_ecc_scrub_2GB,
+-		&board_dram_ecc_scrub_4GB,
+-		NULL
+-	};
+-
+-	void (*dram_ecc_scrub) (void)  = ecc_board_type[get_dram_sku()];
+-
+-	if(dram_ecc_scrub)
+-		dram_ecc_scrub();
+-#endif
++	ddr_init(&dram_timing);
+ }
+ 
+ void spl_board_init(void)
+diff --git a/include/configs/lec-imx8mp.h b/include/configs/lec-imx8mp.h
+index b6227e753e..a0ee841f0b 100644
+--- a/include/configs/lec-imx8mp.h
++++ b/include/configs/lec-imx8mp.h
+@@ -39,8 +39,6 @@
+ 
+ #endif
+ 
+-#define CONFIG_SYS_IMX8MP_SKU_ADDR	0x96DFFC
+-
+ #define CONFIG_CMD_READ
+ #define CONFIG_SERIAL_TAG
+ #define CONFIG_FASTBOOT_USB_DEV 0
+@@ -198,16 +196,32 @@
+ 
+ #define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
+ 
+-/* Totally 6GB DDR */
++/* Totally 2/4/8 (default 6GB) DDR */
+ #define CONFIG_SYS_SDRAM_BASE		0x40000000
+ #define PHYS_SDRAM			0x40000000
++#if defined(CONFIG_LPDDR4_2GB) || defined(CONFIG_LPDDR4_2GK)
++#define PHYS_SDRAM_SIZE			0x80000000	/* 2 GB */
++#elif defined(CONFIG_LPDDR4_4GB)
++#define PHYS_SDRAM_SIZE			0xC0000000	/* 3 GB */
++#elif defined(CONFIG_LPDDR4_8GB)
++#define PHYS_SDRAM_SIZE			0xC0000000	/* 3 GB */
++#else
+ #define PHYS_SDRAM_SIZE			0xC0000000	/* 3 GB */
++#endif
+ #define PHYS_SDRAM_2			0x100000000
+ #ifdef CONFIG_TARGET_IMX8MP_DDR4_EVK
+ #define PHYS_SDRAM_2_SIZE		0x40000000	/* 1 GB */
+ #else
++#if defined(CONFIG_LPDDR4_2GB) || defined(CONFIG_LPDDR4_2GK)
++#define PHYS_SDRAM_2_SIZE		0x00000000	/* 0 GB */
++#elif defined(CONFIG_LPDDR4_4GB)
++#define PHYS_SDRAM_2_SIZE		0x40000000	/* 1 GB */
++#elif defined(CONFIG_LPDDR4_8GB)
++#define PHYS_SDRAM_2_SIZE		0x140000000	/* 5 GB */
++#else
+ #define PHYS_SDRAM_2_SIZE		0xC0000000	/* 3 GB */
+ #endif
++#endif
+ 
+ #define CONFIG_MXC_UART_BASE		UART3_BASE_ADDR
+ 
