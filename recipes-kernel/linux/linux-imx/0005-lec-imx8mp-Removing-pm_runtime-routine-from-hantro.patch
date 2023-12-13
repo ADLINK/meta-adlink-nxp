@@ -1,0 +1,32 @@
+From 9cab7aafd7cbe31f28e3035906f921d8e5f99cf2 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar@adlinktech.com>
+Date: Wed, 22 Mar 2023 16:28:17 +0530
+Subject: [PATCH] lec-imx8mp: Removing pm_runtime routine from hantro
+
+Removing pm_runtime routines from hantrodec_845s driver code.
+This is a workaround, system seems to freeze once video playing
+is completed. Although while playing video no issue is observed
+
+Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
+
+diff --git a/drivers/mxc/hantro_845/hantrodec_845s.c b/drivers/mxc/hantro_845/hantrodec_845s.c
+index 9d2ee0fe26336..0f2c94c3f704e 100755
+--- a/drivers/mxc/hantro_845/hantrodec_845s.c
++++ b/drivers/mxc/hantro_845/hantrodec_845s.c
+@@ -1544,11 +1544,11 @@ static int hantrodec_release(struct inode *inode, struct file *filp)
+ 
+ 	if (ctx->core_id == HANTRO_CORE_ID_INVALID) {
+ 		for (n = 0; n < cores; n++) {
+-			pm_runtime_put_sync(hantrodec_data[n].dev);
++			//pm_runtime_put_sync(hantrodec_data[n].dev);
+ 			hantro_clk_disable(&hantrodec_data[n].clk);
+ 		}
+ 	} else if (ctx->core_id < HXDEC_MAX_CORES) {
+-		pm_runtime_put_sync(hantrodec_data[ctx->core_id].dev);
++		//pm_runtime_put_sync(hantrodec_data[ctx->core_id].dev);
+ 		hantro_clk_disable(&hantrodec_data[ctx->core_id].clk);
+ 	}
+ 
+-- 
+2.34.1
+

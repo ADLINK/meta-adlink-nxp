@@ -1,0 +1,35 @@
+
+
+#Set system time from RTC
+hwclock -s
+
+
+#Load sema drivers
+modprobe adl_bmc
+modprobe adl_bmc_bklight
+modprobe adl_bmc_boardinfo
+modprobe adl_bmc_i2c
+modprobe adl_bmc_nvmem
+modprobe adl_bmc_wdt
+modprobe adl_bmc_hwmon
+modprobe adl_bmc_vm
+
+
+#Read MAC address from BMC
+set_mac_address eth0 
+
+
+# Short-Description: Initial bluetooth interface at boot
+# Description:       This script initial bluetooth interface at boot time
+### END INIT INFO
+sleep 5
+hciattach /dev/ttymxc0 any 115200 flow
+sleep 1
+rfkill unblock all
+
+# Short-Description: Initial alsa config parameters
+# Description:       This script initial codec driver register
+### END INIT INFO
+alsactl restore -f /etc/alsa.cfg
+alsactl store -f /var/lib/alsa/asound.state
+sync

@@ -1,0 +1,38 @@
+diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
+index d7cf76216fe..73c2d5c20f0 100644
+--- a/board/adlink/lec-imx8mp/lec-imx8mp.c
++++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
+@@ -512,6 +512,25 @@ int board_init(void)
+ 	return 0;
+ }
+ 
++static void setup_codec(void)
++{
++	struct udevice *i2c_dev = NULL;
++	struct udevice *bus;
++	int ret;
++
++	ret = uclass_get_device_by_seq(UCLASS_I2C, 0x01, &bus);
++	if (ret) {
++		printf("%s: Can't find bus\n", __func__);
++		return;
++	}
++
++	ret = dm_i2c_probe(bus, 0x1A, 0, &i2c_dev); // WM8960 Audio codec
++	if (ret)
++		env_set("fdtfile", "lec-imx8mp-tlv320-lvds.dtb");
++	else
++		env_set("fdtfile", "lec-imx8mp-hydis-hv150ux2.dtb");
++}
++
+ int board_late_init(void)
+ {
+ #ifdef CONFIG_ENV_IS_IN_MMC
+@@ -521,6 +540,7 @@ int board_late_init(void)
+ 	env_set("board_name", "EVK");
+ 	env_set("board_rev", "iMX8MP");
+ #endif
++	//setup_codec();
+ 
+ 	return 0;
+ }

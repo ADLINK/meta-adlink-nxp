@@ -1,0 +1,12 @@
+[Unit]
+Description=ADLINK to set ethernet levelshift output enable service
+After=multi-user.target
+AllowIsolate=yes
+
+[Service]
+Type=oneshot
+# Start grow partition on system default rootfs
+ExecStart=/usr/bin/eth-lsoe.sh
+
+[Install]
+WantedBy=multi-user.target

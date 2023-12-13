@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2019 NXP
+ */
+
+/dts-v1/;
+
+#include "lec-imx8mp-A4.dts"
+
+&snvs_rtc {
+	status = "okay";
+};
+

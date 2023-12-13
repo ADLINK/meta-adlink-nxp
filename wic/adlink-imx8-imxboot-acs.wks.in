@@ -1,0 +1,23 @@
+# short-description: Create SD card image with a boot partition
+# long-description:
+# Create an image that can be written onto a SD card using dd for use
+# with i.MX SoC family
+# It uses imx-boot (flash.bin)
+#
+# The disk layout used is:
+
+#  - ----------- -------------------------
+# | | imx-boot  | boot (EFI System Part)  |
+#  - ----------- -------------------------
+# ^ ^           ^                         ^
+# | |           |                         |
+# 0 33kiB       IMAGE_ROOTFS_ALIGNMENT    |
+#                                         |
+#                                         Fixed Size: 128
+#
+
+part u-boot --source rawcopy --sourceparams "file=imx-boot" --ondisk ${WIC_FSTAB_BLKDEV} --no-table --align ${IMX_BOOT_SEEK}
+part /boot --source bootimg-partition --ondisk ${WIC_FSTAB_BLKDEV} --fstype=vfat --label boot --active --align 8192 --part-type 0xef00 --fixed-size 128 --uuid C12A7328-F81F-11D2-BA4B-00A0C93EC93B
+part / ${WIC_SRC_ROOTFS} --ondisk ${WIC_FSTAB_BLKDEV} --fstype=ext4 --label root --align 8192 --size=12288
+
+bootloader --ptable gpt

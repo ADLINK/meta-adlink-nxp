@@ -1,0 +1,42 @@
+From 0d625438558a28c435a3b958e083fff97a414925 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar@adlinktech.com>
+Date: Wed, 22 Mar 2023 12:55:17 +0530
+Subject: [PATCH] lec-imx8mp: Correct VLAN RX and TX filter
+
+Correct VLAN RX and TX filter in dwmac4_core.c to support
+Network bridging in eth1 port
+
+Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/dwmac4_core.c b/drivers/net/ethernet/stmicro/stmmac/dwmac4_core.c
+index b217453689839..f2badbfc4d1bb 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac4_core.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac4_core.c
+@@ -475,11 +475,13 @@ static int dwmac4_add_hw_vlan_rx_fltr(struct net_device *dev,
+ 	if (vid > 4095)
+ 		return -EINVAL;
+ 
++#if 0
+ 	if (hw->promisc) {
+ 		netdev_err(dev,
+ 			   "Adding VLAN in promisc mode not supported\n");
+ 		return -EPERM;
+ 	}
++#endif
+ 
+ 	/* Single Rx VLAN Filter */
+ 	if (hw->num_vlan == 1) {
+@@ -530,11 +532,13 @@ static int dwmac4_del_hw_vlan_rx_fltr(struct net_device *dev,
+ {
+ 	int i, ret = 0;
+ 
++#if 0
+ 	if (hw->promisc) {
+ 		netdev_err(dev,
+ 			   "Deleting VLAN in promisc mode not supported\n");
+ 		return -EPERM;
+ 	}
++#endif
+ 
+ 	/* Single Rx VLAN Filter */
+ 	if (hw->num_vlan == 1) {

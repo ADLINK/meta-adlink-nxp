@@ -1,0 +1,111 @@
+diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
+index cee379005c9..051901ad505 100644
+--- a/arch/arm/mach-imx/imx8m/soc.c
++++ b/arch/arm/mach-imx/imx8m/soc.c
+@@ -322,6 +322,27 @@ __weak int board_phys_sdram_size(phys_size_t *size)
+ 	*size += PHYS_SDRAM_2_SIZE;
+ #endif
+ #endif
++
++#ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
++	//ECC DRAM consumes 1/8th of DDR size
++	switch (get_dram_sku()) {
++                case 4: //8GB
++                        *size = 0x1C0000000;
++                        break;
++                case 3: //4GB
++                        *size = 0xE0000000;
++                        break;
++                case 2: //2GB
++                        *size = 0x70000000;
++                        break;
++                case 1: //1GB
++                        *size = 0x38000000;
++                        break;
++                case 0: //512MB
++                        *size = 0x1C000000;
++                        break;
++        }
++#else
+ 	switch (get_dram_sku()) {
+                 case 4: //8GB
+                         *size = 0x200000000;
+@@ -339,6 +360,7 @@ __weak int board_phys_sdram_size(phys_size_t *size)
+                         *size = 0x20000000;
+                         break;
+         }
++#endif
+ 
+ 	return 0;
+ }
+diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
+index c66b2dac14d..a233e80fc53 100644
+--- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
++++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
+@@ -1873,7 +1873,7 @@ struct dram_timing_info dram_timing_4GB = {
+ };
+ 
+ #ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-void board_dram_ecc_scrub(void)
++void board_dram_ecc_scrub_4GB(void)
+ {
+ 	/* add inline scrb function MPlus spcific */
+ 	/* scrub 0-1.75G */
+diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
+index 3b7e49769ae..1c0ce520ac3 100644
+--- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
++++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
+@@ -1877,7 +1877,7 @@ struct dram_timing_info dram_timing_2GK = {
+ };
+ 
+ #ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-void board_dram_ecc_scrub(void)
++void board_dram_ecc_scrub_2GK(void)
+ {
+ 	ddrc_inline_ecc_scrub(0x0,0x1bffffff);
+ 	ddrc_inline_ecc_scrub_end(0x0,0x1fffffff);
+diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
+index f01f1670cc4..15360a2941a 100644
+--- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
++++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
+@@ -1873,7 +1873,7 @@ struct dram_timing_info dram_timing_2GB = {
+ };
+ 
+ #ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
+-void board_dram_ecc_scrub(void)
++void board_dram_ecc_scrub_2GB(void)
+ {
+ 	/* add inline scrb function MPlus spcific */
+ 	/* scrub 0-1.75G */
+diff --git a/board/adlink/lec-imx8mp/spl.c b/board/adlink/lec-imx8mp/spl.c
+index a60a0fc11b4..8435f8528fc 100644
+--- a/board/adlink/lec-imx8mp/spl.c
++++ b/board/adlink/lec-imx8mp/spl.c
+@@ -75,6 +75,27 @@ void spl_dram_init(void)
+ 	ddr_init(dram_timing[get_dram_sku()]);
+ }
+ 
++void board_dram_ecc_scrub_2GB(void);
++void board_dram_ecc_scrub_4GB(void);
++
++void board_dram_ecc_scrub(void)
++{
++#ifdef CONFIG_IMX8M_DRAM_INLINE_ECC
++	void (*ecc_board_type[]) (void) = {
++		NULL,
++		NULL,
++		&board_dram_ecc_scrub_2GB,
++		&board_dram_ecc_scrub_4GB,
++		NULL
++	};
++
++	void (*dram_ecc_scrub) (void)  = ecc_board_type[get_dram_sku()];
++
++	if(dram_ecc_scrub)
++		dram_ecc_scrub();
++#endif
++}
++
+ void spl_board_init(void)
+ {
+ 	if (IS_ENABLED(CONFIG_FSL_CAAM)) {

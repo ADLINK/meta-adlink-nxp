@@ -1,0 +1,551 @@
+From 44a1c3383944ff831db53d5a68c3781cc5d32e17 Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Mon, 11 Dec 2023 15:59:53 +0530
+Subject: [PATCH 3/3] Added TLV320AICX codec support Added Driver to get
+ device/module information Added 150ms Delay before reading EDID data
+
+Signed-off-by: Dinesh V <dinesh.v@adlinktech.com>
+---
+ drivers/gpu/drm/bridge/synopsys/dw-hdmi.c |   4 +-
+ drivers/gpu/drm/panel/panel-simple.c      |  30 +++
+ drivers/misc/devinfo/Kconfig              |  10 +
+ drivers/misc/devinfo/Makefile             |   3 +
+ drivers/misc/devinfo/dutInfo.c            | 108 ++++++++++
+ sound/soc/codecs/tlv320aic3x.c            |  12 +-
+ sound/soc/fsl/Kconfig                     |  12 ++
+ sound/soc/fsl/Makefile                    |   2 +
+ sound/soc/fsl/imx-tlv320aic3x.c           | 251 ++++++++++++++++++++++
+ 9 files changed, 425 insertions(+), 7 deletions(-)
+ create mode 100755 drivers/misc/devinfo/Kconfig
+ create mode 100755 drivers/misc/devinfo/Makefile
+ create mode 100755 drivers/misc/devinfo/dutInfo.c
+ create mode 100755 sound/soc/fsl/imx-tlv320aic3x.c
+
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+index 2085a04293b8..5fa23715f6f8 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+@@ -2481,7 +2481,9 @@ static struct edid *dw_hdmi_get_edid(struct dw_hdmi *hdmi,
+ 
+ 	if (!hdmi->ddc)
+ 		return NULL;
+-
++		
++	pr_info("delay 150ms before get edid to waiting for display edid ready!\n");
++	msleep(150);
+ 	edid = drm_get_edid(connector, hdmi->ddc);
+ 	if (!edid) {
+ 		dev_dbg(hdmi->dev, "failed to get edid\n");
+diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
+index f9d0162412b3..24fd0367d68e 100644
+--- a/drivers/gpu/drm/panel/panel-simple.c
++++ b/drivers/gpu/drm/panel/panel-simple.c
+@@ -2477,6 +2477,33 @@ static const struct panel_desc hitachi_tx23d38vm0caa = {
+ 		.disable = 160,
+ 	},
+ };
++static const struct display_timing auo_g156han04_0_timings = {
++	.pixelclock = { 141000000, 141000000, 141000000 },
++	.hactive = { 1920, 1920, 1920 },
++	.hfront_porch = { 60, 60, 60 },
++	.hback_porch = { 60, 60, 60 },
++	.hsync_len = { 64, 64, 64 },
++	.vactive = { 1080, 1080, 1080 },
++	.vfront_porch = { 12, 12, 12 },
++	.vback_porch = { 12, 12, 12 },
++	.vsync_len = { 12, 12, 12 },
++};
++static const struct panel_desc auo_g156han04_0 = {
++    .timings = &auo_g156han04_0_timings,
++    .num_timings = 1,
++    .bpc = 8, 
++    .size = {
++        .width = 344, 
++        .height = 194, 
++    },
++    .delay = {
++        .prepare = 10,
++        .enable = 50,
++        .disable = 50,
++        .unprepare = 200,
++    },
++    .bus_format = MEDIA_BUS_FMT_RGB888_1X24,
++};
+ 
+ static const struct display_timing hydis_hv150ux2_100_timings = {
+ 	.pixelclock = { 162000000, 162000000, 162000000 },
+@@ -4759,6 +4786,9 @@ static const struct of_device_id platform_of_match[] = {
+ 		.compatible = "hit,tx23d38vm0caa",
+ 		.data = &hitachi_tx23d38vm0caa
+ 	}, {
++		.compatible = "auo,g156han04_0",
++		.data = &auo_g156han04_0,
++	},  {
+ 		.compatible = "hydis,hv150ux2-100",
+ 		.data = &hydis_hv150ux2_100,
+ 	},  {
+diff --git a/drivers/misc/devinfo/Kconfig b/drivers/misc/devinfo/Kconfig
+new file mode 100755
+index 000000000000..caf9b2cd04e0
+--- /dev/null
++++ b/drivers/misc/devinfo/Kconfig
+@@ -0,0 +1,10 @@
++#
++# ADLINK's DUT information interface
++#
++menu "ADLINK DUT Information"
++config ADLINK_DUTINFO
++	bool "ADLINK DUT information driver"
++	default y
++	help
++	  This is a standard general information interface for ADLINK's ARM device system use.
++endmenu
+diff --git a/drivers/misc/devinfo/Makefile b/drivers/misc/devinfo/Makefile
+new file mode 100755
+index 000000000000..a8a24a003d1b
+--- /dev/null
++++ b/drivers/misc/devinfo/Makefile
+@@ -0,0 +1,3 @@
++
++obj-$(CONFIG_ADLINK_DUTINFO)     += dutInfo.o
++
+diff --git a/drivers/misc/devinfo/dutInfo.c b/drivers/misc/devinfo/dutInfo.c
+new file mode 100755
+index 000000000000..27ee25a934f1
+--- /dev/null
++++ b/drivers/misc/devinfo/dutInfo.c
+@@ -0,0 +1,108 @@
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/kobject.h>
++#include <linux/sysfs.h>
++#include <linux/string.h>
++#include <linux/io.h>
++#include<linux/slab.h>
++
++static char *durManufacturer = "ADLINK Technology Inc.";
++static char *dutBrand = "ADLINK";
++/* dutModel must be uppercase */
++static char *dutModel = "LEC-iMX8MP";
++static char dutUid[65] = {0};
++static char *cpu_serial_node = "/sys/bus/soc/devices/soc0/serial_number";
++
++void readCPUID(void);
++
++static ssize_t manufacturer_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    sprintf(buf,"%s\n",durManufacturer);
++    return strlen(buf);
++}
++
++static ssize_t brand_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    sprintf(buf,"%s\n",dutBrand);
++    return strlen(buf);
++}
++
++static ssize_t model_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    sprintf(buf,"%s\n",dutModel);
++    return strlen(buf);
++}
++
++static ssize_t uuid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    /* DUT's UUID need every BSP implement this feature */
++	readCPUID();
++    sprintf(buf,"%s\n",dutUid);
++    return strlen(buf);
++}
++
++static struct kobj_attribute iDutInfo_manufacturer_attribute = __ATTR(manufacturer, 0444, manufacturer_show, NULL);
++static struct kobj_attribute iDutInfo_brandName_attribute = __ATTR(brandName, 0444, brand_show, NULL);
++static struct kobj_attribute iDutInfo_modelName_attribute = __ATTR(modelName, 0444, model_show, NULL);
++static struct kobj_attribute iDutInfo_uuid_attribute = __ATTR(uuid, 0444, uuid_show, NULL);
++
++static struct kobject *iDutInfo_kobj;
++
++static struct attribute *attrs[] =
++{
++    &iDutInfo_manufacturer_attribute.attr,
++	&iDutInfo_brandName_attribute.attr,
++	&iDutInfo_modelName_attribute.attr,
++	&iDutInfo_uuid_attribute.attr,
++    NULL, /* need to NULL terminate the list of attributes */
++};
++
++static struct attribute_group attr_group =
++{
++    .attrs = attrs,
++};
++
++void readCPUID(void)
++{
++    struct file *fp;
++    loff_t pos=0;
++    fp = filp_open(cpu_serial_node,O_RDONLY,0664);
++    if (fp!=NULL){
++        kernel_read(fp,(void *)dutUid,16,&pos);
++        filp_close(fp,NULL);
++    }
++}
++
++static int __init iDutInfo_init(void)
++
++{
++
++    int retval;
++
++    iDutInfo_kobj = kobject_create_and_add("DUTINFO", firmware_kobj);
++    if (!iDutInfo_kobj)
++         return -ENOMEM;
++
++    retval = sysfs_create_group(iDutInfo_kobj,&attr_group);
++    if (retval){
++        kobject_put(iDutInfo_kobj);
++    }
++    return retval;
++}
++
++static void __exit iDutInfo_exit(void)
++
++{
++    sysfs_remove_group(iDutInfo_kobj,&attr_group);
++    kobject_put(iDutInfo_kobj);
++    return;
++}
++
++module_init(iDutInfo_init);
++
++module_exit(iDutInfo_exit);
++
++MODULE_LICENSE("GPL");
++
++MODULE_AUTHOR("Craig Chen <craig.chen@adlinktech.com>");
++
+diff --git a/sound/soc/codecs/tlv320aic3x.c b/sound/soc/codecs/tlv320aic3x.c
+index 7731593a5509..dca8c5c97fc3 100644
+--- a/sound/soc/codecs/tlv320aic3x.c
++++ b/sound/soc/codecs/tlv320aic3x.c
+@@ -90,12 +90,12 @@ struct aic3x_priv {
+ };
+ 
+ static const struct reg_default aic3x_reg[] = {
+-	{   0, 0x00 }, {   1, 0x00 }, {   2, 0x00 }, {   3, 0x10 },
+-	{   4, 0x04 }, {   5, 0x00 }, {   6, 0x00 }, {   7, 0x00 },
+-	{   8, 0x00 }, {   9, 0x00 }, {  10, 0x00 }, {  11, 0x01 },
+-	{  12, 0x00 }, {  13, 0x00 }, {  14, 0x00 }, {  15, 0x80 },
+-	{  16, 0x80 }, {  17, 0xff }, {  18, 0xff }, {  19, 0x78 },
+-	{  20, 0x78 }, {  21, 0x78 }, {  22, 0x78 }, {  23, 0x78 },
++    {   0, 0x00 }, {   1, 0x00 }, {   2, 0x00 }, {   3, 0x00 },
++    {   4, 0x03 }, {   5, 0x09 }, {   6, 0x08 }, {   7, 0x00 },
++    {   8, 0x00 }, {   9, 0x00 }, {  10, 0x00 }, {  11, 0x08 },
++    {  12, 0x02 }, {  13, 0x00 }, {  14, 0x80 }, {  15, 0x80 },
++    {  16, 0x80 }, {  17, 0xff }, {  18, 0x08 }, {  19, 0x02 },
++    {  20, 0x80 }, {  21, 0x78 }, {  22, 0x78 }, {  23, 0x78 },
+ 	{  24, 0x78 }, {  25, 0x00 }, {  26, 0x00 }, {  27, 0xfe },
+ 	{  28, 0x00 }, {  29, 0x00 }, {  30, 0xfe }, {  31, 0x00 },
+ 	{  32, 0x18 }, {  33, 0x18 }, {  34, 0x00 }, {  35, 0x00 },
+diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
+index c70e9c4eed08..2aafa7bba0a0 100644
+--- a/sound/soc/fsl/Kconfig
++++ b/sound/soc/fsl/Kconfig
+@@ -313,6 +313,18 @@ config SND_SOC_IMX_SPDIF
+ 	  SoC Audio support for i.MX boards with S/PDIF
+ 	  Say Y if you want to add support for SoC audio on an i.MX board with
+ 	  a S/DPDIF.
++config SND_SOC_IMX_TLV320AIC3X
++	tristate "SoC Audio support for i.MX6 boards with tlv320aic3x audio codec"
++	depends on OF && I2C
++	select SND_SOC_IMX_PCM_DMA
++	select SND_SOC_IMX_AUDMUX
++	select SND_SOC_FSL_SAI
++	select SND_SOC_FSL_UTILS
++	select SND_KCTL_JACK
++    help
++	  SoC audio for i.MX8M boards with codec TLV320AIC3x attached over
++	  SSI interface.
++	  Say Y if you want to add support for SoC audio on LEC-iMX8MP boards.
+ 
+ config SND_SOC_FSL_ASOC_CARD
+ 	tristate "Generic ASoC Sound Card with ASRC support"
+diff --git a/sound/soc/fsl/Makefile b/sound/soc/fsl/Makefile
+index 63e6912675ea..7f5aafec4f15 100644
+--- a/sound/soc/fsl/Makefile
++++ b/sound/soc/fsl/Makefile
+@@ -73,6 +73,7 @@ snd-soc-eukrea-tlv320-objs := eukrea-tlv320.o
+ snd-soc-imx-es8328-objs := imx-es8328.o
+ snd-soc-imx-sgtl5000-objs := imx-sgtl5000.o
+ snd-soc-imx-spdif-objs := imx-spdif.o
++snd-soc-imx-tlv320aic3x-objs := imx-tlv320aic3x.o
+ snd-soc-imx-audmix-objs := imx-audmix.o
+ snd-soc-imx-hdmi-objs := imx-hdmi.o
+ snd-soc-imx-rpmsg-objs := imx-rpmsg.o
+@@ -84,6 +85,7 @@ snd-soc-imx6qdl-hdmi-objs := imx6qdl-hdmi.o
+ obj-$(CONFIG_SND_SOC_EUKREA_TLV320) += snd-soc-eukrea-tlv320.o
+ obj-$(CONFIG_SND_SOC_IMX_ES8328) += snd-soc-imx-es8328.o
+ obj-$(CONFIG_SND_SOC_IMX_SGTL5000) += snd-soc-imx-sgtl5000.o
++obj-${CONFIG_SND_SOC_IMX_TLV320AIC3X} += snd-soc-imx-tlv320aic3x.o
+ obj-$(CONFIG_SND_SOC_IMX_SPDIF) += snd-soc-imx-spdif.o
+ obj-$(CONFIG_SND_SOC_IMX_AUDMIX) += snd-soc-imx-audmix.o
+ obj-$(CONFIG_SND_SOC_IMX_HDMI) += snd-soc-imx-hdmi.o
+diff --git a/sound/soc/fsl/imx-tlv320aic3x.c b/sound/soc/fsl/imx-tlv320aic3x.c
+new file mode 100755
+index 000000000000..bf6bc2d83433
+--- /dev/null
++++ b/sound/soc/fsl/imx-tlv320aic3x.c
+@@ -0,0 +1,251 @@
++/*
++ * 2014 Variscite, Ltd. All Rights Reserved.
++ *
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * 2012 Variscite, Ltd. All Rights Reserved.
++ * Based on imx-wm8962.c
++ * Copyright (C) 2012 Freescale Semiconductor, Inc.
++ * Copyright (C) 2012 Linaro Ltd.
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/i2c.h>
++#include <linux/clk.h>
++#include <sound/soc.h>
++
++#include "../codecs/tlv320aic3x.h"
++#include "imx-audmux.h"
++
++#define DAI_NAME_SIZE	32
++
++struct imx_tlv320aic3x_data {
++	struct snd_soc_dai_link dai;
++	struct snd_soc_card card;
++	char codec_dai_name[DAI_NAME_SIZE];
++	char platform_name[DAI_NAME_SIZE];
++	struct clk *codec_clk;
++	unsigned int clk_frequency;
++};
++static int imx_tlv320aic3x_dai_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct imx_tlv320aic3x_data *data = container_of(rtd->card,
++					struct imx_tlv320aic3x_data, card);
++	struct device *dev = rtd->card->dev;
++	int ret;
++
++	ret = snd_soc_dai_set_sysclk(asoc_rtd_to_codec(rtd, 0), 0,
++				     data->clk_frequency, SND_SOC_CLOCK_IN);
++	if (ret) {
++		dev_err(dev, "could not set codec driver clock params\n");
++		return ret;
++	}
++
++	return 0;
++}
++
++static const struct snd_soc_dapm_widget imx_tlv320aic3x_dapm_widgets[] = {
++	SND_SOC_DAPM_MIC("Mic Jack", NULL),
++	SND_SOC_DAPM_LINE("Line In Jack", NULL),
++	SND_SOC_DAPM_HP("Headphone Jack", NULL),
++	SND_SOC_DAPM_SPK("Line Out Jack", NULL),
++	SND_SOC_DAPM_SPK("Ext Spk", NULL),
++};
++
++#if 1
++static int imx_tlv320aic3x_audmux_config(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	int int_port, ext_port;
++	int ret;
++
++	ret = of_property_read_u32(np, "mux-int-port", &int_port);
++	if (ret) {
++		dev_err(&pdev->dev, "mux-int-port missing or invalid\n");
++		return ret;
++	}
++	ret = of_property_read_u32(np, "mux-ext-port", &ext_port);
++	if (ret) {
++		dev_err(&pdev->dev, "mux-ext-port missing or invalid\n");
++		return ret;
++	}
++
++	/*
++	 * The port numbering in the hardware manual starts at 1, while
++	 * the audmux API expects it starts at 0.
++	 */
++	int_port--;
++	ext_port--;
++	ret = imx_audmux_v2_configure_port(int_port,
++			IMX_AUDMUX_V2_PTCR_SYN |
++			IMX_AUDMUX_V2_PTCR_TFSEL(ext_port) |
++			IMX_AUDMUX_V2_PTCR_TCSEL(ext_port) |
++			IMX_AUDMUX_V2_PTCR_TFSDIR |
++			IMX_AUDMUX_V2_PTCR_TCLKDIR,
++			IMX_AUDMUX_V2_PDCR_RXDSEL(ext_port));
++	if (ret) {
++		dev_err(&pdev->dev, "audmux internal port setup failed\n");
++		return ret;
++	}
++	ret = imx_audmux_v2_configure_port(ext_port,
++			IMX_AUDMUX_V2_PTCR_SYN,
++			IMX_AUDMUX_V2_PDCR_RXDSEL(int_port));
++	if (ret) {
++		dev_err(&pdev->dev, "audmux external port setup failed\n");
++		return ret;
++	}
++
++	return 0;
++}
++#endif
++static int imx_tlv320aic3x_probe(struct platform_device *pdev)
++{
++	struct device_node *cpu_np, *codec_np;
++	struct platform_device *cpu_pdev;
++	struct i2c_client *codec_dev;
++	struct imx_tlv320aic3x_data *data;
++	struct snd_soc_dai_link_component *comp;
++	int ret;
++
++printk("%s,%d....\n",__FUNCTION__,__LINE__);
++	cpu_np = of_parse_phandle(pdev->dev.of_node, "cpu-dai", 0);
++	codec_np = of_parse_phandle(pdev->dev.of_node, "audio-codec", 0);
++	if (!cpu_np || !codec_np) {
++		dev_err(&pdev->dev, "phandle missing or invalid\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++
++	if (strstr(cpu_np->name, "ssi")) {
++		ret = imx_tlv320aic3x_audmux_config(pdev);
++		if (ret)
++			goto fail;
++	}
++
++	cpu_pdev = of_find_device_by_node(cpu_np);
++	if (!cpu_pdev) {
++		dev_err(&pdev->dev, "failed to find SSI platform device\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++	codec_dev = of_find_i2c_device_by_node(codec_np);
++	if (!codec_dev) {
++		dev_err(&pdev->dev, "failed to find codec platform device\n");
++		return -EINVAL;
++	}
++
++	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
++	comp = devm_kzalloc(&pdev->dev, 3 * sizeof(*comp), GFP_KERNEL);
++	if (!data || !comp) {
++		ret = -ENOMEM;
++		goto fail;
++	}
++
++	data->codec_clk = clk_get(&codec_dev->dev, NULL);
++	if (IS_ERR(data->codec_clk)) {
++		/* assuming clock enabled by default */
++		data->codec_clk = NULL;
++		ret = of_property_read_u32(codec_np, "clock-frequency",
++					&data->clk_frequency);
++		if (ret) {
++			dev_err(&codec_dev->dev,
++				"clock-frequency missing or invalid\n");
++			goto fail;
++		}
++	} else {
++		data->clk_frequency = clk_get_rate(data->codec_clk);
++		clk_prepare_enable(data->codec_clk);
++	}
++
++	data->dai.cpus		= &comp[0];
++	data->dai.codecs	= &comp[1];
++	data->dai.platforms	= &comp[2];
++	data->dai.num_cpus	= 1;
++	data->dai.num_codecs	= 1;
++	data->dai.num_platforms	= 1;
++	data->dai.name = "HiFi";
++	data->dai.stream_name = "HiFi";
++	data->dai.codecs->dai_name = "tlv320aic3x-hifi";
++	data->dai.codecs->of_node = codec_np;
++	data->dai.cpus->of_node = cpu_np;
++	data->dai.platforms->of_node = cpu_np;
++	data->dai.init = &imx_tlv320aic3x_dai_init;
++	data->dai.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++			    SND_SOC_DAIFMT_CBM_CFM;
++
++	data->card.dev = &pdev->dev;
++	ret = snd_soc_of_parse_card_name(&data->card, "model");
++	if (ret)
++		goto clk_fail;
++	ret = snd_soc_of_parse_audio_routing(&data->card, "audio-routing");
++	if (ret)
++		goto clk_fail;
++
++	data->card.num_links = 1;
++	data->card.owner = THIS_MODULE;
++	data->card.dai_link = &data->dai;
++	data->card.dapm_widgets = imx_tlv320aic3x_dapm_widgets;
++	data->card.num_dapm_widgets = ARRAY_SIZE(imx_tlv320aic3x_dapm_widgets);
++
++	ret = snd_soc_register_card(&data->card);
++	//ret = devm_snd_soc_register_card(&pdev->dev, &data->card);
++	if (ret) {
++		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
++		goto clk_fail;
++	}
++
++	platform_set_drvdata(pdev, data);
++clk_fail:
++	clk_put(data->codec_clk);
++fail:
++	if (cpu_np)
++		of_node_put(cpu_np);
++	if (codec_np)
++		of_node_put(codec_np);
++
++	return ret;
++}
++
++static int imx_tlv320aic3x_remove(struct platform_device *pdev)
++{
++	struct imx_tlv320aic3x_data *data = platform_get_drvdata(pdev);
++
++	if (data->codec_clk) {
++		clk_disable_unprepare(data->codec_clk);
++		clk_put(data->codec_clk);
++	}
++	snd_soc_unregister_card(&data->card);
++
++	return 0;
++}
++
++static const struct of_device_id imx_tlv320aic3x_dt_ids[] = {
++	{ .compatible = "fsl,imx-audio-tlv320aic3x", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, imx_tlv320aic3x_dt_ids);
++
++static struct platform_driver imx_tlv320aic3x_driver = {
++	.driver = {
++		.name = "imx-tlv320aic3x",
++		.owner = THIS_MODULE,
++		.of_match_table = imx_tlv320aic3x_dt_ids,
++	},
++	.probe = imx_tlv320aic3x_probe,
++	.remove = imx_tlv320aic3x_remove,
++};
++module_platform_driver(imx_tlv320aic3x_driver);
++
++MODULE_AUTHOR("ron.d@variscite.com. Variscite Ltd.");
++MODULE_DESCRIPTION("Variscite i.MX TLV320aic3x ASoC machine driver");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:imx-tlv320aic3x");
+-- 
+2.25.1
+
