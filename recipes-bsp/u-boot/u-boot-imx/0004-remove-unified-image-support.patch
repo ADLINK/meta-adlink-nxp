@@ -1,3 +1,21 @@
+From e18d9d5c9f7ee1c22a92c1bd2890d8748ba3ebb9 Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Wed, 13 Dec 2023 13:13:55 +0530
+Subject: [PATCH] Initial commit:Kirkstone branch:5.15.2.1.0
+
+---
+ arch/arm/mach-imx/imx8m/soc.c                 | 138 ++----------------
+ board/adlink/lec-imx8mp/Kconfig               |  23 ++-
+ board/adlink/lec-imx8mp/Makefile              |   8 +-
+ board/adlink/lec-imx8mp/lec-imx8mp.c          |  42 ++++++
+ ..._timing_MT53D1024M32D4DT-053_WTD_1500MHz.c |   4 +-
+ ...4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c |   4 +-
+ ...4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c |   4 +-
+ ...dr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c |   2 +-
+ board/adlink/lec-imx8mp/spl.c                 |  37 +----
+ include/configs/lec-imx8mp.h                  |  20 ++-
+ 10 files changed, 104 insertions(+), 178 deletions(-)
+
 diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
 index 19c7135784..26f8643ee9 100644
 --- a/arch/arm/mach-imx/imx8m/soc.c
@@ -227,7 +245,7 @@ index d532842507..49237a04a2 100644
 +obj-$(CONFIG_LPDDR4_8GB) += lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.o
  endif
 diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
-index 73c2d5c20f..0bf1c42dd7 100644
+index 928e1170e3..292b4ff3ff 100644
 --- a/board/adlink/lec-imx8mp/lec-imx8mp.c
 +++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
 @@ -531,6 +531,47 @@ static void setup_codec(void)
@@ -416,7 +434,7 @@ index 8435f8528f..913e2868b9 100644
  
  void spl_board_init(void)
 diff --git a/include/configs/lec-imx8mp.h b/include/configs/lec-imx8mp.h
-index b6227e753e..a0ee841f0b 100644
+index 8b0cc16c13..ed6e6e25d6 100644
 --- a/include/configs/lec-imx8mp.h
 +++ b/include/configs/lec-imx8mp.h
 @@ -39,8 +39,6 @@
@@ -460,5 +478,5 @@ index b6227e753e..a0ee841f0b 100644
  #endif
 +#endif
  
- #define CONFIG_MXC_UART_BASE		UART3_BASE_ADDR
+ #define CONFIG_MXC_UART_BASE		UART2_BASE_ADDR
  

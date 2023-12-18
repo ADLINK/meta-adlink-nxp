@@ -1,5 +1,14 @@
+From a18f4d4a307f051ef17611b570e03b2892efbfbf Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Wed, 13 Dec 2023 13:13:55 +0530
+Subject: [PATCH] Initial commit:Kirkstone branch:5.15.2.1.0
+
+---
+ board/adlink/lec-imx8mp/lec-imx8mp.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
 diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
-index d7cf76216fe..73c2d5c20f0 100644
+index 085824f34f..928e1170e3 100644
 --- a/board/adlink/lec-imx8mp/lec-imx8mp.c
 +++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
 @@ -512,6 +512,25 @@ int board_init(void)
