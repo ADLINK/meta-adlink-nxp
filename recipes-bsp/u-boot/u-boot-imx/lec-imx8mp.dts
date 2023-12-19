@@ -151,7 +151,7 @@
 	phy-mode = "rgmii-id";
 	phy-handle = <&ethphy1>;
 	fsl,magic-packet;
-	status = "okay";
+	status = "disabled";
 
 	mdio {
 		#address-cells = <1>;
