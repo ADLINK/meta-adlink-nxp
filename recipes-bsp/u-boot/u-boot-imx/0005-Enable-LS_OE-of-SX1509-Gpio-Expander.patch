@@ -1,0 +1,50 @@
+From 7edebb04fc718bab394cd9b1876d59f2a8e22731 Mon Sep 17 00:00:00 2001
+From: Dinesh V <dinesh.v@adlinktech.com>
+Date: Wed, 20 Dec 2023 21:20:52 +0530
+Subject: [PATCH 5/5] Enable LS_OE(Pin4) of SX1509 Gpio Expander
+
+---
+ board/adlink/lec-imx8mp/lec-imx8mp.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
+index 292b4ff3ff..7e5dd93c45 100644
+--- a/board/adlink/lec-imx8mp/lec-imx8mp.c
++++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
+@@ -455,6 +455,33 @@ static int setup_eqos(void)
+ 	struct iomuxc_gpr_base_regs *gpr =
+ 		(struct iomuxc_gpr_base_regs *)IOMUXC_GPR_BASE_ADDR;
+ 
++	struct udevice *i2c_dev = NULL;
++	struct udevice *bus;
++	uint8_t i2c_data[64];
++	int ret;
++
++	ret = uclass_get_device_by_seq(UCLASS_I2C, 0x5, &bus);
++	if (ret) {
++		printf("%s: Can't find bus\n", __func__);
++		return -EINVAL;
++	}
++
++	ret = dm_i2c_probe(bus, 0x70, 0, &i2c_dev);//GPIO expander address
++	if (ret) {
++		printf("%s: Can't find device id 0x70\n", __func__);
++		return -ENODEV;
++	}
++
++	dm_i2c_reg_write(i2c_dev, 0x0, 0);
++	dm_i2c_reg_write(i2c_dev, 0xe, 0);
++
++	ret = dm_i2c_read(i2c_dev, 0x0, i2c_data, 0x2A);
++	if (ret) {
++		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
++		return -EIO;
++	}
++
++
+ 	/* set INTF as RGMII, enable RGMII TXC clock */
+ 	clrsetbits_le32(&gpr->gpr[1],
+ 			IOMUXC_GPR_GPR1_GPR_ENET_QOS_INTF_SEL_MASK, BIT(16));
+-- 
+2.25.1
+
