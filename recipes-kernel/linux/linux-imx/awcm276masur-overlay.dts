@@ -10,41 +10,49 @@
 
 / {
 	fragment@0 {
-		target-path = "/uart1";
+		target-path = "/";
 		__overlay__ {
-			bluetooth {
-				compatible = "mrvl,88w8897";
+			usdhc1_pwrseq: usdhc1_pwrseq {
+				compatible = "mmc-pwrseq-simple";
+				reset-gpios = <&gpio2 6 1>; /* GPIO_ACTIVE_LOW = 1 */
+			};
+
+			reg_ex_sdio_3v: regulator-ex-sdio-3v {
+				compatible = "regulator-fixed";
+				regulator-name = "ex-sdio-3V";
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
 			};
 		};
 	};
 
 	fragment@1 {
-		target-path = "/usdhc1";
+		target = <&usdhc1>;
 		__overlay__ {
 			pinctrl-names = "default", "state_100mhz", "state_200mhz";
 			pinctrl-0 = <&pinctrl_usdhc1>;
 			pinctrl-1 = <&pinctrl_usdhc1_100mhz>;
 			pinctrl-2 = <&pinctrl_usdhc1_200mhz>;
-			bus-width = <4>;
+			keep-power-in-suspend;
+			non-removable;
+			wakeup-source;
+			vmmc-supply = <&reg_ex_sdio_3v>;
+			mmc-pwrseq = <&usdhc1_pwrseq>;
+			fsl,sdio-async-interrupt-enabled;
 			status = "okay";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
-			mwifiex: wifi@1 {
-				compatible = "marvell,sd8997";
-				reg = <1>;
-				/* MX8MP_IOMUXC_SD1_DATA6__GPIO2_IO08 */
+			wifi_wake_host {
+				compatible = "nxp,wifi-wake-host";
 				interrupt-parent = <&gpio2>;
-				interrupts = <8 8>; /* IRQ_TYPE_LEVEL_LOW = 8 */
-
-				marvell,caldata_00_txpwrlimit_2g_cfg_set = /bits/ 8 <0x01 0x00 0x06 0x00 0x08 0x02 0x89 0x01>;
-				marvell,wakeup-pin = <14>;
+				interrupts = <9 8>; /* IRQ_TYPE_LEVEL_LOW = 8 */
+				interrupt-names = "host-wake";
 			};
 		};
 	};
 
-	fragment@3 {
-		target-path = "/iomuxc";
+	fragment@2 {
+		target = <&iomuxc>;
 		__overlay__ {
 			pinctrl_usdhc1: usdhc1grp {
 				fsl,pins = <
@@ -60,6 +68,8 @@
 					0x09C 0x2FC 0x000 0x0 0x0	0x1d0
 					/* MX8MP_IOMUXC_SD1_DATA3__USDHC1_DATA3 */
 					0x0A0 0x300 0x000 0x0 0x0	0x1d0
+					/* MX8MP_IOMUXC_SD1_RESET_B__GPIO2_IO10 */
+					0x0B4 0x314 0x000 0x5 0x0	0x10
 				>;
 			};
 
@@ -71,6 +81,7 @@
 					0x098 0x2F8 0x000 0x0 0x0	0x1d4
 					0x09C 0x2FC 0x000 0x0 0x0	0x1d4
 					0x0A0 0x300 0x000 0x0 0x0	0x1d4
+					0x0B4 0x314 0x000 0x5 0x0	0x10
 				>;
 			};
 
@@ -82,8 +93,23 @@
 					0x098 0x2F8 0x000 0x0 0x0	0x1d6
 					0x09C 0x2FC 0x000 0x0 0x0	0x1d6
 					0x0A0 0x300 0x000 0x0 0x0	0x1d6
+					0x0B4 0x314 0x000 0x5 0x0	0x10
 				>;
 			};
+		};
+	};
+
+	fragment@3 {
+		target = <&pcie>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@4 {
+		target = <&pcie_phy>;
+		__overlay__ {
+			status = "disabled";
 		};
 	};
 };
