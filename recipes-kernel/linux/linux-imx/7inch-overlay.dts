@@ -13,11 +13,12 @@
 		target-path = "/";
 		__overlay__ {
 			lvds_backlight {
-				pre-pwm-on-delay-ms = <200>;
+				pre-pwm-on-delay-ms = <160>;
 				pwm-on-delay-ms = <25>;
 				post-pwm-on-delay-ms = <10>;
 				pwm-off-delay-ms = <10>;
-				post-pwm-off-delay-ms = <200>;
+				post-pwm-off-delay-ms = <110>;
+				skip-blpwr-off;
 				status = "okay";
 			};
 		};
@@ -27,27 +28,30 @@
 		target-path = "/";
 		__overlay__ {
 			lvds0_panel {
-				compatible = "am,am1280800wutzqw", "panel-lvds";
+				compatible = "am,1024600DTZQW", "panel-lvds";
 
-				height-mm = <135>;
-				width-mm = <217>;
+				height-mm = <86>;
+				width-mm = <154>;
 
 				post-prepare-delay-ms = <30>;
 				pre-disable-delay-ms = <15>;
-				post-unprepare-delay-ms = <500>;
+				post-unprepare-delay-ms = <1000>;
+
+				power-supply = <&reg_lvds_blpwr>;
+				skip-blpwr-off;
 
 				status = "okay";
 
 				panel-timing {
-					clock-frequency = <71000000>;
-					hactive = <1280>;
-					vactive = <800>;
-					hback-porch = <80>;
-					hfront-porch = <70>;
-					vback-porch = <10>;
-					vfront-porch = <10>;
-					hsync-len = <10>;
-					vsync-len = <3>;
+					clock-frequency = <51200000>;
+					hactive = <1024>;
+					vactive = <600>;
+					hback-porch = <150>;
+					hfront-porch = <150>;
+					vback-porch = <15>;
+					vfront-porch = <15>;
+					hsync-len = <20>;
+					vsync-len = <5>;
 				};
 			};
 		};
