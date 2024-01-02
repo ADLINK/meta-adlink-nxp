@@ -9,7 +9,7 @@
 #include "imx8mp.dtsi"
 
 / {
-	model = "ADLINK MXA-200 gateway board";
+	model = "ADLINK Smart Panel - IMX8MP board";
 	compatible = "fsl,imx8mp-evk", "fsl,imx8mp";
 
 	chosen {
@@ -50,9 +50,72 @@
 
 	dsi_host: dsi-host {
 		compatible = "samsung,sec-mipi-dsi";
+		status = "disabled";
+	};
+
+	backlight: lvds-backlight {
+		compatible = "pwm-backlight";
+		power-supply = <&reg_bl_pwr>;
+		pwms = <&pwm2 0 100000>;
+		enable-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>; /* vin */
+		brightness-levels = < 0  1  2  3  4  5  6  7  8  9
+							10 11 12 13 14 15 16 17 18 19
+							20 21 22 23 24 25 26 27 28 29
+							30 31 32 33 34 35 36 37 38 39
+							40 41 42 43 44 45 46 47 48 49
+							50 51 52 53 54 55 56 57 58 59
+							60 61 62 63 64 65 66 67 68 69
+							70 71 72 73 74 75 76 77 78 79
+							80 81 82 83 84 85 86 87 88 89
+							90 91 92 93 94 95 96 97 98 99
+							100>;
+		default-brightness-level = <80>;
 		status = "okay";
 	};
 
+	reg_bl_pwr: reg-bl-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		status = "okay";
+	};
+
+	lvds_panel@0 {
+		compatible = "lvds-panel";
+		backlight = <&backlight>;
+		enable-gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>; /* +VDD_PANEL */
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: timing0 {
+				clock-frequency = <71000000>;
+				hactive = <1280>;
+				vactive = <800>;
+				hfront-porch = <70>;
+				hback-porch = <80>;
+				hsync-len = <10>;
+				vback-porch = <10>;
+				vfront-porch = <10>;
+				vsync-len = <3>;
+			};
+		};
+
+		port {
+			lvds_in: endpoint {
+				remote-endpoint = <&lvds_out>;
+			};
+		};
+	};
+};
+
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_bl_pwm2>;
+	status = "okay";
 };
 
 &eqos {
@@ -246,7 +309,32 @@
         };
 };
 
-&lcdif1 {
+/* lcdif1 - for mipi-dsi */
+/* lcdif2 - for lvds */
+/* lcdif3 - for hdmi */
+&lcdif2 {
+	status = "okay";
+};
+
+&ldb {
+	status = "okay";
+
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg"; /* spwg or jeida */
+		fsl,data-width = <24>;
+		status = "okay";
+
+		port@1 {
+			reg = <1>;
+
+			lvds_out: endpoint {
+				remote-endpoint = <&lvds_in>;
+			};
+		};
+	};
+};
+
+&ldb_phy {
 	status = "okay";
 };
 
@@ -336,11 +424,29 @@
 &iomuxc {
 	pinctrl-names = "default";
 
-        pinctrl_tpm: tpmgrp {
-	    fsl,pins = <
-                MX8MP_IOMUXC_GPIO1_IO11__GPIO1_IO11           0x156
-           	MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06        0x156	//TPM reset
-            >;
+	pinctrl_tpm: tpmgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO11__GPIO1_IO11           0x156
+			MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06        0x156	//TPM reset
+		>;
+	};
+
+	pinctrl_backlight: backlightgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00	0x16
+		>;
+	};
+
+	pinctrl_bl_pwm2: blpwm2grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO11__PWM2_OUT	0x116
+		>;
+	};
+
+	pinctrl_reg_lvds_vdd: reglvdsvddgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_SAI2_MCLK__GPIO4_IO27	0x16
+		>;
 	};
 
 	pinctrl_eqos: eqosgrp {
