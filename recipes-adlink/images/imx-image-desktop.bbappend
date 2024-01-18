@@ -59,3 +59,5 @@ PREFERRED_PROVIDER_virtual/libgpiod-tools ?= "ubuntu-base"
 
 IMAGE_FSTYPES += " wic.bmap wic.gz"
 
+PREFERRED_VERSION_imx-gpu-viv = "6.4.3.p4.6d-aarch64"
+
