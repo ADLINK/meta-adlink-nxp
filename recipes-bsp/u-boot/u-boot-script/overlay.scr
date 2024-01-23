@@ -28,6 +28,8 @@ if test -n ${E_cma}; then
     setenv overlays ${overlays} cma950mb-overlay.dtbo;
   elif test ${E_cma} = 750; then
     setenv overlays ${overlays} cma750mb-overlay.dtbo;
+  elif test ${E_cma} = 400; then
+    setenv overlays ${overlays} cma400mb-overlay.dtbo;
   fi;
 fi;'
 
