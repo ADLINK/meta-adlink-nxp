@@ -102,10 +102,16 @@ fatload mmc ${mmcdev}:${mmcpart} ${initrd_addr} rootfs.cpio.gz;
 #
 setenv detect_initrd 'echo Detect initrd boot...;
 mmc rescan;
-if test -n ${boot_device} && test ${boot_device} = SD && mmc dev 2 && !mmc dev 2 1; then
+if test -n ${boot_device} && test ${boot_device} = SD && mmc dev 2; then
+  if mmc dev 2 1; then
+    echo "boot partition on emmc";
+  else
+    echo "no partitions on emmc";
+	setenv boot_installer 1;
+  fi
   if test -e mmc ${sd_dev}:1 rootfs.cpio.gz; then
     echo Found rootfs.cpio.gz...;
-	setenv boot_initrd 1;
+	setenv boot_initrd y;
   fi;
 fi;'
 
