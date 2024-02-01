@@ -26,8 +26,6 @@
 * USB OTG Serial Gadget supported (baud rate: 115200)
 * CAN FD Bus interface
 * Audio & speaker
-* Raspberry Pi Camera V2.1 (2 Lanes) - SONY iMX219 sensor ([Datasheet](https://www.raspberrypi.org/documentation/hardware/camera/))
-
 
 <br>
 
