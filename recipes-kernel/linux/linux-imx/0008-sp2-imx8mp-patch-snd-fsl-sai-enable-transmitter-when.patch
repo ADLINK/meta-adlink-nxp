@@ -1,0 +1,35 @@
+From d1f39dcfbcb111d36a13e3f9687c52c923017606 Mon Sep 17 00:00:00 2001
+From: Enrico Scholz <enrico.scholz@sigma-chemnitz.de>
+Date: Mon, 5 Sep 2022 13:58:53 +0200
+Subject: [PATCH 08/16] sp2-imx8mp: patch: snd: fsl-sai: enable transmitter
+ when providing mclk
+
+nxp response to
+
+https://community.nxp.com/t5/i-MX-Processors/How-to-enable-SAI-MCLK-on-iMX8MP/m-p/1495731
+
+Signed-off-by: Enrico Scholz <enrico.scholz@sigma-chemnitz.de>
+---
+ sound/soc/fsl/fsl_sai.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/sound/soc/fsl/fsl_sai.c b/sound/soc/fsl/fsl_sai.c
+index c92db398b402..1f63d36bab61 100644
+--- a/sound/soc/fsl/fsl_sai.c
++++ b/sound/soc/fsl/fsl_sai.c
+@@ -1309,6 +1309,12 @@ static int sai_mclk_enable(struct clk_hw *hw)
+ 	struct fsl_sai_mclk *mclk = container_of(hw, struct fsl_sai_mclk, mclk);
+ 	struct fsl_sai *sai = container_of(mclk, struct fsl_sai, mclk[mclk->idx]);
+ 
++	regmap_update_bits(sai->regmap, FSL_SAI_MCTL,
++			   FSL_SAI_MCTL_MCLK_EN, FSL_SAI_MCTL_MCLK_EN);
++
++	regmap_update_bits(sai->regmap, FSL_SAI_TCSR(sai->soc_data->reg_offset),
++			   FSL_SAI_CSR_TERE, FSL_SAI_CSR_TERE);
++
+ 	return clk_enable(sai->mclk_clk[mclk->idx]);
+ }
+ 
+-- 
+2.25.1
+
