@@ -313,6 +313,7 @@
 	snps,force_thresh_dma_mode;
 	snps,mtl-tx-config = <&mtl_tx_setup>;
 	snps,mtl-rx-config = <&mtl_rx_setup>;
+	fsl,magic-packet;
 	status = "okay";
 
 	mdio {
@@ -325,6 +326,9 @@
 			reg = <1>;
 			eee-broken-1000t;
 			realtek,clkout-disable;
+			interrupt-parent = <&gpio4>;
+			interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
+			wakeup-source;
 		};
 	};
 
@@ -404,6 +408,9 @@
 			reset-deassert-us = <80000>;
 			realtek,aldps-enable;
 			realtek,clkout-disable;
+			interrupt-parent = <&gpio4>;
+			interrupts = <3 IRQ_TYPE_LEVEL_LOW>;
+			wakeup-source;
 		};
 	};
 };
@@ -525,12 +532,10 @@
 	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "jedec,spi-nor";
+	spidev1: spi@0 {
 		reg = <0>;
-		spi-max-frequency = <50000>;
+		compatible = "rohm,dh2228fv";
+		spi-max-frequency = <500000>;
 	};
 };
 
