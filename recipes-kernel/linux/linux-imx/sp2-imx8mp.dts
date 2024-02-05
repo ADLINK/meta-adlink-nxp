@@ -404,6 +404,9 @@
 			reset-deassert-us = <80000>;
 			realtek,aldps-enable;
 			realtek,clkout-disable;
+			interrupt-parent = <&gpio4>;
+			interrupts = <3 IRQ_TYPE_LEVEL_LOW>;
+			wakeup-source;
 		};
 	};
 };
@@ -525,12 +528,10 @@
 	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
-	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "jedec,spi-nor";
+	spidev1: spi@0 {
 		reg = <0>;
-		spi-max-frequency = <50000>;
+		compatible = "rohm,dh2228fv";
+		spi-max-frequency = <500000>;
 	};
 };
 
