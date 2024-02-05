@@ -50,7 +50,7 @@ CORE_IMAGE_EXTRA_INSTALL = " \
 "
 IMAGE_INSTALL:append = " ${CORE_IMAGE_EXTRA_INSTALL}"
 
-UBUNTU_PROVIDER = "${@bb.utils.contains('IMAGE_INSTALL', 'ubuntu-base', 'ubuntu-base', '', d)}"
+UBUNTU_PROVIDER = "${@bb.utils.contains_any('UBUNTU_TARGET_VERSION', '22.04.1 20.04.3 18.04.3 16.04.5', 'ubuntu-base', '', d)}"
 PREFERRED_PROVIDER_virtual/dosfstools ?= "${UBUNTU_PROVIDER}"
 PREFERRED_PROVIDER_virtual/e2fsprogs-mke2fs ?= "${UBUNTU_PROVIDER}"
 PREFERRED_PROVIDER_virtual/e2fsprogs-resize2fs ?= "${UBUNTU_PROVIDER}"
@@ -59,6 +59,6 @@ PREFERRED_PROVIDER_virtual/libtirpc ?= "${UBUNTU_PROVIDER}"
 PREFERRED_PROVIDER_virtual/mobile-broadband-provider-info ?= "${UBUNTU_PROVIDER}"
 PREFERRED_PROVIDER_virtual/libgpiod-tools ?= "${UBUNTU_PROVIDER}"
 
-IMX_GPU_VIV_VER = "${@bb.utils.contains('IMAGE_INSTALL', 'ubuntu-base', '6.4.3.p4.6d-aarch64', '6.4.3.p4.6-aarch64', d)}"
+IMX_GPU_VIV_VER = "${@bb.utils.contains_any('UBUNTU_TARGET_VERSION', '22.04.1 20.04.3 18.04.3 16.04.5', '6.4.3.p4.6d-aarch64', '6.4.3.p4.6-aarch64', d)}"
 PREFERRED_VERSION_imx-gpu-viv = "${IMX_GPU_VIV_VER}"
 
