@@ -1,0 +1,52 @@
+From a3fb32b84f91b0e13945f67b7db37703d53a3f73 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Tue, 24 Oct 2023 11:14:57 +0800
+Subject: [PATCH 04/16] sp2-imx8mp: patch: sgtl5000: switch to highest voltage
+ for vddio:1v8 [ref:
+ https://community.nxp.com/t5/Other-NXP-Products/SGTL5000-with-1-8V-VDDIO-and-3-3V-VDDA/m-p/1156477#M9422]
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ sound/soc/codecs/sgtl5000.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/sound/soc/codecs/sgtl5000.c b/sound/soc/codecs/sgtl5000.c
+index dc56e6c6b668..abb17c3073f1 100644
+--- a/sound/soc/codecs/sgtl5000.c
++++ b/sound/soc/codecs/sgtl5000.c
+@@ -1339,18 +1339,22 @@ static int sgtl5000_set_power_regs(struct snd_soc_component *component)
+ 					SGTL5000_INT_OSC_EN);
+ 		/* Enable VDDC charge pump */
+ 		ana_pwr |= SGTL5000_VDDC_CHRGPMP_POWERUP;
++	} else if (vddio >= 3100 && vdda >= 3100) {
++		/* Disable charge pump */
++		ana_pwr &= ~SGTL5000_VDDC_CHRGPMP_POWERUP;
++
++		/* VDDC use VDDIO rail */
++		lreg_ctrl |= SGTL5000_VDDC_ASSN_OVRD;
++		lreg_ctrl |= SGTL5000_VDDC_MAN_ASSN_VDDIO <<
++				SGTL5000_VDDC_MAN_ASSN_SHIFT;
+ 	} else {
++		dev_info(component->dev, "SGTL5000 will choose highest voltage automatically!\n");
++
++		/* Disable charge pump */
+ 		ana_pwr &= ~SGTL5000_VDDC_CHRGPMP_POWERUP;
+-		/*
+-		 * if vddio == vdda the source of charge pump should be
+-		 * assigned manually to VDDIO
+-		 */
+-		if (regulator_is_equal(sgtl5000->supplies[VDDA].consumer,
+-				       sgtl5000->supplies[VDDIO].consumer)) {
+-			lreg_ctrl |= SGTL5000_VDDC_ASSN_OVRD;
+-			lreg_ctrl |= SGTL5000_VDDC_MAN_ASSN_VDDIO <<
+-				    SGTL5000_VDDC_MAN_ASSN_SHIFT;
+-		}
++		
++		/* Switch to highest supply voltage */
++		lreg_ctrl &= ~SGTL5000_VDDC_ASSN_OVRD;
+ 	}
+ 
+ 	snd_soc_component_write(component, SGTL5000_CHIP_LINREG_CTRL, lreg_ctrl);
+-- 
+2.25.1
+
