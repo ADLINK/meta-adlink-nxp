@@ -1,0 +1,168 @@
+From 2115c19b6f061bf3fbc87e8f079242b35f417d58 Mon Sep 17 00:00:00 2001
+From: Enrico Scholz <enrico.scholz@sigma-chemnitz.de>
+Date: Sun, 24 Jul 2022 16:00:40 +0200
+Subject: [PATCH 07/16] sp2-imx8mp: patch: snd: fsl-sai: provide mclk (TODO)
+
+Signed-off-by: Enrico Scholz <enrico.scholz@sigma-chemnitz.de>
+---
+ sound/soc/fsl/fsl_sai.c | 104 ++++++++++++++++++++++++++++++++++++++++
+ sound/soc/fsl/fsl_sai.h |   7 +++
+ 2 files changed, 111 insertions(+)
+
+diff --git a/sound/soc/fsl/fsl_sai.c b/sound/soc/fsl/fsl_sai.c
+index 1f3eff2528d7..c92db398b402 100644
+--- a/sound/soc/fsl/fsl_sai.c
++++ b/sound/soc/fsl/fsl_sai.c
+@@ -1287,6 +1287,106 @@ static int fsl_sai_read_dlcfg(struct platform_device *pdev, char *pn,
+ 	return num_cfg;
+ }
+ 
++static int sai_mclk_prepare(struct clk_hw *hw)
++{
++	struct fsl_sai_mclk *mclk = container_of(hw, struct fsl_sai_mclk, mclk);
++	struct fsl_sai *sai = container_of(mclk, struct fsl_sai, mclk[mclk->idx]);
++	int rc;
++
++	rc = pm_runtime_get_sync(&sai->pdev->dev);
++	if (rc < 0)
++		return rc;
++
++	rc = clk_prepare(sai->mclk_clk[mclk->idx]);
++	if (rc < 0)
++		pm_runtime_put(&sai->pdev->dev);
++
++	return rc;
++}
++
++static int sai_mclk_enable(struct clk_hw *hw)
++{
++	struct fsl_sai_mclk *mclk = container_of(hw, struct fsl_sai_mclk, mclk);
++	struct fsl_sai *sai = container_of(mclk, struct fsl_sai, mclk[mclk->idx]);
++
++	return clk_enable(sai->mclk_clk[mclk->idx]);
++}
++
++static void sai_mclk_disable(struct clk_hw *hw)
++{
++	struct fsl_sai_mclk *mclk = container_of(hw, struct fsl_sai_mclk, mclk);
++	struct fsl_sai *sai = container_of(mclk, struct fsl_sai, mclk[mclk->idx]);
++
++	clk_disable(sai->mclk_clk[mclk->idx]);
++}
++
++static void sai_mclk_unprepare(struct clk_hw *hw)
++{
++	struct fsl_sai_mclk *mclk = container_of(hw, struct fsl_sai_mclk, mclk);
++	struct fsl_sai *sai = container_of(mclk, struct fsl_sai, mclk[mclk->idx]);
++
++	clk_unprepare(sai->mclk_clk[mclk->idx]);
++	pm_runtime_put(&sai->pdev->dev);
++}
++
++static struct clk_ops const sai_mclk_ops = {
++	.prepare	= sai_mclk_prepare,
++	.enable		= sai_mclk_enable,
++	.disable	= sai_mclk_disable,
++	.unprepare	= sai_mclk_unprepare,
++};
++
++static struct clk_hw *sai_mclk_get(struct of_phandle_args *clkspec, void *sai_)
++{
++	struct fsl_sai *sai = sai_;
++
++	if (clkspec->args_count != 1)
++		return ERR_PTR(-EINVAL);
++
++	if (clkspec->args[0] >= ARRAY_SIZE(sai->mclk))
++		return ERR_PTR(-EINVAL);
++
++	return &sai->mclk[clkspec->args[0]].mclk;
++}
++
++static int fsl_sai_init_mclk(struct fsl_sai *sai)
++{
++	size_t i;
++	int rc;
++
++	for (i = 0; i < ARRAY_SIZE(sai->mclk); ++i) {
++		char name[sizeof("sai@xxxxxxxxx_mclkX_out") + 2 * 9];
++
++		snprintf(name, sizeof name, "%s_mclk%zd_out",
++			 sai->pdev->dev.of_node->full_name, i);
++
++		sai->mclk[i] = (struct fsl_sai_mclk) {
++			.idx	= i,
++			.mclk	= {
++				.init	= CLK_HW_INIT_HW(name,
++							 __clk_get_hw(sai->mclk_clk[i]),
++							 &sai_mclk_ops,
++							 0),
++			}
++		};
++
++		rc = devm_clk_hw_register(&sai->pdev->dev, &sai->mclk[i].mclk);
++		if (rc < 0) {
++			dev_err(&sai->pdev->dev, "failed to register mclk %s: %d\n",
++				name, rc);
++			break;
++		}
++	}
++
++	if (rc < 0)
++		goto out;
++
++	rc = devm_of_clk_add_hw_provider(&sai->pdev->dev, sai_mclk_get, sai);
++
++out:
++	return rc;
++}
++
+ static int fsl_sai_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -1479,6 +1579,10 @@ static int fsl_sai_probe(struct platform_device *pdev)
+ 	    sai->soc_data->max_register >= FSL_SAI_MCTL) {
+ 		regmap_update_bits(sai->regmap, FSL_SAI_MCTL,
+ 				   FSL_SAI_MCTL_MCLK_EN, FSL_SAI_MCTL_MCLK_EN);
++
++		ret = fsl_sai_init_mclk(sai);
++		if (ret < 0)
++			goto err_pm_get_sync;
+ 	}
+ 
+ 	ret = pm_runtime_put_sync(&pdev->dev);
+diff --git a/sound/soc/fsl/fsl_sai.h b/sound/soc/fsl/fsl_sai.h
+index 21c8f7d9d5c9..85136cb1c473 100644
+--- a/sound/soc/fsl/fsl_sai.h
++++ b/sound/soc/fsl/fsl_sai.h
+@@ -8,6 +8,7 @@
+ 
+ #include <linux/pm_qos.h>
+ #include <linux/platform_data/dma-imx.h>
++#include <linux/clk-provider.h>
+ #include <sound/dmaengine_pcm.h>
+ 
+ #define FAL_SAI_NUM_RATES  20
+@@ -270,6 +271,11 @@ struct fsl_sai_dl_cfg {
+ 	unsigned int next_off[2];
+ };
+ 
++struct fsl_sai_mclk {
++	struct clk_hw mclk;
++	unsigned int idx;
++};
++
+ struct fsl_sai {
+ 	struct platform_device *pdev;
+ 	struct regmap *regmap;
+@@ -279,6 +285,7 @@ struct fsl_sai {
+ 	struct clk *pll8k_clk;
+ 	struct clk *pll11k_clk;
+ 	struct resource *res;
++	struct fsl_sai_mclk mclk[FSL_SAI_MCLK_MAX];
+ 
+ 	bool slave_mode[2];
+ 	bool is_lsb_first;
+-- 
+2.25.1
+
