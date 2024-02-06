@@ -1,0 +1,57 @@
+From b78bd13ee5b5ee86a6ded5ec0c53851fbe4c389a Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Wed, 3 Jan 2024 14:35:04 +0800
+Subject: [PATCH 04/22] sp2-imx8mp: patch: handoff: redirect handoff.h to
+ asm/arch/handoff.h (=>asm/arch-imx8m/handoff.h)
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ arch/arm/include/asm/arch-imx8m/handoff.h | 22 ++++++++++++++++++++++
+ include/handoff.h                         |  2 +-
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/include/asm/arch-imx8m/handoff.h
+
+diff --git a/arch/arm/include/asm/arch-imx8m/handoff.h b/arch/arm/include/asm/arch-imx8m/handoff.h
+new file mode 100644
+index 000000000000..298de376a267
+--- /dev/null
++++ b/arch/arm/include/asm/arch-imx8m/handoff.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Architecture-specific SPL handoff information for ARM
++ *
++ * Copyright 2019 Amarula Solutions, BV
++ * Written by Michael Trimarchi <michael@amarulasolutions.com>
++ */
++
++#ifndef __asm_handoff_h
++#define __asm_handoff_h
++
++/**
++ * struct arch_spl_handoff - architecture-specific handoff info
++ *
++ * @usable_ram_top: Value returned by board_get_usable_ram_top() in SPL
++ */
++struct arch_spl_handoff {
++	ulong usable_ram_top;
++	uint32_t sku;
++};
++
++#endif
+diff --git a/include/handoff.h b/include/handoff.h
+index 0104b834f2c4..5620141710fe 100644
+--- a/include/handoff.h
++++ b/include/handoff.h
+@@ -10,7 +10,7 @@
+ 
+ #if CONFIG_IS_ENABLED(HANDOFF)
+ 
+-#include <asm/handoff.h>
++#include <asm/arch/handoff.h>
+ 
+ /**
+  * struct spl_handoff - information passed from SPL to U-Boot proper
+-- 
+2.25.1
+
