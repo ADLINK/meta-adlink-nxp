@@ -1,0 +1,147 @@
+From 894150ee88e82f63811f0ccd00fbb84824f5f369 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Wed, 27 Dec 2023 14:29:00 +0800
+Subject: [PATCH 06/22] sp2-imx8mp: patch: lvds: fix build warnings after patch
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/pwm/pwm-imx-util.c          |  2 ++
+ drivers/pwm/pwm-imx.c               | 17 +++++++++++++++++
+ drivers/video/nxp/imx/imx8mp_lvds.c | 18 +++++++++---------
+ drivers/video/video_link.c          |  2 +-
+ 4 files changed, 29 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/pwm/pwm-imx-util.c b/drivers/pwm/pwm-imx-util.c
+index 823a9d2d6bfa..8d41b97becb9 100644
+--- a/drivers/pwm/pwm-imx-util.c
++++ b/drivers/pwm/pwm-imx-util.c
+@@ -14,6 +14,8 @@
+ #include <div64.h>
+ #include <asm/arch/imx-regs.h>
+ 
++#define CONFIG_IMX6_PWM_PER_CLK 66000000
++
+ /* pwm_id from 0..7 */
+ struct pwm_regs *pwm_id_to_reg(int pwm_id)
+ {
+diff --git a/drivers/pwm/pwm-imx.c b/drivers/pwm/pwm-imx.c
+index 2008c1520e61..447fea505e9f 100644
+--- a/drivers/pwm/pwm-imx.c
++++ b/drivers/pwm/pwm-imx.c
+@@ -15,6 +15,23 @@
+ #include <asm/io.h>
+ #include "pwm-imx-util.h"
+ 
++#define PWMCR_PRESCALER(x)	(((x - 1) & 0xFFF) << 4)
++#define PWMCR_DOZEEN		(1 << 24)
++#define PWMCR_WAITEN		(1 << 23)
++#define PWMCR_DBGEN		(1 << 22)
++#define PWMCR_CLKSRC_IPG_HIGH	(2 << 16)
++#define PWMCR_CLKSRC_IPG	(1 << 16)
++#define PWMCR_EN		(1 << 0)
++
++struct pwm_regs {
++	u32	cr;
++	u32	sr;
++	u32	ir;
++	u32	sar;
++	u32	pr;
++	u32	cnr;
++};
++
+ int pwm_init(int pwm_id, int div, int invert)
+ {
+ 	struct pwm_regs *pwm = (struct pwm_regs *)pwm_id_to_reg(pwm_id);
+diff --git a/drivers/video/nxp/imx/imx8mp_lvds.c b/drivers/video/nxp/imx/imx8mp_lvds.c
+index 11ff41ac560f..4177efca6d06 100644
+--- a/drivers/video/nxp/imx/imx8mp_lvds.c
++++ b/drivers/video/nxp/imx/imx8mp_lvds.c
+@@ -10,6 +10,7 @@
+ #include <video.h>
+ #include <video_bridge.h>
+ #include <video_link.h>
++#include <panel.h>
+ #include <asm/io.h>
+ #include <dm/device-internal.h>
+ #include <linux/iopoll.h>
+@@ -129,6 +130,8 @@ int imx8mp_ldb_read_timing(struct udevice *dev, struct display_timing *timing)
+ {
+ 	struct imx8mp_ldb_priv *priv = dev_get_priv(dev);
+ 
++	debug("%s() dev: %s\n", __func__, dev->name);
++
+ 	if (dev->plat_ == NULL)
+ 		return -EINVAL;
+ 
+@@ -145,8 +148,7 @@ static int imx8mp_ldb_probe(struct udevice *dev)
+ 	struct imx8mp_ldb_priv *priv = dev_get_priv(dev);
+ 	int ret;
+ 
+-	debug("%s\n", __func__);
+-	printf("imx8mp_ldb_probe");
++	debug("%s() dev: %s\n", __func__, dev->name);
+ 
+ 	if (dev->plat_ == NULL) {
+ 		priv->regmap = syscon_regmap_lookup_by_phandle(dev, "gpr");
+@@ -158,7 +160,7 @@ static int imx8mp_ldb_probe(struct udevice *dev)
+ 		/* Require to add alias in DTB */
+ 		priv->ldb_id = dev_seq(dev);
+ 
+-		debug("ldb_id %u\n", priv->ldb_id);
++		debug("%s() ldb_id %u\n", __func__, priv->ldb_id);
+ 	}else{
+ 		
+ 		priv->conn_dev = video_link_get_next_device(dev);
+@@ -202,10 +204,7 @@ static int imx8mp_ldb_probe(struct udevice *dev)
+ 			}
+ 		}
+ 	}
+-    printf("imx8mp_ldb_probe\n");
+-
+ 	return 0;
+-
+ }
+ 
+ static int imx8mp_ldb_bind(struct udevice *dev)
+@@ -214,7 +213,7 @@ static int imx8mp_ldb_bind(struct udevice *dev)
+ 	ofnode lvds_ch_node;
+ 	int ret = 0;
+ 
+-	debug("%s\n", __func__);
++	debug("%s() dev: %s\n", __func__, dev->name);
+ 	lvds_ch_node = ofnode_find_subnode(dev_ofnode(dev), "lvds-channel@0");
+ 	if (ofnode_valid(lvds_ch_node)) {
+ 		ret = device_bind(dev, dev->driver, "lvds-channel@0", (void *)1,
+@@ -233,7 +232,8 @@ int imx8mp_ldb_enable(struct udevice *dev, int panel_bpp,
+ {
+ 	struct imx8mp_ldb_priv *priv = dev_get_priv(dev);
+ 	int ret;
+-	debug("%s\n", __func__);
++
++	debug("%s() dev: %s\n", __func__, dev->name);
+ 
+ 	if (dev->plat_ == NULL) {
+ 
+@@ -275,4 +275,4 @@ U_BOOT_DRIVER(imx8mp_ldb) = {
+ 	.probe				= imx8mp_ldb_probe,
+ 	.ops				= &imx8mp_ldb_ops,
+ 	.priv_auto		= sizeof(struct imx8mp_ldb_priv),
+-};
+\ No newline at end of file
++};
+diff --git a/drivers/video/video_link.c b/drivers/video/video_link.c
+index 72ef1a0f64fd..dba81dce2e6c 100644
+--- a/drivers/video/video_link.c
++++ b/drivers/video/video_link.c
+@@ -437,7 +437,7 @@ static void list_videolink(bool current_only)
+ 		else if (current_only)
+ 			continue;
+ 
+-		printf("[%c]-Video Link %lu", (match)? '*':' ', index);
++		printf("[%c]-Video Link %lu\n", (match)? '*':' ', index);
+ 
+ 		if (match) {
+ 			struct udevice *video_dev = video_link_get_video_device();
+-- 
+2.25.1
+
