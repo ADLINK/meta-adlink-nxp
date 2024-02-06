@@ -1,0 +1,5116 @@
+From 4aa9eb20a36fd8d6a6913359fedfbc95c23b0ffb Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Thu, 17 Aug 2023 11:24:51 +0800
+Subject: [PATCH 02/22] sp2-imx8mp: patch: msgpack: add c-6.0.0 msgpack source
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ include/msgpack.h                 |  24 +
+ include/msgpack/fbuffer.h         |  42 ++
+ include/msgpack/gcc_atomic.h      |  25 +
+ include/msgpack/object.h          | 118 ++++
+ include/msgpack/pack.h            | 174 ++++++
+ include/msgpack/pack_define.h     |  18 +
+ include/msgpack/pack_template.h   | 952 ++++++++++++++++++++++++++++++
+ include/msgpack/sbuffer.h         | 115 ++++
+ include/msgpack/sysdep.h          | 228 +++++++
+ include/msgpack/timestamp.h       |  58 ++
+ include/msgpack/unpack.h          | 281 +++++++++
+ include/msgpack/unpack_define.h   |  89 +++
+ include/msgpack/unpack_template.h | 471 +++++++++++++++
+ include/msgpack/util.h            |  15 +
+ include/msgpack/version.h         |  38 ++
+ include/msgpack/version_master.h  |   3 +
+ include/msgpack/vrefbuffer.h      | 146 +++++
+ include/msgpack/zbuffer.h         | 205 +++++++
+ include/msgpack/zone.h            | 163 +++++
+ lib/Kconfig                       |   2 +
+ lib/Makefile                      |   2 +
+ lib/msgpack/Kconfig               |  13 +
+ lib/msgpack/Makefile              |  10 +
+ lib/msgpack/objectc.c             | 484 +++++++++++++++
+ lib/msgpack/unpack.c              | 702 ++++++++++++++++++++++
+ lib/msgpack/version.c             |  22 +
+ lib/msgpack/vrefbuffer.c          | 250 ++++++++
+ lib/msgpack/zone.c                | 222 +++++++
+ 28 files changed, 4872 insertions(+)
+ create mode 100644 include/msgpack.h
+ create mode 100644 include/msgpack/fbuffer.h
+ create mode 100644 include/msgpack/gcc_atomic.h
+ create mode 100644 include/msgpack/object.h
+ create mode 100644 include/msgpack/pack.h
+ create mode 100644 include/msgpack/pack_define.h
+ create mode 100644 include/msgpack/pack_template.h
+ create mode 100644 include/msgpack/sbuffer.h
+ create mode 100644 include/msgpack/sysdep.h
+ create mode 100644 include/msgpack/timestamp.h
+ create mode 100644 include/msgpack/unpack.h
+ create mode 100644 include/msgpack/unpack_define.h
+ create mode 100644 include/msgpack/unpack_template.h
+ create mode 100644 include/msgpack/util.h
+ create mode 100644 include/msgpack/version.h
+ create mode 100644 include/msgpack/version_master.h
+ create mode 100644 include/msgpack/vrefbuffer.h
+ create mode 100644 include/msgpack/zbuffer.h
+ create mode 100644 include/msgpack/zone.h
+ create mode 100644 lib/msgpack/Kconfig
+ create mode 100644 lib/msgpack/Makefile
+ create mode 100644 lib/msgpack/objectc.c
+ create mode 100644 lib/msgpack/unpack.c
+ create mode 100644 lib/msgpack/version.c
+ create mode 100644 lib/msgpack/vrefbuffer.c
+ create mode 100644 lib/msgpack/zone.c
+
+diff --git a/include/msgpack.h b/include/msgpack.h
+new file mode 100644
+index 000000000000..af557a5cdb27
+--- /dev/null
++++ b/include/msgpack.h
+@@ -0,0 +1,24 @@
++/*
++ * MessagePack for C
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++/**
++ * @defgroup msgpack MessagePack C
++ * @{
++ * @}
++ */
++
++#include "msgpack/util.h"
++#include "msgpack/object.h"
++#include "msgpack/zone.h"
++#include "msgpack/pack.h"
++#include "msgpack/unpack.h"
++#include "msgpack/sbuffer.h"
++#include "msgpack/vrefbuffer.h"
++#include "msgpack/version.h"
++
+diff --git a/include/msgpack/fbuffer.h b/include/msgpack/fbuffer.h
+new file mode 100644
+index 000000000000..5c847dd97b32
+--- /dev/null
++++ b/include/msgpack/fbuffer.h
+@@ -0,0 +1,42 @@
++/*
++ * MessagePack for C FILE* buffer adaptor
++ *
++ * Copyright (C) 2013 Vladimir Volodko
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_FBUFFER_H
++#define MSGPACK_FBUFFER_H
++
++#include <stdio.h>
++#include <assert.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_fbuffer FILE* buffer
++ * @ingroup msgpack_buffer
++ * @{
++ */
++
++static inline int msgpack_fbuffer_write(void* data, const char* buf, size_t len)
++{
++    assert(buf || len == 0);
++    if(!buf) return 0;
++
++    return (1 == fwrite(buf, len, 1, (FILE *)data)) ? 0 : -1;
++}
++
++/** @} */
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/fbuffer.h */
+diff --git a/include/msgpack/gcc_atomic.h b/include/msgpack/gcc_atomic.h
+new file mode 100644
+index 000000000000..6b1b1a799654
+--- /dev/null
++++ b/include/msgpack/gcc_atomic.h
+@@ -0,0 +1,25 @@
++/*
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++
++#ifndef MSGPACK_GCC_ATOMIC_H
++#define MSGPACK_GCC_ATOMIC_H
++
++#if defined(__cplusplus)
++extern "C" {
++#endif
++
++typedef int _msgpack_atomic_counter_t;
++
++int _msgpack_sync_decr_and_fetch(volatile _msgpack_atomic_counter_t* ptr);
++int _msgpack_sync_incr_and_fetch(volatile _msgpack_atomic_counter_t* ptr);
++
++
++#if defined(__cplusplus)
++}
++#endif
++
++
++#endif // MSGPACK_GCC_ATOMIC_H
+diff --git a/include/msgpack/object.h b/include/msgpack/object.h
+new file mode 100644
+index 000000000000..e9431744b70b
+--- /dev/null
++++ b/include/msgpack/object.h
+@@ -0,0 +1,118 @@
++/*
++ * MessagePack for C dynamic typing routine
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_OBJECT_H
++#define MSGPACK_OBJECT_H
++
++#include "zone.h"
++#include <stdio.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_object Dynamically typed object
++ * @ingroup msgpack
++ * @{
++ */
++
++typedef enum {
++    MSGPACK_OBJECT_NIL                  = 0x00,
++    MSGPACK_OBJECT_BOOLEAN              = 0x01,
++    MSGPACK_OBJECT_POSITIVE_INTEGER     = 0x02,
++    MSGPACK_OBJECT_NEGATIVE_INTEGER     = 0x03,
++    MSGPACK_OBJECT_FLOAT32              = 0x0a,
++    MSGPACK_OBJECT_FLOAT64              = 0x04,
++    MSGPACK_OBJECT_FLOAT                = 0x04,
++#if defined(MSGPACK_USE_LEGACY_NAME_AS_FLOAT)
++    MSGPACK_OBJECT_DOUBLE               = MSGPACK_OBJECT_FLOAT, /* obsolete */
++#endif /* MSGPACK_USE_LEGACY_NAME_AS_FLOAT */
++    MSGPACK_OBJECT_STR                  = 0x05,
++    MSGPACK_OBJECT_ARRAY                = 0x06,
++    MSGPACK_OBJECT_MAP                  = 0x07,
++    MSGPACK_OBJECT_BIN                  = 0x08,
++    MSGPACK_OBJECT_EXT                  = 0x09
++} msgpack_object_type;
++
++
++struct msgpack_object;
++struct msgpack_object_kv;
++
++typedef struct {
++    uint32_t size;
++    struct msgpack_object* ptr;
++} msgpack_object_array;
++
++typedef struct {
++    uint32_t size;
++    struct msgpack_object_kv* ptr;
++} msgpack_object_map;
++
++typedef struct {
++    uint32_t size;
++    const char* ptr;
++} msgpack_object_str;
++
++typedef struct {
++    uint32_t size;
++    const char* ptr;
++} msgpack_object_bin;
++
++typedef struct {
++    int8_t type;
++    uint32_t size;
++    const char* ptr;
++} msgpack_object_ext;
++
++typedef union {
++    bool boolean;
++    uint64_t u64;
++    int64_t  i64;
++#if defined(MSGPACK_USE_LEGACY_NAME_AS_FLOAT)
++    double   dec; /* obsolete*/
++#endif /* MSGPACK_USE_LEGACY_NAME_AS_FLOAT */
++    double   f64;
++    msgpack_object_array array;
++    msgpack_object_map map;
++    msgpack_object_str str;
++    msgpack_object_bin bin;
++    msgpack_object_ext ext;
++} msgpack_object_union;
++
++typedef struct msgpack_object {
++    msgpack_object_type type;
++    msgpack_object_union via;
++} msgpack_object;
++
++typedef struct msgpack_object_kv {
++    msgpack_object key;
++    msgpack_object val;
++} msgpack_object_kv;
++
++#if !defined(_KERNEL_MODE)
++MSGPACK_DLLEXPORT
++void msgpack_object_print(FILE* out, msgpack_object o);
++#endif
++
++MSGPACK_DLLEXPORT
++int msgpack_object_print_buffer(char *buffer, size_t buffer_size, msgpack_object o);
++
++MSGPACK_DLLEXPORT
++bool msgpack_object_equal(const msgpack_object x, const msgpack_object y);
++
++/** @} */
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/object.h */
+diff --git a/include/msgpack/pack.h b/include/msgpack/pack.h
+new file mode 100644
+index 000000000000..08ab84b5e07d
+--- /dev/null
++++ b/include/msgpack/pack.h
+@@ -0,0 +1,174 @@
++/*
++ * MessagePack for C packing routine
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_PACK_H
++#define MSGPACK_PACK_H
++
++#include "pack_define.h"
++#include "object.h"
++#include "timestamp.h"
++#include <stdlib.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_buffer Buffers
++ * @ingroup msgpack
++ * @{
++ * @}
++ */
++
++/**
++ * @defgroup msgpack_pack Serializer
++ * @ingroup msgpack
++ * @{
++ */
++
++typedef int (*msgpack_packer_write)(void* data, const char* buf, size_t len);
++
++typedef struct msgpack_packer {
++    void* data;
++    msgpack_packer_write callback;
++} msgpack_packer;
++
++static void msgpack_packer_init(msgpack_packer* pk, void* data, msgpack_packer_write callback);
++
++static msgpack_packer* msgpack_packer_new(void* data, msgpack_packer_write callback);
++static void msgpack_packer_free(msgpack_packer* pk);
++
++static int msgpack_pack_char(msgpack_packer* pk, char d);
++
++static int msgpack_pack_signed_char(msgpack_packer* pk, signed char d);
++static int msgpack_pack_short(msgpack_packer* pk, short d);
++static int msgpack_pack_int(msgpack_packer* pk, int d);
++static int msgpack_pack_long(msgpack_packer* pk, long d);
++static int msgpack_pack_long_long(msgpack_packer* pk, long long d);
++static int msgpack_pack_unsigned_char(msgpack_packer* pk, unsigned char d);
++static int msgpack_pack_unsigned_short(msgpack_packer* pk, unsigned short d);
++static int msgpack_pack_unsigned_int(msgpack_packer* pk, unsigned int d);
++static int msgpack_pack_unsigned_long(msgpack_packer* pk, unsigned long d);
++static int msgpack_pack_unsigned_long_long(msgpack_packer* pk, unsigned long long d);
++
++static int msgpack_pack_uint8(msgpack_packer* pk, uint8_t d);
++static int msgpack_pack_uint16(msgpack_packer* pk, uint16_t d);
++static int msgpack_pack_uint32(msgpack_packer* pk, uint32_t d);
++static int msgpack_pack_uint64(msgpack_packer* pk, uint64_t d);
++static int msgpack_pack_int8(msgpack_packer* pk, int8_t d);
++static int msgpack_pack_int16(msgpack_packer* pk, int16_t d);
++static int msgpack_pack_int32(msgpack_packer* pk, int32_t d);
++static int msgpack_pack_int64(msgpack_packer* pk, int64_t d);
++
++static int msgpack_pack_fix_uint8(msgpack_packer* pk, uint8_t d);
++static int msgpack_pack_fix_uint16(msgpack_packer* pk, uint16_t d);
++static int msgpack_pack_fix_uint32(msgpack_packer* pk, uint32_t d);
++static int msgpack_pack_fix_uint64(msgpack_packer* pk, uint64_t d);
++static int msgpack_pack_fix_int8(msgpack_packer* pk, int8_t d);
++static int msgpack_pack_fix_int16(msgpack_packer* pk, int16_t d);
++static int msgpack_pack_fix_int32(msgpack_packer* pk, int32_t d);
++static int msgpack_pack_fix_int64(msgpack_packer* pk, int64_t d);
++
++static int msgpack_pack_float(msgpack_packer* pk, float d);
++static int msgpack_pack_double(msgpack_packer* pk, double d);
++
++static int msgpack_pack_nil(msgpack_packer* pk);
++static int msgpack_pack_true(msgpack_packer* pk);
++static int msgpack_pack_false(msgpack_packer* pk);
++
++static int msgpack_pack_array(msgpack_packer* pk, size_t n);
++
++static int msgpack_pack_map(msgpack_packer* pk, size_t n);
++
++static int msgpack_pack_str(msgpack_packer* pk, size_t l);
++static int msgpack_pack_str_body(msgpack_packer* pk, const void* b, size_t l);
++static int msgpack_pack_str_with_body(msgpack_packer* pk, const void* b, size_t l);
++
++static int msgpack_pack_v4raw(msgpack_packer* pk, size_t l);
++static int msgpack_pack_v4raw_body(msgpack_packer* pk, const void* b, size_t l);
++
++static int msgpack_pack_bin(msgpack_packer* pk, size_t l);
++static int msgpack_pack_bin_body(msgpack_packer* pk, const void* b, size_t l);
++static int msgpack_pack_bin_with_body(msgpack_packer* pk, const void* b, size_t l);
++
++static int msgpack_pack_ext(msgpack_packer* pk, size_t l, int8_t type);
++static int msgpack_pack_ext_body(msgpack_packer* pk, const void* b, size_t l);
++static int msgpack_pack_ext_with_body(msgpack_packer* pk, const void* b, size_t l, int8_t type);
++
++static int msgpack_pack_timestamp(msgpack_packer* pk, const msgpack_timestamp* d);
++
++MSGPACK_DLLEXPORT
++int msgpack_pack_object(msgpack_packer* pk, msgpack_object d);
++
++
++/** @} */
++
++
++#define msgpack_pack_inline_func(name) \
++    inline int msgpack_pack ## name
++
++#define msgpack_pack_inline_func_cint(name) \
++    inline int msgpack_pack ## name
++
++#define msgpack_pack_inline_func_fixint(name) \
++    inline int msgpack_pack_fix ## name
++
++#define msgpack_pack_user msgpack_packer*
++
++#define msgpack_pack_append_buffer(user, buf, len) \
++    return (*(user)->callback)((user)->data, (const char*)buf, len)
++
++#include "pack_template.h"
++
++inline void msgpack_packer_init(msgpack_packer* pk, void* data, msgpack_packer_write callback)
++{
++    pk->data = data;
++    pk->callback = callback;
++}
++
++inline msgpack_packer* msgpack_packer_new(void* data, msgpack_packer_write callback)
++{
++    msgpack_packer* pk = (msgpack_packer*)calloc(1, sizeof(msgpack_packer));
++    if(!pk) { return NULL; }
++    msgpack_packer_init(pk, data, callback);
++    return pk;
++}
++
++inline void msgpack_packer_free(msgpack_packer* pk)
++{
++    free(pk);
++}
++
++inline int msgpack_pack_str_with_body(msgpack_packer* pk, const void* b, size_t l)
++ {
++     int ret = msgpack_pack_str(pk, l);
++     if (ret != 0) { return ret; }
++     return msgpack_pack_str_body(pk, b, l);
++ }
++
++ inline int msgpack_pack_bin_with_body(msgpack_packer* pk, const void* b, size_t l)
++ {
++     int ret = msgpack_pack_bin(pk, l);
++     if (ret != 0) { return ret; }
++     return msgpack_pack_bin_body(pk, b, l);
++ }
++
++ inline int msgpack_pack_ext_with_body(msgpack_packer* pk, const void* b, size_t l, int8_t type)
++ {
++     int ret = msgpack_pack_ext(pk, l, type);
++     if (ret != 0) { return ret; }
++     return msgpack_pack_ext_body(pk, b, l);
++ }
++ 
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/pack.h */
+diff --git a/include/msgpack/pack_define.h b/include/msgpack/pack_define.h
+new file mode 100644
+index 000000000000..ce98b67558a3
+--- /dev/null
++++ b/include/msgpack/pack_define.h
+@@ -0,0 +1,18 @@
++/*
++ * MessagePack unpacking routine template
++ *
++ * Copyright (C) 2008-2010 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_PACK_DEFINE_H
++#define MSGPACK_PACK_DEFINE_H
++
++#include "msgpack/sysdep.h"
++#include <limits.h>
++#include <string.h>
++
++#endif /* msgpack/pack_define.h */
++
+diff --git a/include/msgpack/pack_template.h b/include/msgpack/pack_template.h
+new file mode 100644
+index 000000000000..53953fa0115c
+--- /dev/null
++++ b/include/msgpack/pack_template.h
+@@ -0,0 +1,952 @@
++/*
++ * MessagePack packing routine template
++ *
++ * Copyright (C) 2008-2010 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++
++#ifndef MSGPACK_ENDIAN_BIG_BYTE
++#define MSGPACK_ENDIAN_BIG_BYTE 0
++#endif
++#ifndef MSGPACK_ENDIAN_LITTLE_BYTE
++#define MSGPACK_ENDIAN_LITTLE_BYTE 1
++#endif
++
++#if MSGPACK_ENDIAN_LITTLE_BYTE
++#define TAKE8_8(d)  ((uint8_t*)&d)[0]
++#define TAKE8_16(d) ((uint8_t*)&d)[0]
++#define TAKE8_32(d) ((uint8_t*)&d)[0]
++#define TAKE8_64(d) ((uint8_t*)&d)[0]
++#elif MSGPACK_ENDIAN_BIG_BYTE
++#define TAKE8_8(d)  ((uint8_t*)&d)[0]
++#define TAKE8_16(d) ((uint8_t*)&d)[1]
++#define TAKE8_32(d) ((uint8_t*)&d)[3]
++#define TAKE8_64(d) ((uint8_t*)&d)[7]
++#else
++#error msgpack-c supports only big endian and little endian
++#endif
++
++#ifndef msgpack_pack_inline_func
++#error msgpack_pack_inline_func template is not defined
++#endif
++
++#ifndef msgpack_pack_user
++#error msgpack_pack_user type is not defined
++#endif
++
++#ifndef msgpack_pack_append_buffer
++#error msgpack_pack_append_buffer callback is not defined
++#endif
++
++#if defined(_MSC_VER)
++#   pragma warning(push)
++#   pragma warning(disable : 4204)   /* nonstandard extension used: non-constant aggregate initializer */
++#endif
++
++/*
++ * Integer
++ */
++
++#define msgpack_pack_real_uint8(x, d) \
++do { \
++    if(d < (1<<7)) { \
++        /* fixnum */ \
++        msgpack_pack_append_buffer(x, &TAKE8_8(d), 1); \
++    } else { \
++        /* unsigned 8 */ \
++        unsigned char buf[2] = {0xcc, TAKE8_8(d)}; \
++        msgpack_pack_append_buffer(x, buf, 2); \
++    } \
++} while(0)
++
++#define msgpack_pack_real_uint16(x, d) \
++do { \
++    if(d < (1<<7)) { \
++        /* fixnum */ \
++        msgpack_pack_append_buffer(x, &TAKE8_16(d), 1); \
++    } else if(d < (1<<8)) { \
++        /* unsigned 8 */ \
++        unsigned char buf[2] = {0xcc, TAKE8_16(d)}; \
++        msgpack_pack_append_buffer(x, buf, 2); \
++    } else { \
++        /* unsigned 16 */ \
++        unsigned char buf[3]; \
++        buf[0] = 0xcd; _msgpack_store16(&buf[1], (uint16_t)d); \
++        msgpack_pack_append_buffer(x, buf, 3); \
++    } \
++} while(0)
++
++#define msgpack_pack_real_uint32(x, d) \
++do { \
++    if(d < (1<<8)) { \
++        if(d < (1<<7)) { \
++            /* fixnum */ \
++            msgpack_pack_append_buffer(x, &TAKE8_32(d), 1); \
++        } else { \
++            /* unsigned 8 */ \
++            unsigned char buf[2] = {0xcc, TAKE8_32(d)}; \
++            msgpack_pack_append_buffer(x, buf, 2); \
++        } \
++    } else { \
++        if(d < (1<<16)) { \
++            /* unsigned 16 */ \
++            unsigned char buf[3]; \
++            buf[0] = 0xcd; _msgpack_store16(&buf[1], (uint16_t)d); \
++            msgpack_pack_append_buffer(x, buf, 3); \
++        } else { \
++            /* unsigned 32 */ \
++            unsigned char buf[5]; \
++            buf[0] = 0xce; _msgpack_store32(&buf[1], (uint32_t)d); \
++            msgpack_pack_append_buffer(x, buf, 5); \
++        } \
++    } \
++} while(0)
++
++#define msgpack_pack_real_uint64(x, d) \
++do { \
++    if(d < (1ULL<<8)) { \
++        if(d < (1ULL<<7)) { \
++            /* fixnum */ \
++            msgpack_pack_append_buffer(x, &TAKE8_64(d), 1); \
++        } else { \
++            /* unsigned 8 */ \
++            unsigned char buf[2] = {0xcc, TAKE8_64(d)}; \
++            msgpack_pack_append_buffer(x, buf, 2); \
++        } \
++    } else { \
++        if(d < (1ULL<<16)) { \
++            /* unsigned 16 */ \
++            unsigned char buf[3]; \
++            buf[0] = 0xcd; _msgpack_store16(&buf[1], (uint16_t)d); \
++            msgpack_pack_append_buffer(x, buf, 3); \
++        } else if(d < (1ULL<<32)) { \
++            /* unsigned 32 */ \
++            unsigned char buf[5]; \
++            buf[0] = 0xce; _msgpack_store32(&buf[1], (uint32_t)d); \
++            msgpack_pack_append_buffer(x, buf, 5); \
++        } else { \
++            /* unsigned 64 */ \
++            unsigned char buf[9]; \
++            buf[0] = 0xcf; _msgpack_store64(&buf[1], d); \
++            msgpack_pack_append_buffer(x, buf, 9); \
++        } \
++    } \
++} while(0)
++
++#define msgpack_pack_real_int8(x, d) \
++do { \
++    if(d < -(1<<5)) { \
++        /* signed 8 */ \
++        unsigned char buf[2] = {0xd0, TAKE8_8(d)}; \
++        msgpack_pack_append_buffer(x, buf, 2); \
++    } else { \
++        /* fixnum */ \
++        msgpack_pack_append_buffer(x, &TAKE8_8(d), 1); \
++    } \
++} while(0)
++
++#define msgpack_pack_real_int16(x, d) \
++do { \
++    if(d < -(1<<5)) { \
++        if(d < -(1<<7)) { \
++            /* signed 16 */ \
++            unsigned char buf[3]; \
++            buf[0] = 0xd1; _msgpack_store16(&buf[1], (int16_t)d); \
++            msgpack_pack_append_buffer(x, buf, 3); \
++        } else { \
++            /* signed 8 */ \
++            unsigned char buf[2] = {0xd0, TAKE8_16(d)}; \
++            msgpack_pack_append_buffer(x, buf, 2); \
++        } \
++    } else if(d < (1<<7)) { \
++        /* fixnum */ \
++        msgpack_pack_append_buffer(x, &TAKE8_16(d), 1); \
++    } else { \
++        if(d < (1<<8)) { \
++            /* unsigned 8 */ \
++            unsigned char buf[2] = {0xcc, TAKE8_16(d)}; \
++            msgpack_pack_append_buffer(x, buf, 2); \
++        } else { \
++            /* unsigned 16 */ \
++            unsigned char buf[3]; \
++            buf[0] = 0xcd; _msgpack_store16(&buf[1], (uint16_t)d); \
++            msgpack_pack_append_buffer(x, buf, 3); \
++        } \
++    } \
++} while(0)
++
++#define msgpack_pack_real_int32(x, d) \
++do { \
++    if(d < -(1<<5)) { \
++        if(d < -(1<<15)) { \
++            /* signed 32 */ \
++            unsigned char buf[5]; \
++            buf[0] = 0xd2; _msgpack_store32(&buf[1], (int32_t)d); \
++            msgpack_pack_append_buffer(x, buf, 5); \
++        } else if(d < -(1<<7)) { \
++            /* signed 16 */ \
++            unsigned char buf[3]; \
++            buf[0] = 0xd1; _msgpack_store16(&buf[1], (int16_t)d); \
++            msgpack_pack_append_buffer(x, buf, 3); \
++        } else { \
++            /* signed 8 */ \
++            unsigned char buf[2] = {0xd0, TAKE8_32(d)}; \
++            msgpack_pack_append_buffer(x, buf, 2); \
++        } \
++    } else if(d < (1<<7)) { \
++        /* fixnum */ \
++        msgpack_pack_append_buffer(x, &TAKE8_32(d), 1); \
++    } else { \
++        if(d < (1<<8)) { \
++            /* unsigned 8 */ \
++            unsigned char buf[2] = {0xcc, TAKE8_32(d)}; \
++            msgpack_pack_append_buffer(x, buf, 2); \
++        } else if(d < (1<<16)) { \
++            /* unsigned 16 */ \
++            unsigned char buf[3]; \
++            buf[0] = 0xcd; _msgpack_store16(&buf[1], (uint16_t)d); \
++            msgpack_pack_append_buffer(x, buf, 3); \
++        } else { \
++            /* unsigned 32 */ \
++            unsigned char buf[5]; \
++            buf[0] = 0xce; _msgpack_store32(&buf[1], (uint32_t)d); \
++            msgpack_pack_append_buffer(x, buf, 5); \
++        } \
++    } \
++} while(0)
++
++#define msgpack_pack_real_int64(x, d) \
++do { \
++    if(d < -(1LL<<5)) { \
++        if(d < -(1LL<<15)) { \
++            if(d < -(1LL<<31)) { \
++                /* signed 64 */ \
++                unsigned char buf[9]; \
++                buf[0] = 0xd3; _msgpack_store64(&buf[1], d); \
++                msgpack_pack_append_buffer(x, buf, 9); \
++            } else { \
++                /* signed 32 */ \
++                unsigned char buf[5]; \
++                buf[0] = 0xd2; _msgpack_store32(&buf[1], (int32_t)d); \
++                msgpack_pack_append_buffer(x, buf, 5); \
++            } \
++        } else { \
++            if(d < -(1<<7)) { \
++                /* signed 16 */ \
++                unsigned char buf[3]; \
++                buf[0] = 0xd1; _msgpack_store16(&buf[1], (int16_t)d); \
++                msgpack_pack_append_buffer(x, buf, 3); \
++            } else { \
++                /* signed 8 */ \
++                unsigned char buf[2] = {0xd0, TAKE8_64(d)}; \
++                msgpack_pack_append_buffer(x, buf, 2); \
++            } \
++        } \
++    } else if(d < (1<<7)) { \
++        /* fixnum */ \
++        msgpack_pack_append_buffer(x, &TAKE8_64(d), 1); \
++    } else { \
++        if(d < (1LL<<16)) { \
++            if(d < (1<<8)) { \
++                /* unsigned 8 */ \
++                unsigned char buf[2] = {0xcc, TAKE8_64(d)}; \
++                msgpack_pack_append_buffer(x, buf, 2); \
++            } else { \
++                /* unsigned 16 */ \
++                unsigned char buf[3]; \
++                buf[0] = 0xcd; _msgpack_store16(&buf[1], (uint16_t)d); \
++                msgpack_pack_append_buffer(x, buf, 3); \
++            } \
++        } else { \
++            if(d < (1LL<<32)) { \
++                /* unsigned 32 */ \
++                unsigned char buf[5]; \
++                buf[0] = 0xce; _msgpack_store32(&buf[1], (uint32_t)d); \
++                msgpack_pack_append_buffer(x, buf, 5); \
++            } else { \
++                /* unsigned 64 */ \
++                unsigned char buf[9]; \
++                buf[0] = 0xcf; _msgpack_store64(&buf[1], d); \
++                msgpack_pack_append_buffer(x, buf, 9); \
++            } \
++        } \
++    } \
++} while(0)
++
++
++#ifdef msgpack_pack_inline_func_fixint
++
++msgpack_pack_inline_func_fixint(_uint8)(msgpack_pack_user x, uint8_t d)
++{
++    unsigned char buf[2] = {0xcc, TAKE8_8(d)};
++    msgpack_pack_append_buffer(x, buf, 2);
++}
++
++msgpack_pack_inline_func_fixint(_uint16)(msgpack_pack_user x, uint16_t d)
++{
++    unsigned char buf[3];
++    buf[0] = 0xcd; _msgpack_store16(&buf[1], d);
++    msgpack_pack_append_buffer(x, buf, 3);
++}
++
++msgpack_pack_inline_func_fixint(_uint32)(msgpack_pack_user x, uint32_t d)
++{
++    unsigned char buf[5];
++    buf[0] = 0xce; _msgpack_store32(&buf[1], d);
++    msgpack_pack_append_buffer(x, buf, 5);
++}
++
++msgpack_pack_inline_func_fixint(_uint64)(msgpack_pack_user x, uint64_t d)
++{
++    unsigned char buf[9];
++    buf[0] = 0xcf; _msgpack_store64(&buf[1], d);
++    msgpack_pack_append_buffer(x, buf, 9);
++}
++
++msgpack_pack_inline_func_fixint(_int8)(msgpack_pack_user x, int8_t d)
++{
++    unsigned char buf[2] = {0xd0, TAKE8_8(d)};
++    msgpack_pack_append_buffer(x, buf, 2);
++}
++
++msgpack_pack_inline_func_fixint(_int16)(msgpack_pack_user x, int16_t d)
++{
++    unsigned char buf[3];
++    buf[0] = 0xd1; _msgpack_store16(&buf[1], d);
++    msgpack_pack_append_buffer(x, buf, 3);
++}
++
++msgpack_pack_inline_func_fixint(_int32)(msgpack_pack_user x, int32_t d)
++{
++    unsigned char buf[5];
++    buf[0] = 0xd2; _msgpack_store32(&buf[1], d);
++    msgpack_pack_append_buffer(x, buf, 5);
++}
++
++msgpack_pack_inline_func_fixint(_int64)(msgpack_pack_user x, int64_t d)
++{
++    unsigned char buf[9];
++    buf[0] = 0xd3; _msgpack_store64(&buf[1], d);
++    msgpack_pack_append_buffer(x, buf, 9);
++}
++
++#undef msgpack_pack_inline_func_fixint
++#endif
++
++
++msgpack_pack_inline_func(_uint8)(msgpack_pack_user x, uint8_t d)
++{
++    msgpack_pack_real_uint8(x, d);
++}
++
++msgpack_pack_inline_func(_uint16)(msgpack_pack_user x, uint16_t d)
++{
++    msgpack_pack_real_uint16(x, d);
++}
++
++msgpack_pack_inline_func(_uint32)(msgpack_pack_user x, uint32_t d)
++{
++    msgpack_pack_real_uint32(x, d);
++}
++
++msgpack_pack_inline_func(_uint64)(msgpack_pack_user x, uint64_t d)
++{
++    msgpack_pack_real_uint64(x, d);
++}
++
++msgpack_pack_inline_func(_int8)(msgpack_pack_user x, int8_t d)
++{
++    msgpack_pack_real_int8(x, d);
++}
++
++msgpack_pack_inline_func(_int16)(msgpack_pack_user x, int16_t d)
++{
++    msgpack_pack_real_int16(x, d);
++}
++
++msgpack_pack_inline_func(_int32)(msgpack_pack_user x, int32_t d)
++{
++    msgpack_pack_real_int32(x, d);
++}
++
++msgpack_pack_inline_func(_int64)(msgpack_pack_user x, int64_t d)
++{
++    msgpack_pack_real_int64(x, d);
++}
++
++msgpack_pack_inline_func(_char)(msgpack_pack_user x, char d)
++{
++#if defined(CHAR_MIN)
++#if CHAR_MIN < 0
++        msgpack_pack_real_int8(x, d);
++#else
++        msgpack_pack_real_uint8(x, d);
++#endif
++#else
++#error CHAR_MIN is not defined
++#endif
++}
++
++msgpack_pack_inline_func(_signed_char)(msgpack_pack_user x, signed char d)
++{
++    msgpack_pack_real_int8(x, d);
++}
++
++msgpack_pack_inline_func(_unsigned_char)(msgpack_pack_user x, unsigned char d)
++{
++    msgpack_pack_real_uint8(x, d);
++}
++
++#ifdef msgpack_pack_inline_func_cint
++
++msgpack_pack_inline_func_cint(_short)(msgpack_pack_user x, short d)
++{
++#if defined(SIZEOF_SHORT)
++#if SIZEOF_SHORT == 2
++    msgpack_pack_real_int16(x, d);
++#elif SIZEOF_SHORT == 4
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#elif defined(SHRT_MAX)
++#if SHRT_MAX == 0x7fff
++    msgpack_pack_real_int16(x, d);
++#elif SHRT_MAX == 0x7fffffff
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#else
++if(sizeof(short) == 2) {
++    msgpack_pack_real_int16(x, d);
++} else if(sizeof(short) == 4) {
++    msgpack_pack_real_int32(x, d);
++} else {
++    msgpack_pack_real_int64(x, d);
++}
++#endif
++}
++
++msgpack_pack_inline_func_cint(_int)(msgpack_pack_user x, int d)
++{
++#if defined(SIZEOF_INT)
++#if SIZEOF_INT == 2
++    msgpack_pack_real_int16(x, d);
++#elif SIZEOF_INT == 4
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#elif defined(INT_MAX)
++#if INT_MAX == 0x7fff
++    msgpack_pack_real_int16(x, d);
++#elif INT_MAX == 0x7fffffff
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#else
++if(sizeof(int) == 2) {
++    msgpack_pack_real_int16(x, d);
++} else if(sizeof(int) == 4) {
++    msgpack_pack_real_int32(x, d);
++} else {
++    msgpack_pack_real_int64(x, d);
++}
++#endif
++}
++
++msgpack_pack_inline_func_cint(_long)(msgpack_pack_user x, long d)
++{
++#if defined(SIZEOF_LONG)
++#if SIZEOF_LONG == 2
++    msgpack_pack_real_int16(x, d);
++#elif SIZEOF_LONG == 4
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#elif defined(LONG_MAX)
++#if LONG_MAX == 0x7fffL
++    msgpack_pack_real_int16(x, d);
++#elif LONG_MAX == 0x7fffffffL
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#else
++if(sizeof(long) == 2) {
++    msgpack_pack_real_int16(x, d);
++} else if(sizeof(long) == 4) {
++    msgpack_pack_real_int32(x, d);
++} else {
++    msgpack_pack_real_int64(x, d);
++}
++#endif
++}
++
++msgpack_pack_inline_func_cint(_long_long)(msgpack_pack_user x, long long d)
++{
++#if defined(SIZEOF_LONG_LONG)
++#if SIZEOF_LONG_LONG == 2
++    msgpack_pack_real_int16(x, d);
++#elif SIZEOF_LONG_LONG == 4
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#elif defined(LLONG_MAX)
++#if LLONG_MAX == 0x7fffL
++    msgpack_pack_real_int16(x, d);
++#elif LLONG_MAX == 0x7fffffffL
++    msgpack_pack_real_int32(x, d);
++#else
++    msgpack_pack_real_int64(x, d);
++#endif
++
++#else
++if(sizeof(long long) == 2) {
++    msgpack_pack_real_int16(x, d);
++} else if(sizeof(long long) == 4) {
++    msgpack_pack_real_int32(x, d);
++} else {
++    msgpack_pack_real_int64(x, d);
++}
++#endif
++}
++
++msgpack_pack_inline_func_cint(_unsigned_short)(msgpack_pack_user x, unsigned short d)
++{
++#if defined(SIZEOF_SHORT)
++#if SIZEOF_SHORT == 2
++    msgpack_pack_real_uint16(x, d);
++#elif SIZEOF_SHORT == 4
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#elif defined(USHRT_MAX)
++#if USHRT_MAX == 0xffffU
++    msgpack_pack_real_uint16(x, d);
++#elif USHRT_MAX == 0xffffffffU
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#else
++if(sizeof(unsigned short) == 2) {
++    msgpack_pack_real_uint16(x, d);
++} else if(sizeof(unsigned short) == 4) {
++    msgpack_pack_real_uint32(x, d);
++} else {
++    msgpack_pack_real_uint64(x, d);
++}
++#endif
++}
++
++msgpack_pack_inline_func_cint(_unsigned_int)(msgpack_pack_user x, unsigned int d)
++{
++#if defined(SIZEOF_INT)
++#if SIZEOF_INT == 2
++    msgpack_pack_real_uint16(x, d);
++#elif SIZEOF_INT == 4
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#elif defined(UINT_MAX)
++#if UINT_MAX == 0xffffU
++    msgpack_pack_real_uint16(x, d);
++#elif UINT_MAX == 0xffffffffU
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#else
++if(sizeof(unsigned int) == 2) {
++    msgpack_pack_real_uint16(x, d);
++} else if(sizeof(unsigned int) == 4) {
++    msgpack_pack_real_uint32(x, d);
++} else {
++    msgpack_pack_real_uint64(x, d);
++}
++#endif
++}
++
++msgpack_pack_inline_func_cint(_unsigned_long)(msgpack_pack_user x, unsigned long d)
++{
++#if defined(SIZEOF_LONG)
++#if SIZEOF_LONG == 2
++    msgpack_pack_real_uint16(x, d);
++#elif SIZEOF_LONG == 4
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#elif defined(ULONG_MAX)
++#if ULONG_MAX == 0xffffUL
++    msgpack_pack_real_uint16(x, d);
++#elif ULONG_MAX == 0xffffffffUL
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#else
++if(sizeof(unsigned long) == 2) {
++    msgpack_pack_real_uint16(x, d);
++} else if(sizeof(unsigned long) == 4) {
++    msgpack_pack_real_uint32(x, d);
++} else {
++    msgpack_pack_real_uint64(x, d);
++}
++#endif
++}
++
++msgpack_pack_inline_func_cint(_unsigned_long_long)(msgpack_pack_user x, unsigned long long d)
++{
++#if defined(SIZEOF_LONG_LONG)
++#if SIZEOF_LONG_LONG == 2
++    msgpack_pack_real_uint16(x, d);
++#elif SIZEOF_LONG_LONG == 4
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#elif defined(ULLONG_MAX)
++#if ULLONG_MAX == 0xffffUL
++    msgpack_pack_real_uint16(x, d);
++#elif ULLONG_MAX == 0xffffffffUL
++    msgpack_pack_real_uint32(x, d);
++#else
++    msgpack_pack_real_uint64(x, d);
++#endif
++
++#else
++if(sizeof(unsigned long long) == 2) {
++    msgpack_pack_real_uint16(x, d);
++} else if(sizeof(unsigned long long) == 4) {
++    msgpack_pack_real_uint32(x, d);
++} else {
++    msgpack_pack_real_uint64(x, d);
++}
++#endif
++}
++
++#undef msgpack_pack_inline_func_cint
++#endif
++
++
++
++/*
++ * Float
++ */
++
++msgpack_pack_inline_func(_float)(msgpack_pack_user x, float d)
++{
++    unsigned char buf[5];
++    union { float f; uint32_t i; } mem;
++    mem.f = d;
++    buf[0] = 0xca; _msgpack_store32(&buf[1], mem.i);
++    msgpack_pack_append_buffer(x, buf, 5);
++}
++
++msgpack_pack_inline_func(_double)(msgpack_pack_user x, double d)
++{
++    unsigned char buf[9];
++    union { double f; uint64_t i; } mem;
++    mem.f = d;
++    buf[0] = 0xcb;
++#if defined(TARGET_OS_IPHONE)
++    // ok
++#elif defined(__arm__) && !(__ARM_EABI__) // arm-oabi
++    // https://github.com/msgpack/msgpack-perl/pull/1
++    mem.i = (mem.i & 0xFFFFFFFFUL) << 32UL | (mem.i >> 32UL);
++#endif
++    _msgpack_store64(&buf[1], mem.i);
++    msgpack_pack_append_buffer(x, buf, 9);
++}
++
++
++/*
++ * Nil
++ */
++
++msgpack_pack_inline_func(_nil)(msgpack_pack_user x)
++{
++    static const unsigned char d = 0xc0;
++    msgpack_pack_append_buffer(x, &d, 1);
++}
++
++
++/*
++ * Boolean
++ */
++
++msgpack_pack_inline_func(_true)(msgpack_pack_user x)
++{
++    static const unsigned char d = 0xc3;
++    msgpack_pack_append_buffer(x, &d, 1);
++}
++
++msgpack_pack_inline_func(_false)(msgpack_pack_user x)
++{
++    static const unsigned char d = 0xc2;
++    msgpack_pack_append_buffer(x, &d, 1);
++}
++
++
++/*
++ * Array
++ */
++
++msgpack_pack_inline_func(_array)(msgpack_pack_user x, size_t n)
++{
++    if(n < 16) {
++        unsigned char d = 0x90 | (uint8_t)n;
++        msgpack_pack_append_buffer(x, &d, 1);
++    } else if(n < 65536) {
++        unsigned char buf[3];
++        buf[0] = 0xdc; _msgpack_store16(&buf[1], (uint16_t)n);
++        msgpack_pack_append_buffer(x, buf, 3);
++    } else {
++        unsigned char buf[5];
++        buf[0] = 0xdd; _msgpack_store32(&buf[1], (uint32_t)n);
++        msgpack_pack_append_buffer(x, buf, 5);
++    }
++}
++
++
++/*
++ * Map
++ */
++
++msgpack_pack_inline_func(_map)(msgpack_pack_user x, size_t n)
++{
++    if(n < 16) {
++        unsigned char d = 0x80 | (uint8_t)n;
++        msgpack_pack_append_buffer(x, &TAKE8_8(d), 1);
++    } else if(n < 65536) {
++        unsigned char buf[3];
++        buf[0] = 0xde; _msgpack_store16(&buf[1], (uint16_t)n);
++        msgpack_pack_append_buffer(x, buf, 3);
++    } else {
++        unsigned char buf[5];
++        buf[0] = 0xdf; _msgpack_store32(&buf[1], (uint32_t)n);
++        msgpack_pack_append_buffer(x, buf, 5);
++    }
++}
++
++
++/*
++ * Str
++ */
++
++msgpack_pack_inline_func(_str)(msgpack_pack_user x, size_t l)
++{
++    if(l < 32) {
++        unsigned char d = 0xa0 | (uint8_t)l;
++        msgpack_pack_append_buffer(x, &TAKE8_8(d), 1);
++    } else if(l < 256) {
++        unsigned char buf[2];
++        buf[0] = 0xd9; buf[1] = (uint8_t)l;
++        msgpack_pack_append_buffer(x, buf, 2);
++    } else if(l < 65536) {
++        unsigned char buf[3];
++        buf[0] = 0xda; _msgpack_store16(&buf[1], (uint16_t)l);
++        msgpack_pack_append_buffer(x, buf, 3);
++    } else {
++        unsigned char buf[5];
++        buf[0] = 0xdb; _msgpack_store32(&buf[1], (uint32_t)l);
++        msgpack_pack_append_buffer(x, buf, 5);
++    }
++}
++
++msgpack_pack_inline_func(_str_body)(msgpack_pack_user x, const void* b, size_t l)
++{
++    msgpack_pack_append_buffer(x, (const unsigned char*)b, l);
++}
++
++/*
++ * Raw (V4)
++ */
++
++msgpack_pack_inline_func(_v4raw)(msgpack_pack_user x, size_t l)
++{
++    if(l < 32) {
++        unsigned char d = 0xa0 | (uint8_t)l;
++        msgpack_pack_append_buffer(x, &TAKE8_8(d), 1);
++    } else if(l < 65536) {
++        unsigned char buf[3];
++        buf[0] = 0xda; _msgpack_store16(&buf[1], (uint16_t)l);
++        msgpack_pack_append_buffer(x, buf, 3);
++    } else {
++        unsigned char buf[5];
++        buf[0] = 0xdb; _msgpack_store32(&buf[1], (uint32_t)l);
++        msgpack_pack_append_buffer(x, buf, 5);
++    }
++}
++
++msgpack_pack_inline_func(_v4raw_body)(msgpack_pack_user x, const void* b, size_t l)
++{
++    msgpack_pack_append_buffer(x, (const unsigned char*)b, l);
++}
++
++/*
++ * Bin
++ */
++
++msgpack_pack_inline_func(_bin)(msgpack_pack_user x, size_t l)
++{
++    if(l < 256) {
++        unsigned char buf[2];
++        buf[0] = 0xc4; buf[1] = (uint8_t)l;
++        msgpack_pack_append_buffer(x, buf, 2);
++    } else if(l < 65536) {
++        unsigned char buf[3];
++        buf[0] = 0xc5; _msgpack_store16(&buf[1], (uint16_t)l);
++        msgpack_pack_append_buffer(x, buf, 3);
++    } else {
++        unsigned char buf[5];
++        buf[0] = 0xc6; _msgpack_store32(&buf[1], (uint32_t)l);
++        msgpack_pack_append_buffer(x, buf, 5);
++    }
++}
++
++msgpack_pack_inline_func(_bin_body)(msgpack_pack_user x, const void* b, size_t l)
++{
++    msgpack_pack_append_buffer(x, (const unsigned char*)b, l);
++}
++
++/*
++ * Ext
++ */
++
++msgpack_pack_inline_func(_ext)(msgpack_pack_user x, size_t l, int8_t type)
++{
++    switch(l) {
++    case 1: {
++        unsigned char buf[2];
++        buf[0] = 0xd4;
++        buf[1] = (unsigned char)type;
++        msgpack_pack_append_buffer(x, buf, 2);
++    } break;
++    case 2: {
++        unsigned char buf[2];
++        buf[0] = 0xd5;
++        buf[1] = (unsigned char)type;
++        msgpack_pack_append_buffer(x, buf, 2);
++    } break;
++    case 4: {
++        unsigned char buf[2];
++        buf[0] = 0xd6;
++        buf[1] = (unsigned char)type;
++        msgpack_pack_append_buffer(x, buf, 2);
++    } break;
++    case 8: {
++        unsigned char buf[2];
++        buf[0] = 0xd7;
++        buf[1] = (unsigned char)type;
++        msgpack_pack_append_buffer(x, buf, 2);
++    } break;
++    case 16: {
++        unsigned char buf[2];
++        buf[0] = 0xd8;
++        buf[1] = (unsigned char)type;
++        msgpack_pack_append_buffer(x, buf, 2);
++    } break;
++    default:
++        if(l < 256) {
++            unsigned char buf[3];
++            buf[0] = 0xc7;
++            buf[1] = (unsigned char)l;
++            buf[2] = (unsigned char)type;
++            msgpack_pack_append_buffer(x, buf, 3);
++        } else if(l < 65536) {
++            unsigned char buf[4];
++            buf[0] = 0xc8;
++            _msgpack_store16(&buf[1], l);
++            buf[3] = (unsigned char)type;
++            msgpack_pack_append_buffer(x, buf, 4);
++        } else {
++            unsigned char buf[6];
++            buf[0] = 0xc9;
++            _msgpack_store32(&buf[1], l);
++            buf[5] = (unsigned char)type;
++            msgpack_pack_append_buffer(x, buf, 6);
++        }
++        break;
++    }
++}
++
++msgpack_pack_inline_func(_ext_body)(msgpack_pack_user x, const void* b, size_t l)
++{
++    msgpack_pack_append_buffer(x, (const unsigned char*)b, l);
++}
++
++msgpack_pack_inline_func(_timestamp)(msgpack_pack_user x, const msgpack_timestamp* d)
++{
++    if ((((int64_t)d->tv_sec) >> 34) == 0) {
++        uint64_t data64 = ((uint64_t) d->tv_nsec << 34) | (uint64_t)d->tv_sec;
++        if ((data64 & 0xffffffff00000000L) == 0)   {
++            // timestamp 32
++            char buf[4];
++            uint32_t data32 = (uint32_t)data64;
++            msgpack_pack_ext(x, 4, -1);
++            _msgpack_store32(buf, data32);
++            msgpack_pack_append_buffer(x, buf, 4);
++        } else {
++            // timestamp 64
++            char buf[8];
++            msgpack_pack_ext(x, 8, -1);
++            _msgpack_store64(buf, data64);
++            msgpack_pack_append_buffer(x, buf, 8);
++        }
++    } else  {
++        // timestamp 96
++        char buf[12];
++        _msgpack_store32(&buf[0], d->tv_nsec);
++        _msgpack_store64(&buf[4], d->tv_sec);
++        msgpack_pack_ext(x, 12, -1);
++        msgpack_pack_append_buffer(x, buf, 12);
++    }
++}
++
++#undef msgpack_pack_inline_func
++#undef msgpack_pack_user
++#undef msgpack_pack_append_buffer
++
++#undef TAKE8_8
++#undef TAKE8_16
++#undef TAKE8_32
++#undef TAKE8_64
++
++#undef msgpack_pack_real_uint8
++#undef msgpack_pack_real_uint16
++#undef msgpack_pack_real_uint32
++#undef msgpack_pack_real_uint64
++#undef msgpack_pack_real_int8
++#undef msgpack_pack_real_int16
++#undef msgpack_pack_real_int32
++#undef msgpack_pack_real_int64
++
++#if defined(_MSC_VER)
++#   pragma warning(pop)
++#endif
+diff --git a/include/msgpack/sbuffer.h b/include/msgpack/sbuffer.h
+new file mode 100644
+index 000000000000..572d8f27e683
+--- /dev/null
++++ b/include/msgpack/sbuffer.h
+@@ -0,0 +1,115 @@
++/*
++ * MessagePack for C simple buffer implementation
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_SBUFFER_H
++#define MSGPACK_SBUFFER_H
++
++#include <stdlib.h>
++#include <string.h>
++#include <assert.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_sbuffer Simple buffer
++ * @ingroup msgpack_buffer
++ * @{
++ */
++
++typedef struct msgpack_sbuffer {
++    size_t size;
++    char* data;
++    size_t alloc;
++} msgpack_sbuffer;
++
++static inline void msgpack_sbuffer_init(msgpack_sbuffer* sbuf)
++{
++    memset(sbuf, 0, sizeof(msgpack_sbuffer));
++}
++
++static inline void msgpack_sbuffer_destroy(msgpack_sbuffer* sbuf)
++{
++    free(sbuf->data);
++}
++
++static inline msgpack_sbuffer* msgpack_sbuffer_new(void)
++{
++    return (msgpack_sbuffer*)calloc(1, sizeof(msgpack_sbuffer));
++}
++
++static inline void msgpack_sbuffer_free(msgpack_sbuffer* sbuf)
++{
++    if(sbuf == NULL) { return; }
++    msgpack_sbuffer_destroy(sbuf);
++    free(sbuf);
++}
++
++#ifndef MSGPACK_SBUFFER_INIT_SIZE
++#define MSGPACK_SBUFFER_INIT_SIZE 8192
++#endif
++
++static inline int msgpack_sbuffer_write(void* data, const char* buf, size_t len)
++{
++    msgpack_sbuffer* sbuf = (msgpack_sbuffer*)data;
++
++    assert(buf || len == 0);
++    if(!buf) return 0;
++
++    if(sbuf->alloc - sbuf->size < len) {
++        void* tmp;
++        size_t nsize = (sbuf->alloc) ?
++                sbuf->alloc * 2 : MSGPACK_SBUFFER_INIT_SIZE;
++
++        while(nsize < sbuf->size + len) {
++            size_t tmp_nsize = nsize * 2;
++            if (tmp_nsize <= nsize) {
++                nsize = sbuf->size + len;
++                break;
++            }
++            nsize = tmp_nsize;
++        }
++
++        tmp = realloc(sbuf->data, nsize);
++        if(!tmp) { return -1; }
++
++        sbuf->data = (char*)tmp;
++        sbuf->alloc = nsize;
++    }
++
++    memcpy(sbuf->data + sbuf->size, buf, len);
++    sbuf->size += len;
++
++    return 0;
++}
++
++static inline char* msgpack_sbuffer_release(msgpack_sbuffer* sbuf)
++{
++    char* tmp = sbuf->data;
++    sbuf->size = 0;
++    sbuf->data = NULL;
++    sbuf->alloc = 0;
++    return tmp;
++}
++
++static inline void msgpack_sbuffer_clear(msgpack_sbuffer* sbuf)
++{
++    sbuf->size = 0;
++}
++
++/** @} */
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/sbuffer.h */
+diff --git a/include/msgpack/sysdep.h b/include/msgpack/sysdep.h
+new file mode 100644
+index 000000000000..8f6f4614ba32
+--- /dev/null
++++ b/include/msgpack/sysdep.h
+@@ -0,0 +1,228 @@
++/*
++ * MessagePack system dependencies
++ *
++ * Copyright (C) 2008-2010 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_SYSDEP_H
++#define MSGPACK_SYSDEP_H
++
++#include <stdlib.h>
++#include <stddef.h>
++
++#ifndef MSGPACK_ENDIAN_BIG_BYTE
++#define MSGPACK_ENDIAN_BIG_BYTE 0
++#endif
++#ifndef MSGPACK_ENDIAN_LITTLE_BYTE
++#define MSGPACK_ENDIAN_LITTLE_BYTE 1
++#endif
++
++#if defined(_MSC_VER) && _MSC_VER <= 1800
++#   define snprintf(buf, len, format,...) _snprintf_s(buf, len, _TRUNCATE, format, __VA_ARGS__)
++#endif
++
++#if defined(_MSC_VER) && _MSC_VER < 1600
++    typedef signed __int8 int8_t;
++    typedef unsigned __int8 uint8_t;
++    typedef signed __int16 int16_t;
++    typedef unsigned __int16 uint16_t;
++    typedef signed __int32 int32_t;
++    typedef unsigned __int32 uint32_t;
++    typedef signed __int64 int64_t;
++    typedef unsigned __int64 uint64_t;
++#   if defined(_WIN64)
++        typedef signed __int64 intptr_t;
++        typedef unsigned __int64 uintptr_t;
++#   else
++        typedef signed __int32 intptr_t;
++        typedef unsigned __int32 uintptr_t;
++#   endif
++#elif defined(_MSC_VER)  // && _MSC_VER >= 1600
++#   include <stdint.h>
++#else
++#   include <stdint.h>
++#   include <stdbool.h>
++#endif
++
++#if !defined(MSGPACK_DLLEXPORT)
++#if defined(_MSC_VER)
++#   define MSGPACK_DLLEXPORT __declspec(dllexport)
++#else  /* _MSC_VER */
++#   define MSGPACK_DLLEXPORT
++#endif /* _MSC_VER */
++#endif
++
++#ifdef _WIN32
++#   if defined(_KERNEL_MODE)
++#       define _msgpack_atomic_counter_header <ntddk.h>
++#   else
++#       define _msgpack_atomic_counter_header <windows.h>
++#       if !defined(WIN32_LEAN_AND_MEAN)
++#           define WIN32_LEAN_AND_MEAN
++#       endif /* WIN32_LEAN_AND_MEAN */
++#   endif
++    typedef long _msgpack_atomic_counter_t;
++#if defined(_AMD64_) || defined(_M_X64) || defined(_M_ARM64)
++#    define _msgpack_sync_decr_and_fetch(ptr) _InterlockedDecrement(ptr)
++#    define _msgpack_sync_incr_and_fetch(ptr) _InterlockedIncrement(ptr)
++#else
++#    define _msgpack_sync_decr_and_fetch(ptr) InterlockedDecrement(ptr)
++#    define _msgpack_sync_incr_and_fetch(ptr) InterlockedIncrement(ptr)
++#endif
++#elif defined(__GNUC__) && ((__GNUC__*10 + __GNUC_MINOR__) < 41)
++
++#   if defined(__cplusplus)
++#       define _msgpack_atomic_counter_header "msgpack/gcc_atomic.hpp"
++#   else
++#       define _msgpack_atomic_counter_header "msgpack/gcc_atomic.h"
++#   endif
++
++#else
++    typedef unsigned int _msgpack_atomic_counter_t;
++#   define _msgpack_sync_decr_and_fetch(ptr) __sync_sub_and_fetch(ptr, 1)
++#   define _msgpack_sync_incr_and_fetch(ptr) __sync_add_and_fetch(ptr, 1)
++#endif
++
++#ifdef _WIN32
++
++#   ifdef __cplusplus
++    /* numeric_limits<T>::min,max */
++#       ifdef max
++#           undef max
++#       endif
++#       ifdef min
++#           undef min
++#       endif
++#   endif
++
++#elif defined(unix) || defined(__unix) || defined(__APPLE__) || defined(__OpenBSD__)
++
++#include <arpa/inet.h>  /* __BYTE_ORDER */
++#   if defined(linux)
++#       include <byteswap.h>
++#   endif
++
++#endif
++
++#if !defined(MSGPACK_ENDIAN_LITTLE_BYTE) && !defined(MSGPACK_ENDIAN_BIG_BYTE)
++#include <msgpack/predef/other/endian.h>
++#endif // !defined(MSGPACK_ENDIAN_LITTLE_BYTE) && !defined(MSGPACK_ENDIAN_BIG_BYTE)
++
++#if MSGPACK_ENDIAN_LITTLE_BYTE
++
++#   if defined(unix) || defined(__unix) || defined(__APPLE__) || defined(__OpenBSD__)
++#       define _msgpack_be16(x) ntohs((uint16_t)x)
++#   else
++#       if defined(ntohs)
++#           define _msgpack_be16(x) ntohs(x)
++#       elif defined(_byteswap_ushort) || (defined(_MSC_VER) && _MSC_VER >= 1400)
++#           define _msgpack_be16(x) ((uint16_t)_byteswap_ushort((unsigned short)x))
++#       else
++#           define _msgpack_be16(x) ( \
++                ((((uint16_t)x) <<  8) ) | \
++                ((((uint16_t)x) >>  8) ) )
++#        endif
++#   endif
++
++#   if defined(unix) || defined(__unix) || defined(__APPLE__) || defined(__OpenBSD__)
++#       define _msgpack_be32(x) ntohl((uint32_t)x)
++#   else
++#       if defined(ntohl)
++#           define _msgpack_be32(x) ntohl(x)
++#       elif defined(_byteswap_ulong) || (defined(_MSC_VER) && _MSC_VER >= 1400)
++#           define _msgpack_be32(x) ((uint32_t)_byteswap_ulong((unsigned long)x))
++#       else
++#           define _msgpack_be32(x) \
++                ( ((((uint32_t)x) << 24)               ) | \
++                  ((((uint32_t)x) <<  8) & 0x00ff0000U ) | \
++                  ((((uint32_t)x) >>  8) & 0x0000ff00U ) | \
++                  ((((uint32_t)x) >> 24)               ) )
++#       endif
++#   endif
++
++#   if defined(_byteswap_uint64) || (defined(_MSC_VER) && _MSC_VER >= 1400)
++#        define _msgpack_be64(x) (_byteswap_uint64(x))
++#   elif defined(bswap_64)
++#        define _msgpack_be64(x) bswap_64(x)
++#   elif defined(__DARWIN_OSSwapInt64)
++#        define _msgpack_be64(x) __DARWIN_OSSwapInt64(x)
++#   else
++#        define _msgpack_be64(x) \
++             ( ((((uint64_t)x) << 56)                         ) | \
++               ((((uint64_t)x) << 40) & 0x00ff000000000000ULL ) | \
++               ((((uint64_t)x) << 24) & 0x0000ff0000000000ULL ) | \
++               ((((uint64_t)x) <<  8) & 0x000000ff00000000ULL ) | \
++               ((((uint64_t)x) >>  8) & 0x00000000ff000000ULL ) | \
++               ((((uint64_t)x) >> 24) & 0x0000000000ff0000ULL ) | \
++               ((((uint64_t)x) >> 40) & 0x000000000000ff00ULL ) | \
++               ((((uint64_t)x) >> 56)                         ) )
++#   endif
++
++#elif MSGPACK_ENDIAN_BIG_BYTE
++
++#   define _msgpack_be16(x) (x)
++#   define _msgpack_be32(x) (x)
++#   define _msgpack_be64(x) (x)
++
++#else
++#   error msgpack-c supports only big endian and little endian
++#endif /* MSGPACK_ENDIAN_LITTLE_BYTE */
++
++#define _msgpack_load16(cast, from, to) do {       \
++        memcpy((cast*)(to), (from), sizeof(cast)); \
++        *(to) = (cast)_msgpack_be16(*(to));      \
++    } while (0);
++
++#define _msgpack_load32(cast, from, to) do {       \
++        memcpy((cast*)(to), (from), sizeof(cast)); \
++        *(to) = (cast)_msgpack_be32(*(to));        \
++    } while (0);
++#define _msgpack_load64(cast, from, to) do {       \
++        memcpy((cast*)(to), (from), sizeof(cast)); \
++        *(to) = (cast)_msgpack_be64(*(to));        \
++    } while (0);
++
++#define _msgpack_store16(to, num) \
++    do { uint16_t val = _msgpack_be16(num); memcpy(to, &val, 2); } while(0)
++#define _msgpack_store32(to, num) \
++    do { uint32_t val = _msgpack_be32(num); memcpy(to, &val, 4); } while(0)
++#define _msgpack_store64(to, num) \
++    do { uint64_t val = _msgpack_be64(num); memcpy(to, &val, 8); } while(0)
++
++/*
++#define _msgpack_load16(cast, from) \
++    ({ cast val; memcpy(&val, (char*)from, 2); _msgpack_be16(val); })
++#define _msgpack_load32(cast, from) \
++    ({ cast val; memcpy(&val, (char*)from, 4); _msgpack_be32(val); })
++#define _msgpack_load64(cast, from) \
++    ({ cast val; memcpy(&val, (char*)from, 8); _msgpack_be64(val); })
++*/
++
++
++#if !defined(__cplusplus) && defined(_MSC_VER)
++#  if !defined(_KERNEL_MODE)
++#    if !defined(FALSE)
++#      define FALSE (0)
++#    endif
++#    if !defined(TRUE)
++#      define TRUE (!FALSE)
++#    endif
++#  endif
++#  if _MSC_VER >= 1800
++#    include <stdbool.h>
++#  else
++#    define bool int
++#    define true TRUE
++#    define false FALSE
++#  endif
++#  define inline __inline
++#endif
++
++#ifdef __APPLE__
++#  include <TargetConditionals.h>
++#endif
++
++#endif /* msgpack/sysdep.h */
+diff --git a/include/msgpack/timestamp.h b/include/msgpack/timestamp.h
+new file mode 100644
+index 000000000000..7613931257f6
+--- /dev/null
++++ b/include/msgpack/timestamp.h
+@@ -0,0 +1,58 @@
++/*
++ * MessagePack for C TimeStamp
++ *
++ * Copyright (C) 2018 KONDO Takatoshi
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_TIMESTAMP_H
++#define MSGPACK_TIMESTAMP_H
++
++#include <msgpack/object.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++typedef struct msgpack_timestamp {
++    int64_t tv_sec;
++    uint32_t tv_nsec;
++} msgpack_timestamp;
++
++static inline bool msgpack_object_to_timestamp(const msgpack_object* obj, msgpack_timestamp* ts) {
++    if (obj->type != MSGPACK_OBJECT_EXT) return false;
++    if (obj->via.ext.type != -1) return false;
++    switch (obj->via.ext.size) {
++    case 4:
++        ts->tv_nsec = 0;
++        {
++            uint32_t v;
++            _msgpack_load32(uint32_t, obj->via.ext.ptr, &v);
++            ts->tv_sec = v;
++        }
++        return true;
++    case 8: {
++        uint64_t value;
++        _msgpack_load64(uint64_t, obj->via.ext.ptr, &value);
++        ts->tv_nsec = (uint32_t)(value >> 34);
++        ts->tv_sec = value & 0x00000003ffffffffLL;
++        return true;
++    }
++    case 12:
++        _msgpack_load32(uint32_t, obj->via.ext.ptr, &ts->tv_nsec);
++        _msgpack_load64(int64_t, obj->via.ext.ptr + 4, &ts->tv_sec);
++        return true;
++    default:
++        return false;
++    }
++}
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/timestamp.h */
+diff --git a/include/msgpack/unpack.h b/include/msgpack/unpack.h
+new file mode 100644
+index 000000000000..036d575ebade
+--- /dev/null
++++ b/include/msgpack/unpack.h
+@@ -0,0 +1,281 @@
++/*
++ * MessagePack for C unpacking routine
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_UNPACKER_H
++#define MSGPACK_UNPACKER_H
++
++#include "zone.h"
++#include "object.h"
++#include <string.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_unpack Deserializer
++ * @ingroup msgpack
++ * @{
++ */
++
++typedef struct msgpack_unpacked {
++    msgpack_zone* zone;
++    msgpack_object data;
++} msgpack_unpacked;
++
++typedef enum {
++    MSGPACK_UNPACK_SUCCESS              =  2,
++    MSGPACK_UNPACK_EXTRA_BYTES          =  1,
++    MSGPACK_UNPACK_CONTINUE             =  0,
++    MSGPACK_UNPACK_PARSE_ERROR          = -1,
++    MSGPACK_UNPACK_NOMEM_ERROR          = -2
++} msgpack_unpack_return;
++
++
++MSGPACK_DLLEXPORT
++msgpack_unpack_return
++msgpack_unpack_next(msgpack_unpacked* result,
++        const char* data, size_t len, size_t* off);
++
++/** @} */
++
++
++/**
++ * @defgroup msgpack_unpacker Streaming deserializer
++ * @ingroup msgpack
++ * @{
++ */
++
++typedef struct msgpack_unpacker {
++    char* buffer;
++    size_t used;
++    size_t free;
++    size_t off;
++    size_t parsed;
++    msgpack_zone* z;
++    size_t initial_buffer_size;
++    void* ctx;
++} msgpack_unpacker;
++
++
++#ifndef MSGPACK_UNPACKER_INIT_BUFFER_SIZE
++#define MSGPACK_UNPACKER_INIT_BUFFER_SIZE (64*1024)
++#endif
++
++/**
++ * Initializes a streaming deserializer.
++ * The initialized deserializer must be destroyed by msgpack_unpacker_destroy(msgpack_unpacker*).
++ */
++MSGPACK_DLLEXPORT
++bool msgpack_unpacker_init(msgpack_unpacker* mpac, size_t initial_buffer_size);
++
++/**
++ * Destroys a streaming deserializer initialized by msgpack_unpacker_init(msgpack_unpacker*, size_t).
++ */
++MSGPACK_DLLEXPORT
++void msgpack_unpacker_destroy(msgpack_unpacker* mpac);
++
++
++/**
++ * Creates a streaming deserializer.
++ * The created deserializer must be destroyed by msgpack_unpacker_free(msgpack_unpacker*).
++ */
++MSGPACK_DLLEXPORT
++msgpack_unpacker* msgpack_unpacker_new(size_t initial_buffer_size);
++
++/**
++ * Frees a streaming deserializer created by msgpack_unpacker_new(size_t).
++ */
++MSGPACK_DLLEXPORT
++void msgpack_unpacker_free(msgpack_unpacker* mpac);
++
++
++#ifndef MSGPACK_UNPACKER_RESERVE_SIZE
++#define MSGPACK_UNPACKER_RESERVE_SIZE (32*1024)
++#endif
++
++/**
++ * Reserves free space of the internal buffer.
++ * Use this function to fill the internal buffer with
++ * msgpack_unpacker_buffer(msgpack_unpacker*),
++ * msgpack_unpacker_buffer_capacity(const msgpack_unpacker*) and
++ * msgpack_unpacker_buffer_consumed(msgpack_unpacker*).
++ */
++static inline bool   msgpack_unpacker_reserve_buffer(msgpack_unpacker* mpac, size_t size);
++
++/**
++ * Gets pointer to the free space of the internal buffer.
++ * Use this function to fill the internal buffer with
++ * msgpack_unpacker_reserve_buffer(msgpack_unpacker*, size_t),
++ * msgpack_unpacker_buffer_capacity(const msgpack_unpacker*) and
++ * msgpack_unpacker_buffer_consumed(msgpack_unpacker*).
++ */
++static inline char*  msgpack_unpacker_buffer(msgpack_unpacker* mpac);
++
++/**
++ * Gets size of the free space of the internal buffer.
++ * Use this function to fill the internal buffer with
++ * msgpack_unpacker_reserve_buffer(msgpack_unpacker*, size_t),
++ * msgpack_unpacker_buffer(const msgpack_unpacker*) and
++ * msgpack_unpacker_buffer_consumed(msgpack_unpacker*).
++ */
++static inline size_t msgpack_unpacker_buffer_capacity(const msgpack_unpacker* mpac);
++
++/**
++ * Notifies the deserializer that the internal buffer filled.
++ * Use this function to fill the internal buffer with
++ * msgpack_unpacker_reserve_buffer(msgpack_unpacker*, size_t),
++ * msgpack_unpacker_buffer(msgpack_unpacker*) and
++ * msgpack_unpacker_buffer_capacity(const msgpack_unpacker*).
++ */
++static inline void   msgpack_unpacker_buffer_consumed(msgpack_unpacker* mpac, size_t size);
++
++
++/**
++ * Deserializes one object.
++ * Returns true if it successes. Otherwise false is returned.
++ * @param pac  pointer to an initialized msgpack_unpacked object.
++ */
++MSGPACK_DLLEXPORT
++msgpack_unpack_return msgpack_unpacker_next(msgpack_unpacker* mpac, msgpack_unpacked* pac);
++
++/**
++ * Deserializes one object and set the number of parsed bytes involved.
++ * Returns true if it successes. Otherwise false is returned.
++ * @param mpac    pointer to an initialized msgpack_unpacker object.
++ * @param result  pointer to an initialized msgpack_unpacked object.
++ * @param p_bytes pointer to variable that will be set with the number of parsed bytes.
++ */
++MSGPACK_DLLEXPORT
++msgpack_unpack_return msgpack_unpacker_next_with_size(msgpack_unpacker* mpac,
++                                                      msgpack_unpacked* result,
++                                                      size_t *p_bytes);
++
++/**
++ * Initializes a msgpack_unpacked object.
++ * The initialized object must be destroyed by msgpack_unpacked_destroy(msgpack_unpacker*).
++ * Use the object with msgpack_unpacker_next(msgpack_unpacker*, msgpack_unpacked*) or
++ * msgpack_unpack_next(msgpack_unpacked*, const char*, size_t, size_t*).
++ */
++static inline void msgpack_unpacked_init(msgpack_unpacked* result);
++
++/**
++ * Destroys a streaming deserializer initialized by msgpack_unpacked().
++ */
++static inline void msgpack_unpacked_destroy(msgpack_unpacked* result);
++
++/**
++ * Releases the memory zone from msgpack_unpacked object.
++ * The released zone must be freed by msgpack_zone_free(msgpack_zone*).
++ */
++static inline msgpack_zone* msgpack_unpacked_release_zone(msgpack_unpacked* result);
++
++
++MSGPACK_DLLEXPORT
++int msgpack_unpacker_execute(msgpack_unpacker* mpac);
++
++MSGPACK_DLLEXPORT
++msgpack_object msgpack_unpacker_data(msgpack_unpacker* mpac);
++
++MSGPACK_DLLEXPORT
++msgpack_zone* msgpack_unpacker_release_zone(msgpack_unpacker* mpac);
++
++MSGPACK_DLLEXPORT
++void msgpack_unpacker_reset_zone(msgpack_unpacker* mpac);
++
++MSGPACK_DLLEXPORT
++void msgpack_unpacker_reset(msgpack_unpacker* mpac);
++
++static inline size_t msgpack_unpacker_message_size(const msgpack_unpacker* mpac);
++
++
++/** @} */
++
++
++// obsolete
++MSGPACK_DLLEXPORT
++msgpack_unpack_return
++msgpack_unpack(const char* data, size_t len, size_t* off,
++        msgpack_zone* result_zone, msgpack_object* result);
++
++
++
++
++static inline size_t msgpack_unpacker_parsed_size(const msgpack_unpacker* mpac);
++
++MSGPACK_DLLEXPORT
++bool msgpack_unpacker_flush_zone(msgpack_unpacker* mpac);
++
++MSGPACK_DLLEXPORT
++bool msgpack_unpacker_expand_buffer(msgpack_unpacker* mpac, size_t size);
++
++static inline bool msgpack_unpacker_reserve_buffer(msgpack_unpacker* mpac, size_t size)
++{
++    if(mpac->free >= size) { return true; }
++    return msgpack_unpacker_expand_buffer(mpac, size);
++}
++
++static inline char* msgpack_unpacker_buffer(msgpack_unpacker* mpac)
++{
++    return mpac->buffer + mpac->used;
++}
++
++static inline size_t msgpack_unpacker_buffer_capacity(const msgpack_unpacker* mpac)
++{
++    return mpac->free;
++}
++
++static inline void msgpack_unpacker_buffer_consumed(msgpack_unpacker* mpac, size_t size)
++{
++    mpac->used += size;
++    mpac->free -= size;
++}
++
++static inline size_t msgpack_unpacker_message_size(const msgpack_unpacker* mpac)
++{
++    return mpac->parsed - mpac->off + mpac->used;
++}
++
++static inline size_t msgpack_unpacker_parsed_size(const msgpack_unpacker* mpac)
++{
++    return mpac->parsed;
++}
++
++
++static inline void msgpack_unpacked_init(msgpack_unpacked* result)
++{
++    memset(result, 0, sizeof(msgpack_unpacked));
++}
++
++static inline void msgpack_unpacked_destroy(msgpack_unpacked* result)
++{
++    if(result->zone != NULL) {
++        msgpack_zone_free(result->zone);
++        result->zone = NULL;
++        memset(&result->data, 0, sizeof(msgpack_object));
++    }
++}
++
++static inline msgpack_zone* msgpack_unpacked_release_zone(msgpack_unpacked* result)
++{
++    if(result->zone != NULL) {
++        msgpack_zone* z = result->zone;
++        result->zone = NULL;
++        return z;
++    }
++    return NULL;
++}
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/unpack.h */
+diff --git a/include/msgpack/unpack_define.h b/include/msgpack/unpack_define.h
+new file mode 100644
+index 000000000000..c7decf65994a
+--- /dev/null
++++ b/include/msgpack/unpack_define.h
+@@ -0,0 +1,89 @@
++/*
++ * MessagePack unpacking routine template
++ *
++ * Copyright (C) 2008-2010 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_UNPACK_DEFINE_H
++#define MSGPACK_UNPACK_DEFINE_H
++
++#include "msgpack/sysdep.h"
++#include <stdlib.h>
++#include <string.h>
++#include <assert.h>
++#include <stdio.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++#ifndef MSGPACK_EMBED_STACK_SIZE
++#define MSGPACK_EMBED_STACK_SIZE 32
++#endif
++
++
++typedef enum {
++    MSGPACK_CS_HEADER            = 0x00,  // nil
++
++    //MSGPACK_CS_                = 0x01,
++    //MSGPACK_CS_                = 0x02,  // false
++    //MSGPACK_CS_                = 0x03,  // true
++
++    MSGPACK_CS_BIN_8             = 0x04,
++    MSGPACK_CS_BIN_16            = 0x05,
++    MSGPACK_CS_BIN_32            = 0x06,
++
++    MSGPACK_CS_EXT_8             = 0x07,
++    MSGPACK_CS_EXT_16            = 0x08,
++    MSGPACK_CS_EXT_32            = 0x09,
++
++    MSGPACK_CS_FLOAT             = 0x0a,
++    MSGPACK_CS_DOUBLE            = 0x0b,
++    MSGPACK_CS_UINT_8            = 0x0c,
++    MSGPACK_CS_UINT_16           = 0x0d,
++    MSGPACK_CS_UINT_32           = 0x0e,
++    MSGPACK_CS_UINT_64           = 0x0f,
++    MSGPACK_CS_INT_8             = 0x10,
++    MSGPACK_CS_INT_16            = 0x11,
++    MSGPACK_CS_INT_32            = 0x12,
++    MSGPACK_CS_INT_64            = 0x13,
++
++    MSGPACK_CS_FIXEXT_1          = 0x14,
++    MSGPACK_CS_FIXEXT_2          = 0x15,
++    MSGPACK_CS_FIXEXT_4          = 0x16,
++    MSGPACK_CS_FIXEXT_8          = 0x17,
++    MSGPACK_CS_FIXEXT_16         = 0x18,
++
++    MSGPACK_CS_STR_8             = 0x19, // str8
++    MSGPACK_CS_STR_16            = 0x1a, // str16
++    MSGPACK_CS_STR_32            = 0x1b, // str32
++    MSGPACK_CS_ARRAY_16          = 0x1c,
++    MSGPACK_CS_ARRAY_32          = 0x1d,
++    MSGPACK_CS_MAP_16            = 0x1e,
++    MSGPACK_CS_MAP_32            = 0x1f,
++
++    //MSGPACK_ACS_BIG_INT_VALUE,
++    //MSGPACK_ACS_BIG_FLOAT_VALUE,
++    MSGPACK_ACS_STR_VALUE,
++    MSGPACK_ACS_BIN_VALUE,
++    MSGPACK_ACS_EXT_VALUE
++} msgpack_unpack_state;
++
++
++typedef enum {
++    MSGPACK_CT_ARRAY_ITEM,
++    MSGPACK_CT_MAP_KEY,
++    MSGPACK_CT_MAP_VALUE
++} msgpack_container_type;
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/unpack_define.h */
++
+diff --git a/include/msgpack/unpack_template.h b/include/msgpack/unpack_template.h
+new file mode 100644
+index 000000000000..de30f3cf09f9
+--- /dev/null
++++ b/include/msgpack/unpack_template.h
+@@ -0,0 +1,471 @@
++/*
++ * MessagePack unpacking routine template
++ *
++ * Copyright (C) 2008-2010 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++
++#ifndef msgpack_unpack_func
++#error msgpack_unpack_func template is not defined
++#endif
++
++#ifndef msgpack_unpack_callback
++#error msgpack_unpack_callback template is not defined
++#endif
++
++#ifndef msgpack_unpack_struct
++#error msgpack_unpack_struct template is not defined
++#endif
++
++#ifndef msgpack_unpack_struct_decl
++#define msgpack_unpack_struct_decl(name) msgpack_unpack_struct(name)
++#endif
++
++#ifndef msgpack_unpack_object
++#error msgpack_unpack_object type is not defined
++#endif
++
++#ifndef msgpack_unpack_user
++#error msgpack_unpack_user type is not defined
++#endif
++
++#ifndef USE_CASE_RANGE
++#if !defined(_MSC_VER)
++#define USE_CASE_RANGE
++#endif
++#endif
++
++#if defined(_KERNEL_MODE)
++#undef  assert
++#define assert NT_ASSERT
++#endif
++
++msgpack_unpack_struct_decl(_stack) {
++    msgpack_unpack_object obj;
++    size_t count;
++    unsigned int ct;
++    msgpack_unpack_object map_key;
++};
++
++msgpack_unpack_struct_decl(_context) {
++    msgpack_unpack_user user;
++    unsigned int cs;
++    unsigned int trail;
++    unsigned int top;
++    /*
++    msgpack_unpack_struct(_stack)* stack;
++    unsigned int stack_size;
++    msgpack_unpack_struct(_stack) embed_stack[MSGPACK_EMBED_STACK_SIZE];
++    */
++    msgpack_unpack_struct(_stack) stack[MSGPACK_EMBED_STACK_SIZE];
++};
++
++
++msgpack_unpack_func(void, _init)(msgpack_unpack_struct(_context)* ctx)
++{
++    ctx->cs = MSGPACK_CS_HEADER;
++    ctx->trail = 0;
++    ctx->top = 0;
++    /*
++    ctx->stack = ctx->embed_stack;
++    ctx->stack_size = MSGPACK_EMBED_STACK_SIZE;
++    */
++    ctx->stack[0].obj = msgpack_unpack_callback(_root)(&ctx->user);
++}
++
++/*
++msgpack_unpack_func(void, _destroy)(msgpack_unpack_struct(_context)* ctx)
++{
++    if(ctx->stack_size != MSGPACK_EMBED_STACK_SIZE) {
++        free(ctx->stack);
++    }
++}
++*/
++
++msgpack_unpack_func(msgpack_unpack_object, _data)(msgpack_unpack_struct(_context)* ctx)
++{
++    return (ctx)->stack[0].obj;
++}
++
++
++msgpack_unpack_func(int, _execute)(msgpack_unpack_struct(_context)* ctx, const char* data, size_t len, size_t* off)
++{
++    assert(len >= *off);
++    {
++        const unsigned char* p = (unsigned char*)data + *off;
++        const unsigned char* const pe = (unsigned char*)data + len;
++        const void* n = NULL;
++
++        unsigned int trail = ctx->trail;
++        unsigned int cs = ctx->cs;
++        unsigned int top = ctx->top;
++        msgpack_unpack_struct(_stack)* stack = ctx->stack;
++        /*
++        unsigned int stack_size = ctx->stack_size;
++        */
++        msgpack_unpack_user* user = &ctx->user;
++
++        msgpack_unpack_object obj;
++        msgpack_unpack_struct(_stack)* c = NULL;
++
++        int ret;
++
++#define push_simple_value(func) \
++        ret = msgpack_unpack_callback(func)(user, &obj); \
++        if(ret < 0) { goto _failed; } \
++        goto _push
++#define push_fixed_value(func, arg) \
++        ret = msgpack_unpack_callback(func)(user, arg, &obj); \
++        if(ret < 0) { goto _failed; } \
++        goto _push
++#define push_variable_value(func, base, pos, len) \
++        ret = msgpack_unpack_callback(func)(user, \
++            (const char*)base, (const char*)pos, len, &obj); \
++        if(ret < 0) { goto _failed; } \
++        goto _push
++
++#define again_fixed_trail(_cs, trail_len) \
++        trail = trail_len; \
++        cs = _cs; \
++        goto _fixed_trail_again
++#define again_fixed_trail_if_zero(_cs, trail_len, ifzero) \
++        trail = trail_len; \
++        if(trail == 0) { goto ifzero; } \
++        cs = _cs; \
++        goto _fixed_trail_again
++
++#define start_container(func, count_, ct_) \
++        if(top >= MSGPACK_EMBED_STACK_SIZE) { \
++            ret = MSGPACK_UNPACK_NOMEM_ERROR; \
++            goto _failed; \
++        } /* FIXME */ \
++        ret = msgpack_unpack_callback(func)(user, count_, &stack[top].obj); \
++        if(ret < 0) { goto _failed; } \
++        if((count_) == 0) { obj = stack[top].obj; goto _push; } \
++        stack[top].ct = ct_; \
++        stack[top].count = count_; \
++        ++top; \
++        goto _header_again
++
++#define NEXT_CS(p) \
++        ((unsigned int)*p & 0x1f)
++
++#ifdef USE_CASE_RANGE
++#define SWITCH_RANGE_BEGIN     switch(*p) {
++#define SWITCH_RANGE(FROM, TO) case FROM ... TO:
++#define SWITCH_RANGE_DEFAULT   default:
++#define SWITCH_RANGE_END       }
++#else
++#define SWITCH_RANGE_BEGIN     { if(0) {
++#define SWITCH_RANGE(FROM, TO) } else if(FROM <= *p && *p <= TO) {
++#define SWITCH_RANGE_DEFAULT   } else {
++#define SWITCH_RANGE_END       } }
++#endif
++
++        if(p == pe) { goto _out; }
++        do {
++            switch(cs) {
++            case MSGPACK_CS_HEADER:
++                SWITCH_RANGE_BEGIN
++                SWITCH_RANGE(0x00, 0x7f)  // Positive Fixnum
++                    push_fixed_value(_uint8, *(uint8_t*)p);
++                SWITCH_RANGE(0xe0, 0xff)  // Negative Fixnum
++                    push_fixed_value(_int8, *(int8_t*)p);
++                SWITCH_RANGE(0xc0, 0xdf)  // Variable
++                    switch(*p) {
++                    case 0xc0:  // nil
++                        push_simple_value(_nil);
++                    //case 0xc1:  // string
++                    //  again_terminal_trail(NEXT_CS(p), p+1);
++                    case 0xc2:  // false
++                        push_simple_value(_false);
++                    case 0xc3:  // true
++                        push_simple_value(_true);
++                    case 0xc4: // bin 8
++                    case 0xc5: // bin 16
++                    case 0xc6: // bin 32
++                        again_fixed_trail(NEXT_CS(p), 1 << (((unsigned int)*p) & 0x03));
++                    case 0xc7: // ext 8
++                    case 0xc8: // ext 16
++                    case 0xc9: // ext 32
++                        again_fixed_trail(NEXT_CS(p), 1 << ((((unsigned int)*p) + 1) & 0x03));
++                    case 0xca:  // float
++                    case 0xcb:  // double
++                    case 0xcc:  // unsigned int  8
++                    case 0xcd:  // unsigned int 16
++                    case 0xce:  // unsigned int 32
++                    case 0xcf:  // unsigned int 64
++                    case 0xd0:  // signed int  8
++                    case 0xd1:  // signed int 16
++                    case 0xd2:  // signed int 32
++                    case 0xd3:  // signed int 64
++                        again_fixed_trail(NEXT_CS(p), 1 << (((unsigned int)*p) & 0x03));
++                    case 0xd4:  // fixext 1
++                    case 0xd5:  // fixext 2
++                    case 0xd6:  // fixext 4
++                    case 0xd7:  // fixext 8
++                        again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE,
++                            (1 << (((unsigned int)*p) & 0x03)) + 1, _ext_zero);
++                    case 0xd8:  // fixext 16
++                        again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, 16+1, _ext_zero);
++
++                    case 0xd9:  // str 8
++                    case 0xda:  // str 16
++                    case 0xdb:  // str 32
++                        again_fixed_trail(NEXT_CS(p), 1 << ((((unsigned int)*p) & 0x03) - 1));
++                    case 0xdc:  // array 16
++                    case 0xdd:  // array 32
++                    case 0xde:  // map 16
++                    case 0xdf:  // map 32
++                        again_fixed_trail(NEXT_CS(p), 2u << (((unsigned int)*p) & 0x01));
++                    default:
++                        ret = MSGPACK_UNPACK_PARSE_ERROR;
++                        goto _failed;
++                    }
++                SWITCH_RANGE(0xa0, 0xbf)  // FixStr
++                    again_fixed_trail_if_zero(MSGPACK_ACS_STR_VALUE, ((unsigned int)*p & 0x1f), _str_zero);
++                SWITCH_RANGE(0x90, 0x9f)  // FixArray
++                    start_container(_array, ((unsigned int)*p) & 0x0f, MSGPACK_CT_ARRAY_ITEM);
++                SWITCH_RANGE(0x80, 0x8f)  // FixMap
++                    start_container(_map, ((unsigned int)*p) & 0x0f, MSGPACK_CT_MAP_KEY);
++
++                SWITCH_RANGE_DEFAULT
++                    ret = MSGPACK_UNPACK_PARSE_ERROR;
++                    goto _failed;
++                SWITCH_RANGE_END
++                // end MSGPACK_CS_HEADER
++
++
++            _fixed_trail_again:
++                ++p;
++                // fallthrough
++
++            default:
++                if((size_t)(pe - p) < trail) { goto _out; }
++                n = p;  p += trail - 1;
++                switch(cs) {
++                //case MSGPACK_CS_
++                //case MSGPACK_CS_
++                case MSGPACK_CS_FLOAT: {
++                        union { uint32_t i; float f; } mem;
++                        _msgpack_load32(uint32_t, n, &mem.i);
++                        push_fixed_value(_float, mem.f); }
++                case MSGPACK_CS_DOUBLE: {
++                        union { uint64_t i; double f; } mem;
++                        _msgpack_load64(uint64_t, n, &mem.i);
++#if defined(TARGET_OS_IPHONE)
++                    // ok
++#elif defined(__arm__) && !(__ARM_EABI__) // arm-oabi
++                        // https://github.com/msgpack/msgpack-perl/pull/1
++                        mem.i = (mem.i & 0xFFFFFFFFUL) << 32UL | (mem.i >> 32UL);
++#endif
++                        push_fixed_value(_double, mem.f); }
++                case MSGPACK_CS_UINT_8:
++                    push_fixed_value(_uint8, *(uint8_t*)n);
++                case MSGPACK_CS_UINT_16:{
++                    uint16_t tmp;
++                    _msgpack_load16(uint16_t,n,&tmp);
++                    push_fixed_value(_uint16, tmp);
++                }
++                case MSGPACK_CS_UINT_32:{
++                    uint32_t tmp;
++                    _msgpack_load32(uint32_t,n,&tmp);
++                    push_fixed_value(_uint32, tmp);
++                }
++                case MSGPACK_CS_UINT_64:{
++                    uint64_t tmp;
++                    _msgpack_load64(uint64_t,n,&tmp);
++                    push_fixed_value(_uint64, tmp);
++                }
++                case MSGPACK_CS_INT_8:
++                    push_fixed_value(_int8, *(int8_t*)n);
++                case MSGPACK_CS_INT_16:{
++                    int16_t tmp;
++                    _msgpack_load16(int16_t,n,&tmp);
++                    push_fixed_value(_int16, tmp);
++                }
++                case MSGPACK_CS_INT_32:{
++                    int32_t tmp;
++                    _msgpack_load32(int32_t,n,&tmp);
++                    push_fixed_value(_int32, tmp);
++                }
++                case MSGPACK_CS_INT_64:{
++                    int64_t tmp;
++                    _msgpack_load64(int64_t,n,&tmp);
++                    push_fixed_value(_int64, tmp);
++                }
++                case MSGPACK_CS_FIXEXT_1:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, 1+1, _ext_zero);
++                case MSGPACK_CS_FIXEXT_2:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, 2+1, _ext_zero);
++                case MSGPACK_CS_FIXEXT_4:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, 4+1, _ext_zero);
++                case MSGPACK_CS_FIXEXT_8:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, 8+1, _ext_zero);
++                case MSGPACK_CS_FIXEXT_16:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, 16+1, _ext_zero);
++                case MSGPACK_CS_STR_8:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_STR_VALUE, *(uint8_t*)n, _str_zero);
++                case MSGPACK_CS_BIN_8:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_BIN_VALUE, *(uint8_t*)n, _bin_zero);
++                case MSGPACK_CS_EXT_8:
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, (*(uint8_t*)n) + 1, _ext_zero);
++                case MSGPACK_CS_STR_16:{
++                    uint16_t tmp;
++                    _msgpack_load16(uint16_t,n,&tmp);
++                    again_fixed_trail_if_zero(MSGPACK_ACS_STR_VALUE, tmp, _str_zero);
++                }
++                case MSGPACK_CS_BIN_16:{
++                    uint16_t tmp;
++                    _msgpack_load16(uint16_t,n,&tmp);
++                    again_fixed_trail_if_zero(MSGPACK_ACS_BIN_VALUE, tmp, _bin_zero);
++                }
++                case MSGPACK_CS_EXT_16:{
++                    uint16_t tmp;
++                    _msgpack_load16(uint16_t,n,&tmp);
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, tmp + 1, _ext_zero);
++                }
++                case MSGPACK_CS_STR_32:{
++                    uint32_t tmp;
++                    _msgpack_load32(uint32_t,n,&tmp);
++                    again_fixed_trail_if_zero(MSGPACK_ACS_STR_VALUE, tmp, _str_zero);
++                }
++                case MSGPACK_CS_BIN_32:{
++                    uint32_t tmp;
++                    _msgpack_load32(uint32_t,n,&tmp);
++                    again_fixed_trail_if_zero(MSGPACK_ACS_BIN_VALUE, tmp, _bin_zero);
++                }
++                case MSGPACK_CS_EXT_32:{
++                    uint32_t tmp;
++                    _msgpack_load32(uint32_t,n,&tmp);
++                    again_fixed_trail_if_zero(MSGPACK_ACS_EXT_VALUE, tmp + 1, _ext_zero);
++                }
++                case MSGPACK_ACS_STR_VALUE:
++                _str_zero:
++                    push_variable_value(_str, data, n, trail);
++                case MSGPACK_ACS_BIN_VALUE:
++                _bin_zero:
++                    push_variable_value(_bin, data, n, trail);
++                case MSGPACK_ACS_EXT_VALUE:
++                _ext_zero:
++                    push_variable_value(_ext, data, n, trail);
++
++                case MSGPACK_CS_ARRAY_16:{
++                    uint16_t tmp;
++                    _msgpack_load16(uint16_t,n,&tmp);
++                    start_container(_array, tmp, MSGPACK_CT_ARRAY_ITEM);
++                }
++                case MSGPACK_CS_ARRAY_32:{
++                    /* FIXME security guard */
++                    uint32_t tmp;
++                    _msgpack_load32(uint32_t,n,&tmp);
++                    start_container(_array, tmp, MSGPACK_CT_ARRAY_ITEM);
++                }
++
++                case MSGPACK_CS_MAP_16:{
++                    uint16_t tmp;
++                    _msgpack_load16(uint16_t,n,&tmp);
++                    start_container(_map, tmp, MSGPACK_CT_MAP_KEY);
++                }
++                case MSGPACK_CS_MAP_32:{
++                    /* FIXME security guard */
++                    uint32_t tmp;
++                    _msgpack_load32(uint32_t,n,&tmp);
++                    start_container(_map, tmp, MSGPACK_CT_MAP_KEY);
++                }
++
++                default:
++                    ret = MSGPACK_UNPACK_PARSE_ERROR;
++                    goto _failed;
++                }
++            }
++
++    _push:
++        if(top == 0) { goto _finish; }
++        c = &stack[top-1];
++        switch(c->ct) {
++        case MSGPACK_CT_ARRAY_ITEM:
++            ret = msgpack_unpack_callback(_array_item)(user, &c->obj, obj); \
++            if(ret < 0) { goto _failed; }
++            if(--c->count == 0) {
++                obj = c->obj;
++                --top;
++                /*printf("stack pop %d\n", top);*/
++                goto _push;
++            }
++            goto _header_again;
++        case MSGPACK_CT_MAP_KEY:
++            c->map_key = obj;
++            c->ct = MSGPACK_CT_MAP_VALUE;
++            goto _header_again;
++        case MSGPACK_CT_MAP_VALUE:
++            ret = msgpack_unpack_callback(_map_item)(user, &c->obj, c->map_key, obj); \
++            if(ret < 0) { goto _failed; }
++            if(--c->count == 0) {
++                obj = c->obj;
++                --top;
++                /*printf("stack pop %d\n", top);*/
++                goto _push;
++            }
++            c->ct = MSGPACK_CT_MAP_KEY;
++            goto _header_again;
++
++        default:
++            ret = MSGPACK_UNPACK_PARSE_ERROR;
++            goto _failed;
++        }
++
++    _header_again:
++            cs = MSGPACK_CS_HEADER;
++            ++p;
++        } while(p != pe);
++        goto _out;
++
++
++    _finish:
++        stack[0].obj = obj;
++        ++p;
++        ret = 1;
++        /*printf("-- finish --\n"); */
++        goto _end;
++
++    _failed:
++        /*printf("** FAILED **\n"); */
++        goto _end;
++
++    _out:
++        ret = 0;
++        goto _end;
++
++    _end:
++        ctx->cs = cs;
++        ctx->trail = trail;
++        ctx->top = top;
++        *off = (size_t)(p - (const unsigned char*)data);
++
++        return ret;
++    }
++}
++
++#undef msgpack_unpack_func
++#undef msgpack_unpack_callback
++#undef msgpack_unpack_struct
++#undef msgpack_unpack_object
++#undef msgpack_unpack_user
++
++#undef push_simple_value
++#undef push_fixed_value
++#undef push_variable_value
++#undef again_fixed_trail
++#undef again_fixed_trail_if_zero
++#undef start_container
++
++#undef NEXT_CS
++
++#undef SWITCH_RANGE_BEGIN
++#undef SWITCH_RANGE
++#undef SWITCH_RANGE_DEFAULT
++#undef SWITCH_RANGE_END
+diff --git a/include/msgpack/util.h b/include/msgpack/util.h
+new file mode 100644
+index 000000000000..959b56bec04c
+--- /dev/null
++++ b/include/msgpack/util.h
+@@ -0,0 +1,15 @@
++/*
++ * MessagePack for C utilities
++ *
++ * Copyright (C) 2014 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_UTIL_H
++#define MSGPACK_UTIL_H
++
++#define MSGPACK_UNUSED(a) (void)(a)
++
++#endif /* MSGPACK_UTIL_H */
+diff --git a/include/msgpack/version.h b/include/msgpack/version.h
+new file mode 100644
+index 000000000000..bd6605b8c453
+--- /dev/null
++++ b/include/msgpack/version.h
+@@ -0,0 +1,38 @@
++/*
++ * MessagePack for C version information
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_VERSION_H
++#define MSGPACK_VERSION_H
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++MSGPACK_DLLEXPORT
++const char* msgpack_version(void);
++MSGPACK_DLLEXPORT
++int msgpack_version_major(void);
++MSGPACK_DLLEXPORT
++int msgpack_version_minor(void);
++MSGPACK_DLLEXPORT
++int msgpack_version_revision(void);
++
++#include "version_master.h"
++
++#define MSGPACK_STR(v) #v
++#define MSGPACK_VERSION_I(maj, min, rev) MSGPACK_STR(maj) "." MSGPACK_STR(min) "." MSGPACK_STR(rev)
++
++#define MSGPACK_VERSION MSGPACK_VERSION_I(MSGPACK_VERSION_MAJOR, MSGPACK_VERSION_MINOR, MSGPACK_VERSION_REVISION)
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/version.h */
++
+diff --git a/include/msgpack/version_master.h b/include/msgpack/version_master.h
+new file mode 100644
+index 000000000000..fdab088941d5
+--- /dev/null
++++ b/include/msgpack/version_master.h
+@@ -0,0 +1,3 @@
++#define MSGPACK_VERSION_MAJOR    6
++#define MSGPACK_VERSION_MINOR    0
++#define MSGPACK_VERSION_REVISION 0
+diff --git a/include/msgpack/vrefbuffer.h b/include/msgpack/vrefbuffer.h
+new file mode 100644
+index 000000000000..c2633052bdbd
+--- /dev/null
++++ b/include/msgpack/vrefbuffer.h
+@@ -0,0 +1,146 @@
++/*
++ * MessagePack for C zero-copy buffer implementation
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_VREFBUFFER_H
++#define MSGPACK_VREFBUFFER_H
++
++#include "zone.h"
++#include <stdlib.h>
++#include <assert.h>
++
++#if defined(unix) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__) || defined(__QNXTO__) || defined(__HAIKU__)
++#include <sys/uio.h>
++typedef struct iovec msgpack_iovec;
++#else
++struct msgpack_iovec {
++    void  *iov_base;
++    size_t iov_len;
++};
++typedef struct msgpack_iovec msgpack_iovec;
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_vrefbuffer Vectored Referencing buffer
++ * @ingroup msgpack_buffer
++ * @{
++ */
++
++struct msgpack_vrefbuffer_chunk;
++typedef struct msgpack_vrefbuffer_chunk msgpack_vrefbuffer_chunk;
++
++typedef struct msgpack_vrefbuffer_inner_buffer {
++    size_t free;
++    char*  ptr;
++    msgpack_vrefbuffer_chunk* head;
++} msgpack_vrefbuffer_inner_buffer;
++
++typedef struct msgpack_vrefbuffer {
++    msgpack_iovec* tail;
++    msgpack_iovec* end;
++    msgpack_iovec* array;
++
++    size_t chunk_size;
++    size_t ref_size;
++
++    msgpack_vrefbuffer_inner_buffer inner_buffer;
++} msgpack_vrefbuffer;
++
++
++#ifndef MSGPACK_VREFBUFFER_REF_SIZE
++#define MSGPACK_VREFBUFFER_REF_SIZE 32
++#endif
++
++#ifndef MSGPACK_VREFBUFFER_CHUNK_SIZE
++#define MSGPACK_VREFBUFFER_CHUNK_SIZE 8192
++#endif
++
++MSGPACK_DLLEXPORT
++bool msgpack_vrefbuffer_init(msgpack_vrefbuffer* vbuf,
++        size_t ref_size, size_t chunk_size);
++MSGPACK_DLLEXPORT
++void msgpack_vrefbuffer_destroy(msgpack_vrefbuffer* vbuf);
++
++static inline msgpack_vrefbuffer* msgpack_vrefbuffer_new(size_t ref_size, size_t chunk_size);
++static inline void msgpack_vrefbuffer_free(msgpack_vrefbuffer* vbuf);
++
++static inline int msgpack_vrefbuffer_write(void* data, const char* buf, size_t len);
++
++static inline const msgpack_iovec* msgpack_vrefbuffer_vec(const msgpack_vrefbuffer* vref);
++static inline size_t msgpack_vrefbuffer_veclen(const msgpack_vrefbuffer* vref);
++
++MSGPACK_DLLEXPORT
++int msgpack_vrefbuffer_append_copy(msgpack_vrefbuffer* vbuf,
++        const char* buf, size_t len);
++
++MSGPACK_DLLEXPORT
++int msgpack_vrefbuffer_append_ref(msgpack_vrefbuffer* vbuf,
++        const char* buf, size_t len);
++
++MSGPACK_DLLEXPORT
++int msgpack_vrefbuffer_migrate(msgpack_vrefbuffer* vbuf, msgpack_vrefbuffer* to);
++
++MSGPACK_DLLEXPORT
++void msgpack_vrefbuffer_clear(msgpack_vrefbuffer* vref);
++
++/** @} */
++
++
++static inline msgpack_vrefbuffer* msgpack_vrefbuffer_new(size_t ref_size, size_t chunk_size)
++{
++    msgpack_vrefbuffer* vbuf = (msgpack_vrefbuffer*)malloc(sizeof(msgpack_vrefbuffer));
++    if (vbuf == NULL) return NULL;
++    if(!msgpack_vrefbuffer_init(vbuf, ref_size, chunk_size)) {
++        free(vbuf);
++        return NULL;
++    }
++    return vbuf;
++}
++
++static inline void msgpack_vrefbuffer_free(msgpack_vrefbuffer* vbuf)
++{
++    if(vbuf == NULL) { return; }
++    msgpack_vrefbuffer_destroy(vbuf);
++    free(vbuf);
++}
++
++static inline int msgpack_vrefbuffer_write(void* data, const char* buf, size_t len)
++{
++    msgpack_vrefbuffer* vbuf = (msgpack_vrefbuffer*)data;
++    assert(buf || len == 0);
++
++    if(!buf) return 0;
++
++    if(len < vbuf->ref_size) {
++        return msgpack_vrefbuffer_append_copy(vbuf, buf, len);
++    } else {
++        return msgpack_vrefbuffer_append_ref(vbuf, buf, len);
++    }
++}
++
++static inline const msgpack_iovec* msgpack_vrefbuffer_vec(const msgpack_vrefbuffer* vref)
++{
++    return vref->array;
++}
++
++static inline size_t msgpack_vrefbuffer_veclen(const msgpack_vrefbuffer* vref)
++{
++    return (size_t)(vref->tail - vref->array);
++}
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/vrefbuffer.h */
+diff --git a/include/msgpack/zbuffer.h b/include/msgpack/zbuffer.h
+new file mode 100644
+index 000000000000..c38d627e7098
+--- /dev/null
++++ b/include/msgpack/zbuffer.h
+@@ -0,0 +1,205 @@
++/*
++ * MessagePack for C deflate buffer implementation
++ *
++ * Copyright (C) 2010 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_ZBUFFER_H
++#define MSGPACK_ZBUFFER_H
++
++#include "sysdep.h"
++#include <stdlib.h>
++#include <string.h>
++#include <assert.h>
++#include <zlib.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_zbuffer Compressed buffer
++ * @ingroup msgpack_buffer
++ * @{
++ */
++
++typedef struct msgpack_zbuffer {
++    z_stream stream;
++    char* data;
++    size_t init_size;
++} msgpack_zbuffer;
++
++#ifndef MSGPACK_ZBUFFER_INIT_SIZE
++#define MSGPACK_ZBUFFER_INIT_SIZE 8192
++#endif
++
++static inline bool msgpack_zbuffer_init(
++    msgpack_zbuffer* zbuf, int level, size_t init_size);
++static inline void msgpack_zbuffer_destroy(msgpack_zbuffer* zbuf);
++
++static inline msgpack_zbuffer* msgpack_zbuffer_new(int level, size_t init_size);
++static inline void msgpack_zbuffer_free(msgpack_zbuffer* zbuf);
++
++static inline char* msgpack_zbuffer_flush(msgpack_zbuffer* zbuf);
++
++static inline const char* msgpack_zbuffer_data(const msgpack_zbuffer* zbuf);
++static inline size_t msgpack_zbuffer_size(const msgpack_zbuffer* zbuf);
++
++static inline bool msgpack_zbuffer_reset(msgpack_zbuffer* zbuf);
++static inline void msgpack_zbuffer_reset_buffer(msgpack_zbuffer* zbuf);
++static inline char* msgpack_zbuffer_release_buffer(msgpack_zbuffer* zbuf);
++
++
++#ifndef MSGPACK_ZBUFFER_RESERVE_SIZE
++#define MSGPACK_ZBUFFER_RESERVE_SIZE 512
++#endif
++
++static inline int msgpack_zbuffer_write(void* data, const char* buf, size_t len);
++
++static inline bool msgpack_zbuffer_expand(msgpack_zbuffer* zbuf);
++
++
++static inline bool msgpack_zbuffer_init(msgpack_zbuffer* zbuf,
++        int level, size_t init_size)
++{
++    memset(zbuf, 0, sizeof(msgpack_zbuffer));
++    zbuf->init_size = init_size;
++    if(deflateInit(&zbuf->stream, level) != Z_OK) {
++        free(zbuf->data);
++        return false;
++    }
++    return true;
++}
++
++static inline void msgpack_zbuffer_destroy(msgpack_zbuffer* zbuf)
++{
++    deflateEnd(&zbuf->stream);
++    free(zbuf->data);
++}
++
++static inline msgpack_zbuffer* msgpack_zbuffer_new(int level, size_t init_size)
++{
++    msgpack_zbuffer* zbuf = (msgpack_zbuffer*)malloc(sizeof(msgpack_zbuffer));
++    if (zbuf == NULL) return NULL;
++    if(!msgpack_zbuffer_init(zbuf, level, init_size)) {
++        free(zbuf);
++        return NULL;
++    }
++    return zbuf;
++}
++
++static inline void msgpack_zbuffer_free(msgpack_zbuffer* zbuf)
++{
++    if(zbuf == NULL) { return; }
++    msgpack_zbuffer_destroy(zbuf);
++    free(zbuf);
++}
++
++static inline bool msgpack_zbuffer_expand(msgpack_zbuffer* zbuf)
++{
++    size_t used = (size_t)((char *)(zbuf->stream.next_out) - zbuf->data);
++    size_t csize = used + zbuf->stream.avail_out;
++
++    size_t nsize = (csize == 0) ? zbuf->init_size : csize * 2;
++
++    char* tmp = (char*)realloc(zbuf->data, nsize);
++    if(tmp == NULL) {
++        return false;
++    }
++
++    zbuf->data = tmp;
++    zbuf->stream.next_out  = (Bytef*)(tmp + used);
++    zbuf->stream.avail_out = (uInt)(nsize - used);
++
++    return true;
++}
++
++static inline int msgpack_zbuffer_write(void* data, const char* buf, size_t len)
++{
++    msgpack_zbuffer* zbuf = (msgpack_zbuffer*)data;
++
++    assert(buf || len == 0);
++    if(!buf) return 0;
++
++    zbuf->stream.next_in = (Bytef*)buf;
++    zbuf->stream.avail_in = (uInt)len;
++
++    while(zbuf->stream.avail_in > 0) {
++        if(zbuf->stream.avail_out < MSGPACK_ZBUFFER_RESERVE_SIZE) {
++            if(!msgpack_zbuffer_expand(zbuf)) {
++                return -1;
++            }
++        }
++
++        if(deflate(&zbuf->stream, Z_NO_FLUSH) != Z_OK) {
++            return -1;
++        }
++    }
++
++    return 0;
++}
++
++static inline char* msgpack_zbuffer_flush(msgpack_zbuffer* zbuf)
++{
++    while(true) {
++        switch(deflate(&zbuf->stream, Z_FINISH)) {
++        case Z_STREAM_END:
++            return zbuf->data;
++        case Z_OK:
++        case Z_BUF_ERROR:
++            if(!msgpack_zbuffer_expand(zbuf)) {
++                return NULL;
++            }
++            break;
++        default:
++            return NULL;
++        }
++    }
++}
++
++static inline const char* msgpack_zbuffer_data(const msgpack_zbuffer* zbuf)
++{
++    return zbuf->data;
++}
++
++static inline size_t msgpack_zbuffer_size(const msgpack_zbuffer* zbuf)
++{
++    return (size_t)((char *)(zbuf->stream.next_out) - zbuf->data);
++}
++
++static inline void msgpack_zbuffer_reset_buffer(msgpack_zbuffer* zbuf)
++{
++    zbuf->stream.avail_out += (uInt)((char*)zbuf->stream.next_out - zbuf->data);
++    zbuf->stream.next_out = (Bytef*)zbuf->data;
++}
++
++static inline bool msgpack_zbuffer_reset(msgpack_zbuffer* zbuf)
++{
++    if(deflateReset(&zbuf->stream) != Z_OK) {
++        return false;
++    }
++    msgpack_zbuffer_reset_buffer(zbuf);
++    return true;
++}
++
++static inline char* msgpack_zbuffer_release_buffer(msgpack_zbuffer* zbuf)
++{
++    char* tmp = zbuf->data;
++    zbuf->data = NULL;
++    zbuf->stream.next_out = NULL;
++    zbuf->stream.avail_out = 0;
++    return tmp;
++}
++
++/** @} */
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/zbuffer.h */
+diff --git a/include/msgpack/zone.h b/include/msgpack/zone.h
+new file mode 100644
+index 000000000000..7facd547c288
+--- /dev/null
++++ b/include/msgpack/zone.h
+@@ -0,0 +1,163 @@
++/*
++ * MessagePack for C memory pool implementation
++ *
++ * Copyright (C) 2008-2010 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#ifndef MSGPACK_ZONE_H
++#define MSGPACK_ZONE_H
++
++#include "sysdep.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/**
++ * @defgroup msgpack_zone Memory zone
++ * @ingroup msgpack
++ * @{
++ */
++
++typedef struct msgpack_zone_finalizer {
++    void (*func)(void* data);
++    void* data;
++} msgpack_zone_finalizer;
++
++typedef struct msgpack_zone_finalizer_array {
++    msgpack_zone_finalizer* tail;
++    msgpack_zone_finalizer* end;
++    msgpack_zone_finalizer* array;
++} msgpack_zone_finalizer_array;
++
++struct msgpack_zone_chunk;
++typedef struct msgpack_zone_chunk msgpack_zone_chunk;
++
++typedef struct msgpack_zone_chunk_list {
++    size_t free;
++    char* ptr;
++    msgpack_zone_chunk* head;
++} msgpack_zone_chunk_list;
++
++typedef struct msgpack_zone {
++    msgpack_zone_chunk_list chunk_list;
++    msgpack_zone_finalizer_array finalizer_array;
++    size_t chunk_size;
++} msgpack_zone;
++
++#ifndef MSGPACK_ZONE_CHUNK_SIZE
++#define MSGPACK_ZONE_CHUNK_SIZE 8192
++#endif
++
++MSGPACK_DLLEXPORT
++bool msgpack_zone_init(msgpack_zone* zone, size_t chunk_size);
++MSGPACK_DLLEXPORT
++void msgpack_zone_destroy(msgpack_zone* zone);
++
++MSGPACK_DLLEXPORT
++msgpack_zone* msgpack_zone_new(size_t chunk_size);
++MSGPACK_DLLEXPORT
++void msgpack_zone_free(msgpack_zone* zone);
++
++static inline void* msgpack_zone_malloc(msgpack_zone* zone, size_t size);
++static inline void* msgpack_zone_malloc_no_align(msgpack_zone* zone, size_t size);
++
++static inline bool msgpack_zone_push_finalizer(msgpack_zone* zone,
++        void (*func)(void* data), void* data);
++
++static inline void msgpack_zone_swap(msgpack_zone* a, msgpack_zone* b);
++
++MSGPACK_DLLEXPORT
++bool msgpack_zone_is_empty(msgpack_zone* zone);
++
++MSGPACK_DLLEXPORT
++void msgpack_zone_clear(msgpack_zone* zone);
++
++/** @} */
++
++
++#ifndef MSGPACK_ZONE_ALIGN
++#define MSGPACK_ZONE_ALIGN sizeof(void*)
++#endif
++
++MSGPACK_DLLEXPORT
++void* msgpack_zone_malloc_expand(msgpack_zone* zone, size_t size);
++
++static inline void* msgpack_zone_malloc_no_align(msgpack_zone* zone, size_t size)
++{
++    char* ptr;
++    msgpack_zone_chunk_list* cl = &zone->chunk_list;
++
++    if(zone->chunk_list.free < size) {
++        return msgpack_zone_malloc_expand(zone, size);
++    }
++
++    ptr = cl->ptr;
++    cl->free -= size;
++    cl->ptr  += size;
++
++    return ptr;
++}
++
++static inline void* msgpack_zone_malloc(msgpack_zone* zone, size_t size)
++{
++    char* aligned =
++        (char*)(
++            (uintptr_t)(
++                zone->chunk_list.ptr + (MSGPACK_ZONE_ALIGN - 1)
++            ) & ~(uintptr_t)(MSGPACK_ZONE_ALIGN - 1)
++        );
++    size_t adjusted_size = size + (size_t)(aligned - zone->chunk_list.ptr);
++    if(zone->chunk_list.free >= adjusted_size) {
++        zone->chunk_list.free -= adjusted_size;
++        zone->chunk_list.ptr  += adjusted_size;
++        return aligned;
++    }
++    {
++        void* ptr = msgpack_zone_malloc_expand(zone, size + (MSGPACK_ZONE_ALIGN - 1));
++        if (ptr) {
++            return (char*)((uintptr_t)(ptr) & ~(uintptr_t)(MSGPACK_ZONE_ALIGN - 1));
++        }
++    }
++    return NULL;
++}
++
++
++bool msgpack_zone_push_finalizer_expand(msgpack_zone* zone,
++        void (*func)(void* data), void* data);
++
++static inline bool msgpack_zone_push_finalizer(msgpack_zone* zone,
++        void (*func)(void* data), void* data)
++{
++    msgpack_zone_finalizer_array* const fa = &zone->finalizer_array;
++    msgpack_zone_finalizer* fin = fa->tail;
++
++    if(fin == fa->end) {
++        return msgpack_zone_push_finalizer_expand(zone, func, data);
++    }
++
++    fin->func = func;
++    fin->data = data;
++
++    ++fa->tail;
++
++    return true;
++}
++
++static inline void msgpack_zone_swap(msgpack_zone* a, msgpack_zone* b)
++{
++    msgpack_zone tmp = *a;
++    *a = *b;
++    *b = tmp;
++}
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* msgpack/zone.h */
+diff --git a/lib/Kconfig b/lib/Kconfig
+index acd3d51bc965..9c44cd7707ca 100644
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -644,6 +644,8 @@ config ZSTD
+ 	help
+ 	  This enables Zstandard decompression library.
+ 
++source lib/msgpack/Kconfig
++
+ config SPL_LZ4
+ 	bool "Enable LZ4 decompression support in SPL"
+ 	help
+diff --git a/lib/Makefile b/lib/Makefile
+index 632dcba86959..c308aa9f0f5c 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -91,6 +91,8 @@ obj-$(CONFIG_AVB_SUPPORT) += avb/
+ obj-$(CONFIG_$(SPL_TPL_)OF_LIBFDT) += libfdt/
+ obj-$(CONFIG_$(SPL_TPL_)OF_REAL) += fdtdec_common.o fdtdec.o
+ 
++obj-$(CONFIG_$(SPL_)MSGPACK) += msgpack/
++
+ ifdef CONFIG_SPL_BUILD
+ obj-$(CONFIG_SPL_YMODEM_SUPPORT) += crc16.o
+ obj-$(CONFIG_$(SPL_TPL_)HASH) += crc16.o
+diff --git a/lib/msgpack/Kconfig b/lib/msgpack/Kconfig
+new file mode 100644
+index 000000000000..08be19225095
+--- /dev/null
++++ b/lib/msgpack/Kconfig
+@@ -0,0 +1,13 @@
++config MSGPACK
++    bool "Enable MessagePack binary packing support for json formatted content"
++    default n
++	help
++	  MSGPACK support. This enables MSGPACK binary packing feature for json
++	  formatted content.
++
++if MSGPACK
++
++config SPL_MSGPACK
++	bool "Use MSGPACK Library within SPL"
++
++endif
+diff --git a/lib/msgpack/Makefile b/lib/msgpack/Makefile
+new file mode 100644
+index 000000000000..e706c45aad86
+--- /dev/null
++++ b/lib/msgpack/Makefile
+@@ -0,0 +1,10 @@
++# SPDX-License-Identifier: GPL-2.0+
++#
++# Copyright (c) 2013, Google Inc.
++#
++# (C) Copyright 2000-2007
++# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++
++obj-$(CONFIG_$(SPL_)MSGPACK) += objectc.o unpack.o version.o vrefbuffer.o zone.o
++
++
+diff --git a/lib/msgpack/objectc.c b/lib/msgpack/objectc.c
+new file mode 100644
+index 000000000000..d8fce0ca2fdb
+--- /dev/null
++++ b/lib/msgpack/objectc.c
+@@ -0,0 +1,484 @@
++/*
++ * MessagePack for C dynamic typing routine
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#if defined(_KERNEL_MODE)
++#  undef  _NO_CRT_STDIO_INLINE
++#  define _NO_CRT_STDIO_INLINE
++#endif
++
++#include "msgpack/object.h"
++#include "msgpack/pack.h"
++#include <ctype.h>
++
++#include <stdio.h>
++#include <string.h>
++
++#if defined(_MSC_VER)
++#if _MSC_VER >= 1800
++#include <inttypes.h>
++#else
++#define PRIu64 "I64u"
++#define PRIi64 "I64i"
++#define PRIi8 "i"
++#endif
++#else
++#include <inttypes.h>
++#endif
++
++#if defined(_KERNEL_MODE)
++#  undef  snprintf
++#  define snprintf _snprintf
++#endif
++
++int msgpack_pack_object(msgpack_packer* pk, msgpack_object d)
++{
++    switch(d.type) {
++    case MSGPACK_OBJECT_NIL:
++        return msgpack_pack_nil(pk);
++
++    case MSGPACK_OBJECT_BOOLEAN:
++        if(d.via.boolean) {
++            return msgpack_pack_true(pk);
++        } else {
++            return msgpack_pack_false(pk);
++        }
++
++    case MSGPACK_OBJECT_POSITIVE_INTEGER:
++        return msgpack_pack_uint64(pk, d.via.u64);
++
++    case MSGPACK_OBJECT_NEGATIVE_INTEGER:
++        return msgpack_pack_int64(pk, d.via.i64);
++
++    case MSGPACK_OBJECT_FLOAT32:
++        return msgpack_pack_float(pk, (float)d.via.f64);
++
++    case MSGPACK_OBJECT_FLOAT64:
++        return msgpack_pack_double(pk, d.via.f64);
++
++    case MSGPACK_OBJECT_STR:
++        {
++            int ret = msgpack_pack_str(pk, d.via.str.size);
++            if(ret < 0) { return ret; }
++            return msgpack_pack_str_body(pk, d.via.str.ptr, d.via.str.size);
++        }
++
++    case MSGPACK_OBJECT_BIN:
++        {
++            int ret = msgpack_pack_bin(pk, d.via.bin.size);
++            if(ret < 0) { return ret; }
++            return msgpack_pack_bin_body(pk, d.via.bin.ptr, d.via.bin.size);
++        }
++
++    case MSGPACK_OBJECT_EXT:
++        {
++            int ret = msgpack_pack_ext(pk, d.via.ext.size, d.via.ext.type);
++            if(ret < 0) { return ret; }
++            return msgpack_pack_ext_body(pk, d.via.ext.ptr, d.via.ext.size);
++        }
++
++    case MSGPACK_OBJECT_ARRAY:
++        {
++            int ret = msgpack_pack_array(pk, d.via.array.size);
++            if(ret < 0) {
++                return ret;
++            }
++            else {
++                msgpack_object* o = d.via.array.ptr;
++                msgpack_object* const oend = d.via.array.ptr + d.via.array.size;
++                for(; o != oend; ++o) {
++                    ret = msgpack_pack_object(pk, *o);
++                    if(ret < 0) { return ret; }
++                }
++
++                return 0;
++            }
++        }
++
++    case MSGPACK_OBJECT_MAP:
++        {
++            int ret = msgpack_pack_map(pk, d.via.map.size);
++            if(ret < 0) {
++                return ret;
++            }
++            else {
++                msgpack_object_kv* kv = d.via.map.ptr;
++                msgpack_object_kv* const kvend = d.via.map.ptr + d.via.map.size;
++                for(; kv != kvend; ++kv) {
++                    ret = msgpack_pack_object(pk, kv->key);
++                    if(ret < 0) { return ret; }
++                    ret = msgpack_pack_object(pk, kv->val);
++                    if(ret < 0) { return ret; }
++                }
++
++                return 0;
++            }
++        }
++
++    default:
++        return -1;
++    }
++}
++
++#if !defined(_KERNEL_MODE)
++
++static void msgpack_object_bin_print(FILE* out, const char *ptr, size_t size)
++{
++    size_t i;
++    for (i = 0; i < size; ++i) {
++        if (ptr[i] == '"') {
++            fputs("\\\"", out);
++        } else if (isprint((unsigned char)ptr[i])) {
++            fputc(ptr[i], out);
++        } else {
++            fprintf(out, "\\x%02x", (unsigned char)ptr[i]);
++        }
++    }
++}
++
++void msgpack_object_print(FILE* out, msgpack_object o)
++{
++    switch(o.type) {
++    case MSGPACK_OBJECT_NIL:
++        fprintf(out, "nil");
++        break;
++
++    case MSGPACK_OBJECT_BOOLEAN:
++        fprintf(out, (o.via.boolean ? "true" : "false"));
++        break;
++
++    case MSGPACK_OBJECT_POSITIVE_INTEGER:
++#if defined(PRIu64)
++        fprintf(out, "%" PRIu64, o.via.u64);
++#else
++        if (o.via.u64 > ULONG_MAX)
++            fprintf(out, "over 4294967295");
++        else
++            fprintf(out, "%lu", (unsigned long)o.via.u64);
++#endif
++        break;
++
++    case MSGPACK_OBJECT_NEGATIVE_INTEGER:
++#if defined(PRIi64)
++        fprintf(out, "%" PRIi64, o.via.i64);
++#else
++        if (o.via.i64 > LONG_MAX)
++            fprintf(out, "over +2147483647");
++        else if (o.via.i64 < LONG_MIN)
++            fprintf(out, "under -2147483648");
++        else
++            fprintf(out, "%ld", (signed long)o.via.i64);
++#endif
++        break;
++
++    case MSGPACK_OBJECT_FLOAT32:
++    case MSGPACK_OBJECT_FLOAT64:
++        fprintf(out, "%f", o.via.f64);
++        break;
++
++    case MSGPACK_OBJECT_STR:
++        fprintf(out, "\"");
++        fwrite(o.via.str.ptr, o.via.str.size, 1, out);
++        fprintf(out, "\"");
++        break;
++
++    case MSGPACK_OBJECT_BIN:
++        fprintf(out, "\"");
++        msgpack_object_bin_print(out, o.via.bin.ptr, o.via.bin.size);
++        fprintf(out, "\"");
++        break;
++
++    case MSGPACK_OBJECT_EXT:
++#if defined(PRIi8)
++        fprintf(out, "(ext: %" PRIi8 ")", o.via.ext.type);
++#else
++        fprintf(out, "(ext: %d)", (int)o.via.ext.type);
++#endif
++        fprintf(out, "\"");
++        msgpack_object_bin_print(out, o.via.ext.ptr, o.via.ext.size);
++        fprintf(out, "\"");
++        break;
++
++    case MSGPACK_OBJECT_ARRAY:
++        fprintf(out, "[");
++        if(o.via.array.size != 0) {
++            msgpack_object* p = o.via.array.ptr;
++            msgpack_object* const pend = o.via.array.ptr + o.via.array.size;
++            msgpack_object_print(out, *p);
++            ++p;
++            for(; p < pend; ++p) {
++                fprintf(out, ", ");
++                msgpack_object_print(out, *p);
++            }
++        }
++        fprintf(out, "]");
++        break;
++
++    case MSGPACK_OBJECT_MAP:
++        fprintf(out, "{");
++        if(o.via.map.size != 0) {
++            msgpack_object_kv* p = o.via.map.ptr;
++            msgpack_object_kv* const pend = o.via.map.ptr + o.via.map.size;
++            msgpack_object_print(out, p->key);
++            fprintf(out, "=>");
++            msgpack_object_print(out, p->val);
++            ++p;
++            for(; p < pend; ++p) {
++                fprintf(out, ", ");
++                msgpack_object_print(out, p->key);
++                fprintf(out, "=>");
++                msgpack_object_print(out, p->val);
++            }
++        }
++        fprintf(out, "}");
++        break;
++
++    default:
++        // FIXME
++#if defined(PRIu64)
++        fprintf(out, "#<UNKNOWN %i %" PRIu64 ">", o.type, o.via.u64);
++#else
++        if (o.via.u64 > ULONG_MAX)
++            fprintf(out, "#<UNKNOWN %i over 4294967295>", o.type);
++        else
++            fprintf(out, "#<UNKNOWN %i %lu>", o.type, (unsigned long)o.via.u64);
++#endif
++
++    }
++}
++
++#endif
++
++#define MSGPACK_CHECKED_CALL(ret, func, aux_buffer, aux_buffer_size, ...) \
++    ret = func(aux_buffer, aux_buffer_size, __VA_ARGS__);                 \
++    if (ret <= 0 || ret >= (int)aux_buffer_size) return 0;                \
++    aux_buffer = aux_buffer + ret;                                        \
++    aux_buffer_size = aux_buffer_size - ret                               \
++
++static int msgpack_object_bin_print_buffer(char *buffer, size_t buffer_size, const char *ptr, size_t size)
++{
++    size_t i;
++    char *aux_buffer = buffer;
++    size_t aux_buffer_size = buffer_size;
++    int ret;
++
++    for (i = 0; i < size; ++i) {
++        if (ptr[i] == '"') {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\\\"");
++        } else if (isprint((unsigned char)ptr[i])) {
++            if (aux_buffer_size > 0) {
++                memcpy(aux_buffer, ptr + i, 1);
++                aux_buffer = aux_buffer + 1;
++                aux_buffer_size = aux_buffer_size - 1;
++            }
++        } else {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\\x%02x", (unsigned char)ptr[i]);
++        }
++    }
++
++    return (int)(buffer_size - aux_buffer_size);
++}
++
++int msgpack_object_print_buffer(char *buffer, size_t buffer_size, msgpack_object o)
++{
++    char *aux_buffer = buffer;
++    size_t aux_buffer_size = buffer_size;
++    int ret;
++    switch(o.type) {
++    case MSGPACK_OBJECT_NIL:
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "nil");
++        break;
++
++    case MSGPACK_OBJECT_BOOLEAN:
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, (o.via.boolean ? "true" : "false"));
++        break;
++
++    case MSGPACK_OBJECT_POSITIVE_INTEGER:
++#if defined(PRIu64)
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "%" PRIu64, o.via.u64);
++#else
++        if (o.via.u64 > ULONG_MAX) {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "over 4294967295");
++        } else {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "%lu", (unsigned long)o.via.u64);
++        }
++#endif
++        break;
++
++    case MSGPACK_OBJECT_NEGATIVE_INTEGER:
++#if defined(PRIi64)
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "%" PRIi64, o.via.i64);
++#else
++        if (o.via.i64 > LONG_MAX) {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "over +2147483647");
++        } else if (o.via.i64 < LONG_MIN) {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "under -2147483648");
++        } else {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "%ld", (signed long)o.via.i64);
++        }
++#endif
++        break;
++
++    case MSGPACK_OBJECT_FLOAT32:
++    case MSGPACK_OBJECT_FLOAT64:
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "%f", o.via.f64);
++        break;
++
++    case MSGPACK_OBJECT_STR:
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\"");
++        if (o.via.str.size > 0) {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "%.*s", (int)o.via.str.size, o.via.str.ptr);
++        }
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\"");
++        break;
++
++    case MSGPACK_OBJECT_BIN:
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\"");
++        MSGPACK_CHECKED_CALL(ret, msgpack_object_bin_print_buffer, aux_buffer, aux_buffer_size, o.via.bin.ptr, o.via.bin.size);
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\"");
++        break;
++
++    case MSGPACK_OBJECT_EXT:
++#if defined(PRIi8)
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "(ext: %" PRIi8 ")", o.via.ext.type);
++#else
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "(ext: %d)", (int)o.via.ext.type);
++#endif
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\"");
++        MSGPACK_CHECKED_CALL(ret, msgpack_object_bin_print_buffer, aux_buffer, aux_buffer_size, o.via.ext.ptr, o.via.ext.size);
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\"");
++        break;
++
++    case MSGPACK_OBJECT_ARRAY:
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "[");
++        if(o.via.array.size != 0) {
++            msgpack_object* p = o.via.array.ptr;
++            msgpack_object* const pend = o.via.array.ptr + o.via.array.size;
++            MSGPACK_CHECKED_CALL(ret, msgpack_object_print_buffer, aux_buffer, aux_buffer_size, *p);
++            ++p;
++            for(; p < pend; ++p) {
++                MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, ", ");
++                MSGPACK_CHECKED_CALL(ret, msgpack_object_print_buffer, aux_buffer, aux_buffer_size, *p);
++            }
++        }
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "]");
++        break;
++
++    case MSGPACK_OBJECT_MAP:
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "{");
++        if(o.via.map.size != 0) {
++            msgpack_object_kv* p = o.via.map.ptr;
++            msgpack_object_kv* const pend = o.via.map.ptr + o.via.map.size;
++            MSGPACK_CHECKED_CALL(ret, msgpack_object_print_buffer, aux_buffer, aux_buffer_size, p->key);
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "=>");
++            MSGPACK_CHECKED_CALL(ret, msgpack_object_print_buffer, aux_buffer, aux_buffer_size, p->val);
++            ++p;
++            for(; p < pend; ++p) {
++                MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, ", ");
++                MSGPACK_CHECKED_CALL(ret, msgpack_object_print_buffer, aux_buffer, aux_buffer_size, p->key);
++                MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "=>");
++                MSGPACK_CHECKED_CALL(ret, msgpack_object_print_buffer, aux_buffer, aux_buffer_size, p->val);
++            }
++        }
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "}");
++        break;
++
++    default:
++    // FIXME
++#if defined(PRIu64)
++        MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "#<UNKNOWN %i %" PRIu64 ">", o.type, o.via.u64);
++#else
++        if (o.via.u64 > ULONG_MAX) {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "#<UNKNOWN %i over 4294967295>", o.type);
++        } else {
++            MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "#<UNKNOWN %i %lu>", o.type, (unsigned long)o.via.u64);
++        }
++#endif
++    }
++
++    return (int)(buffer_size - aux_buffer_size);
++}
++
++#undef MSGPACK_CHECKED_CALL
++
++bool msgpack_object_equal(const msgpack_object x, const msgpack_object y)
++{
++    if(x.type != y.type) { return false; }
++
++    switch(x.type) {
++    case MSGPACK_OBJECT_NIL:
++        return true;
++
++    case MSGPACK_OBJECT_BOOLEAN:
++        return x.via.boolean == y.via.boolean;
++
++    case MSGPACK_OBJECT_POSITIVE_INTEGER:
++        return x.via.u64 == y.via.u64;
++
++    case MSGPACK_OBJECT_NEGATIVE_INTEGER:
++        return x.via.i64 == y.via.i64;
++
++    case MSGPACK_OBJECT_FLOAT32:
++    case MSGPACK_OBJECT_FLOAT64:
++        return x.via.f64 == y.via.f64;
++
++    case MSGPACK_OBJECT_STR:
++        return x.via.str.size == y.via.str.size &&
++            memcmp(x.via.str.ptr, y.via.str.ptr, x.via.str.size) == 0;
++
++    case MSGPACK_OBJECT_BIN:
++        return x.via.bin.size == y.via.bin.size &&
++            memcmp(x.via.bin.ptr, y.via.bin.ptr, x.via.bin.size) == 0;
++
++    case MSGPACK_OBJECT_EXT:
++        return x.via.ext.size == y.via.ext.size &&
++            x.via.ext.type == y.via.ext.type &&
++            memcmp(x.via.ext.ptr, y.via.ext.ptr, x.via.ext.size) == 0;
++
++    case MSGPACK_OBJECT_ARRAY:
++        if(x.via.array.size != y.via.array.size) {
++            return false;
++        } else if(x.via.array.size == 0) {
++            return true;
++        } else {
++            msgpack_object* px = x.via.array.ptr;
++            msgpack_object* const pxend = x.via.array.ptr + x.via.array.size;
++            msgpack_object* py = y.via.array.ptr;
++            do {
++                if(!msgpack_object_equal(*px, *py)) {
++                    return false;
++                }
++                ++px;
++                ++py;
++            } while(px < pxend);
++            return true;
++        }
++
++    case MSGPACK_OBJECT_MAP:
++        if(x.via.map.size != y.via.map.size) {
++            return false;
++        } else if(x.via.map.size == 0) {
++            return true;
++        } else {
++            msgpack_object_kv* px = x.via.map.ptr;
++            msgpack_object_kv* const pxend = x.via.map.ptr + x.via.map.size;
++            msgpack_object_kv* py = y.via.map.ptr;
++            do {
++                if(!msgpack_object_equal(px->key, py->key) || !msgpack_object_equal(px->val, py->val)) {
++                    return false;
++                }
++                ++px;
++                ++py;
++            } while(px < pxend);
++            return true;
++        }
++
++    default:
++        return false;
++    }
++}
+diff --git a/lib/msgpack/unpack.c b/lib/msgpack/unpack.c
+new file mode 100644
+index 000000000000..9341cb08af82
+--- /dev/null
++++ b/lib/msgpack/unpack.c
+@@ -0,0 +1,702 @@
++/*
++ * MessagePack for C unpacking routine
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#include "msgpack/unpack.h"
++#include "msgpack/unpack_define.h"
++#include "msgpack/util.h"
++#include <stdlib.h>
++
++#ifdef _msgpack_atomic_counter_header
++#include _msgpack_atomic_counter_header
++#endif
++
++
++typedef struct {
++    msgpack_zone** z;
++    bool referenced;
++} unpack_user;
++
++
++#define msgpack_unpack_struct(name) \
++    struct template ## name
++
++#define msgpack_unpack_func(ret, name) \
++    ret template ## name
++
++#define msgpack_unpack_callback(name) \
++    template_callback ## name
++
++#define msgpack_unpack_object msgpack_object
++
++#define msgpack_unpack_user unpack_user
++
++
++struct template_context;
++typedef struct template_context template_context;
++
++static void template_init(template_context* ctx);
++
++static msgpack_object template_data(template_context* ctx);
++
++static int template_execute(
++    template_context* ctx, const char* data, size_t len, size_t* off);
++
++
++static inline msgpack_object template_callback_root(unpack_user* u)
++{
++    msgpack_object o;
++    MSGPACK_UNUSED(u);
++    o.type = MSGPACK_OBJECT_NIL;
++    return o;
++}
++
++static inline int template_callback_uint8(unpack_user* u, uint8_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++    o->via.u64 = d;
++    return 0;
++}
++
++static inline int template_callback_uint16(unpack_user* u, uint16_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++    o->via.u64 = d;
++    return 0;
++}
++
++static inline int template_callback_uint32(unpack_user* u, uint32_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++    o->via.u64 = d;
++    return 0;
++}
++
++static inline int template_callback_uint64(unpack_user* u, uint64_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++    o->via.u64 = d;
++    return 0;
++}
++
++static inline int template_callback_int8(unpack_user* u, int8_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    if(d >= 0) {
++        o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++        o->via.u64 = (uint64_t)d;
++        return 0;
++    }
++    else {
++        o->type = MSGPACK_OBJECT_NEGATIVE_INTEGER;
++        o->via.i64 = d;
++        return 0;
++    }
++}
++
++static inline int template_callback_int16(unpack_user* u, int16_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    if(d >= 0) {
++        o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++        o->via.u64 = (uint64_t)d;
++        return 0;
++    }
++    else {
++        o->type = MSGPACK_OBJECT_NEGATIVE_INTEGER;
++        o->via.i64 = d;
++        return 0;
++    }
++}
++
++static inline int template_callback_int32(unpack_user* u, int32_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    if(d >= 0) {
++        o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++        o->via.u64 = (uint64_t)d;
++        return 0;
++    }
++    else {
++        o->type = MSGPACK_OBJECT_NEGATIVE_INTEGER;
++        o->via.i64 = d;
++        return 0;
++    }
++}
++
++static inline int template_callback_int64(unpack_user* u, int64_t d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    if(d >= 0) {
++        o->type = MSGPACK_OBJECT_POSITIVE_INTEGER;
++        o->via.u64 = (uint64_t)d;
++        return 0;
++    }
++    else {
++        o->type = MSGPACK_OBJECT_NEGATIVE_INTEGER;
++        o->via.i64 = d;
++        return 0;
++    }
++}
++
++static inline int template_callback_float(unpack_user* u, float d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_FLOAT32;
++    o->via.f64 = d;
++    return 0;
++}
++
++static inline int template_callback_double(unpack_user* u, double d, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_FLOAT64;
++    o->via.f64 = d;
++    return 0;
++}
++
++static inline int template_callback_nil(unpack_user* u, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_NIL;
++    return 0;
++}
++
++static inline int template_callback_true(unpack_user* u, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_BOOLEAN;
++    o->via.boolean = true;
++    return 0;
++}
++
++static inline int template_callback_false(unpack_user* u, msgpack_object* o)
++{
++    MSGPACK_UNUSED(u);
++    o->type = MSGPACK_OBJECT_BOOLEAN;
++    o->via.boolean = false;
++    return 0;
++}
++
++static inline int template_callback_array(unpack_user* u, unsigned int n, msgpack_object* o)
++{
++    size_t size;
++    // Let's leverage the fact that sizeof(msgpack_object) is a compile time constant
++    // to check for int overflows.
++    // Note - while n is constrained to 32-bit, the product of n * sizeof(msgpack_object)
++    // might not be constrained to 4GB on 64-bit systems
++#if SIZE_MAX == UINT_MAX
++    if (n > SIZE_MAX/sizeof(msgpack_object))
++        return MSGPACK_UNPACK_NOMEM_ERROR;
++#endif
++
++    o->type = MSGPACK_OBJECT_ARRAY;
++    o->via.array.size = 0;
++
++    size = n * sizeof(msgpack_object);
++
++    if (*u->z == NULL) {
++        *u->z = msgpack_zone_new(MSGPACK_ZONE_CHUNK_SIZE);
++        if(*u->z == NULL) {
++            return MSGPACK_UNPACK_NOMEM_ERROR;
++        }
++    }
++
++    // Unsure whether size = 0 should be an error, and if so, what to return
++    o->via.array.ptr = (msgpack_object*)msgpack_zone_malloc(*u->z, size);
++    if(o->via.array.ptr == NULL) { return MSGPACK_UNPACK_NOMEM_ERROR; }
++    return 0;
++}
++
++static inline int template_callback_array_item(unpack_user* u, msgpack_object* c, msgpack_object o)
++{
++    MSGPACK_UNUSED(u);
++#if defined(__GNUC__) && !defined(__clang__)
++    memcpy(&c->via.array.ptr[c->via.array.size], &o, sizeof(msgpack_object));
++#else  /* __GNUC__ && !__clang__ */
++    c->via.array.ptr[c->via.array.size] = o;
++#endif /* __GNUC__ && !__clang__ */
++    ++c->via.array.size;
++    return 0;
++}
++
++static inline int template_callback_map(unpack_user* u, unsigned int n, msgpack_object* o)
++{
++    size_t size;
++    // Let's leverage the fact that sizeof(msgpack_object_kv) is a compile time constant
++    // to check for int overflows
++    // Note - while n is constrained to 32-bit, the product of n * sizeof(msgpack_object)
++    // might not be constrained to 4GB on 64-bit systems
++
++    // Note - this will always be false on 64-bit systems
++#if SIZE_MAX == UINT_MAX
++    if (n > SIZE_MAX/sizeof(msgpack_object_kv))
++        return MSGPACK_UNPACK_NOMEM_ERROR;
++#endif
++
++    o->type = MSGPACK_OBJECT_MAP;
++    o->via.map.size = 0;
++
++    size = n * sizeof(msgpack_object_kv);
++
++    if (*u->z == NULL) {
++        *u->z = msgpack_zone_new(MSGPACK_ZONE_CHUNK_SIZE);
++        if(*u->z == NULL) {
++            return MSGPACK_UNPACK_NOMEM_ERROR;
++        }
++    }
++
++    // Should size = 0 be an error? If so, what error to return?
++    o->via.map.ptr = (msgpack_object_kv*)msgpack_zone_malloc(*u->z, size);
++    if(o->via.map.ptr == NULL) { return MSGPACK_UNPACK_NOMEM_ERROR; }
++    return 0;
++}
++
++static inline int template_callback_map_item(unpack_user* u, msgpack_object* c, msgpack_object k, msgpack_object v)
++{
++    MSGPACK_UNUSED(u);
++#if defined(__GNUC__) && !defined(__clang__)
++    memcpy(&c->via.map.ptr[c->via.map.size].key, &k, sizeof(msgpack_object));
++    memcpy(&c->via.map.ptr[c->via.map.size].val, &v, sizeof(msgpack_object));
++#else  /* __GNUC__ && !__clang__ */
++    c->via.map.ptr[c->via.map.size].key = k;
++    c->via.map.ptr[c->via.map.size].val = v;
++#endif /* __GNUC__ && !__clang__ */
++    ++c->via.map.size;
++    return 0;
++}
++
++static inline int template_callback_str(unpack_user* u, const char* b, const char* p, unsigned int l, msgpack_object* o)
++{
++    MSGPACK_UNUSED(b);
++    if (*u->z == NULL) {
++        *u->z = msgpack_zone_new(MSGPACK_ZONE_CHUNK_SIZE);
++        if(*u->z == NULL) {
++            return MSGPACK_UNPACK_NOMEM_ERROR;
++        }
++    }
++    o->type = MSGPACK_OBJECT_STR;
++    o->via.str.ptr = p;
++    o->via.str.size = l;
++    u->referenced = true;
++    return 0;
++}
++
++static inline int template_callback_bin(unpack_user* u, const char* b, const char* p, unsigned int l, msgpack_object* o)
++{
++    MSGPACK_UNUSED(b);
++    if (*u->z == NULL) {
++        *u->z = msgpack_zone_new(MSGPACK_ZONE_CHUNK_SIZE);
++        if(*u->z == NULL) {
++            return MSGPACK_UNPACK_NOMEM_ERROR;
++        }
++    }
++    o->type = MSGPACK_OBJECT_BIN;
++    o->via.bin.ptr = p;
++    o->via.bin.size = l;
++    u->referenced = true;
++    return 0;
++}
++
++static inline int template_callback_ext(unpack_user* u, const char* b, const char* p, unsigned int l, msgpack_object* o)
++{
++    MSGPACK_UNUSED(b);
++    if (l == 0) {
++        return MSGPACK_UNPACK_PARSE_ERROR;
++    }
++    if (*u->z == NULL) {
++        *u->z = msgpack_zone_new(MSGPACK_ZONE_CHUNK_SIZE);
++        if(*u->z == NULL) {
++            return MSGPACK_UNPACK_NOMEM_ERROR;
++        }
++    }
++    o->type = MSGPACK_OBJECT_EXT;
++    o->via.ext.type = *p;
++    o->via.ext.ptr = p + 1;
++    o->via.ext.size = l - 1;
++    u->referenced = true;
++    return 0;
++}
++
++#include "msgpack/unpack_template.h"
++
++
++#define CTX_CAST(m) ((template_context*)(m))
++#define CTX_REFERENCED(mpac) CTX_CAST((mpac)->ctx)->user.referenced
++
++#define COUNTER_SIZE (sizeof(_msgpack_atomic_counter_t))
++
++
++static inline void init_count(void* buffer)
++{
++    *(volatile _msgpack_atomic_counter_t*)buffer = 1;
++}
++
++static inline void decr_count(void* buffer)
++{
++    // atomic if(--*(_msgpack_atomic_counter_t*)buffer == 0) { free(buffer); }
++    if(_msgpack_sync_decr_and_fetch((volatile _msgpack_atomic_counter_t*)buffer) == 0) {
++        free(buffer);
++    }
++}
++
++static inline void incr_count(void* buffer)
++{
++    // atomic ++*(_msgpack_atomic_counter_t*)buffer;
++    _msgpack_sync_incr_and_fetch((volatile _msgpack_atomic_counter_t*)buffer);
++}
++
++static inline _msgpack_atomic_counter_t get_count(void* buffer)
++{
++    return *(volatile _msgpack_atomic_counter_t*)buffer;
++}
++
++bool msgpack_unpacker_init(msgpack_unpacker* mpac, size_t initial_buffer_size)
++{
++    char* buffer;
++    void* ctx;
++
++    if(initial_buffer_size < COUNTER_SIZE) {
++        initial_buffer_size = COUNTER_SIZE;
++    }
++
++    buffer = (char*)malloc(initial_buffer_size);
++    if(buffer == NULL) {
++        return false;
++    }
++
++    ctx = malloc(sizeof(template_context));
++    if(ctx == NULL) {
++        free(buffer);
++        return false;
++    }
++
++    mpac->buffer = buffer;
++    mpac->used = COUNTER_SIZE;
++    mpac->free = initial_buffer_size - mpac->used;
++    mpac->off = COUNTER_SIZE;
++    mpac->parsed = 0;
++    mpac->initial_buffer_size = initial_buffer_size;
++    mpac->z = NULL;
++    mpac->ctx = ctx;
++
++    init_count(mpac->buffer);
++
++    template_init(CTX_CAST(mpac->ctx));
++    CTX_CAST(mpac->ctx)->user.z = &mpac->z;
++    CTX_CAST(mpac->ctx)->user.referenced = false;
++
++    return true;
++}
++
++void msgpack_unpacker_destroy(msgpack_unpacker* mpac)
++{
++    msgpack_zone_free(mpac->z);
++    free(mpac->ctx);
++    decr_count(mpac->buffer);
++}
++
++msgpack_unpacker* msgpack_unpacker_new(size_t initial_buffer_size)
++{
++    msgpack_unpacker* mpac = (msgpack_unpacker*)malloc(sizeof(msgpack_unpacker));
++    if(mpac == NULL) {
++        return NULL;
++    }
++
++    if(!msgpack_unpacker_init(mpac, initial_buffer_size)) {
++        free(mpac);
++        return NULL;
++    }
++
++    return mpac;
++}
++
++void msgpack_unpacker_free(msgpack_unpacker* mpac)
++{
++    msgpack_unpacker_destroy(mpac);
++    free(mpac);
++}
++
++bool msgpack_unpacker_expand_buffer(msgpack_unpacker* mpac, size_t size)
++{
++    if(mpac->used == mpac->off && get_count(mpac->buffer) == 1
++            && !CTX_REFERENCED(mpac)) {
++        // rewind buffer
++        mpac->free += mpac->used - COUNTER_SIZE;
++        mpac->used = COUNTER_SIZE;
++        mpac->off = COUNTER_SIZE;
++
++        if(mpac->free >= size) {
++            return true;
++        }
++    }
++
++    if(mpac->off == COUNTER_SIZE) {
++        char* tmp;
++        size_t next_size = (mpac->used + mpac->free) * 2;  // include COUNTER_SIZE
++        while(next_size < size + mpac->used) {
++            size_t tmp_next_size = next_size * 2;
++            if (tmp_next_size <= next_size) {
++                next_size = size + mpac->used;
++                break;
++            }
++            next_size = tmp_next_size;
++        }
++
++        tmp = (char*)realloc(mpac->buffer, next_size);
++        if(tmp == NULL) {
++            return false;
++        }
++
++        mpac->buffer = tmp;
++        mpac->free = next_size - mpac->used;
++
++    } else {
++        char* tmp;
++        size_t next_size = mpac->initial_buffer_size;  // include COUNTER_SIZE
++        size_t not_parsed = mpac->used - mpac->off;
++        while(next_size < size + not_parsed + COUNTER_SIZE) {
++            size_t tmp_next_size = next_size * 2;
++            if (tmp_next_size <= next_size) {
++                next_size = size + not_parsed + COUNTER_SIZE;
++                break;
++            }
++            next_size = tmp_next_size;
++        }
++
++        tmp = (char*)malloc(next_size);
++        if(tmp == NULL) {
++            return false;
++        }
++
++        init_count(tmp);
++
++        memcpy(tmp+COUNTER_SIZE, mpac->buffer+mpac->off, not_parsed);
++
++        if(CTX_REFERENCED(mpac)) {
++            if(!msgpack_zone_push_finalizer(mpac->z, decr_count, mpac->buffer)) {
++                free(tmp);
++                return false;
++            }
++            CTX_REFERENCED(mpac) = false;
++        } else {
++            decr_count(mpac->buffer);
++        }
++
++        mpac->buffer = tmp;
++        mpac->used = not_parsed + COUNTER_SIZE;
++        mpac->free = next_size - mpac->used;
++        mpac->off = COUNTER_SIZE;
++    }
++
++    return true;
++}
++
++int msgpack_unpacker_execute(msgpack_unpacker* mpac)
++{
++    size_t off = mpac->off;
++    int ret = template_execute(CTX_CAST(mpac->ctx),
++            mpac->buffer, mpac->used, &mpac->off);
++    if(mpac->off > off) {
++        mpac->parsed += mpac->off - off;
++    }
++    return ret;
++}
++
++msgpack_object msgpack_unpacker_data(msgpack_unpacker* mpac)
++{
++    return template_data(CTX_CAST(mpac->ctx));
++}
++
++msgpack_zone* msgpack_unpacker_release_zone(msgpack_unpacker* mpac)
++{
++    msgpack_zone* old = mpac->z;
++
++    if (old == NULL) return NULL;
++    if(!msgpack_unpacker_flush_zone(mpac)) {
++        return NULL;
++    }
++
++    mpac->z = NULL;
++    CTX_CAST(mpac->ctx)->user.z = &mpac->z;
++
++    return old;
++}
++
++void msgpack_unpacker_reset_zone(msgpack_unpacker* mpac)
++{
++    msgpack_zone_clear(mpac->z);
++}
++
++bool msgpack_unpacker_flush_zone(msgpack_unpacker* mpac)
++{
++    if(CTX_REFERENCED(mpac)) {
++        if(!msgpack_zone_push_finalizer(mpac->z, decr_count, mpac->buffer)) {
++            return false;
++        }
++        CTX_REFERENCED(mpac) = false;
++
++        incr_count(mpac->buffer);
++    }
++
++    return true;
++}
++
++void msgpack_unpacker_reset(msgpack_unpacker* mpac)
++{
++    template_init(CTX_CAST(mpac->ctx));
++    // don't reset referenced flag
++    mpac->parsed = 0;
++}
++
++static inline msgpack_unpack_return unpacker_next(msgpack_unpacker* mpac,
++                                                  msgpack_unpacked* result)
++{
++    int ret;
++
++    msgpack_unpacked_destroy(result);
++
++    ret = msgpack_unpacker_execute(mpac);
++
++    if(ret < 0) {
++        result->zone = NULL;
++        memset(&result->data, 0, sizeof(msgpack_object));
++        return (msgpack_unpack_return)ret;
++    }
++
++    if(ret == 0) {
++        return MSGPACK_UNPACK_CONTINUE;
++    }
++    result->zone = msgpack_unpacker_release_zone(mpac);
++    result->data = msgpack_unpacker_data(mpac);
++
++    return MSGPACK_UNPACK_SUCCESS;
++}
++
++msgpack_unpack_return msgpack_unpacker_next(msgpack_unpacker* mpac,
++                                            msgpack_unpacked* result)
++{
++    msgpack_unpack_return ret;
++
++    ret = unpacker_next(mpac, result);
++    if (ret == MSGPACK_UNPACK_SUCCESS) {
++        msgpack_unpacker_reset(mpac);
++    }
++
++    return ret;
++}
++
++msgpack_unpack_return
++msgpack_unpacker_next_with_size(msgpack_unpacker* mpac,
++                                msgpack_unpacked* result, size_t *p_bytes)
++{
++    msgpack_unpack_return ret;
++
++    ret = unpacker_next(mpac, result);
++    if (ret == MSGPACK_UNPACK_SUCCESS || ret == MSGPACK_UNPACK_CONTINUE) {
++        *p_bytes = mpac->parsed;
++    }
++
++    if (ret == MSGPACK_UNPACK_SUCCESS) {
++        msgpack_unpacker_reset(mpac);
++    }
++
++    return ret;
++}
++
++msgpack_unpack_return
++msgpack_unpack(const char* data, size_t len, size_t* off,
++        msgpack_zone* result_zone, msgpack_object* result)
++{
++    size_t noff = 0;
++    if(off != NULL) { noff = *off; }
++
++    if(len <= noff) {
++        // FIXME
++        return MSGPACK_UNPACK_CONTINUE;
++    }
++    else {
++        int e;
++        template_context ctx;
++        template_init(&ctx);
++
++        ctx.user.z = &result_zone;
++        ctx.user.referenced = false;
++
++        e = template_execute(&ctx, data, len, &noff);
++        if(e < 0) {
++            return (msgpack_unpack_return)e;
++        }
++
++        if(off != NULL) { *off = noff; }
++
++        if(e == 0) {
++            return MSGPACK_UNPACK_CONTINUE;
++        }
++
++        *result = template_data(&ctx);
++
++        if(noff < len) {
++            return MSGPACK_UNPACK_EXTRA_BYTES;
++        }
++
++        return MSGPACK_UNPACK_SUCCESS;
++    }
++}
++
++msgpack_unpack_return
++msgpack_unpack_next(msgpack_unpacked* result,
++        const char* data, size_t len, size_t* off)
++{
++    size_t noff = 0;
++    msgpack_unpacked_destroy(result);
++
++    if(off != NULL) { noff = *off; }
++
++    if(len <= noff) {
++        return MSGPACK_UNPACK_CONTINUE;
++    }
++
++    {
++        int e;
++        template_context ctx;
++        template_init(&ctx);
++
++        ctx.user.z = &result->zone;
++        ctx.user.referenced = false;
++
++        e = template_execute(&ctx, data, len, &noff);
++
++        if(off != NULL) { *off = noff; }
++
++        if(e < 0) {
++            msgpack_zone_free(result->zone);
++            result->zone = NULL;
++            return (msgpack_unpack_return)e;
++        }
++
++        if(e == 0) {
++            return MSGPACK_UNPACK_CONTINUE;
++        }
++
++        result->data = template_data(&ctx);
++
++        return MSGPACK_UNPACK_SUCCESS;
++    }
++}
++
++#if defined(MSGPACK_OLD_COMPILER_BUS_ERROR_WORKAROUND)
++// FIXME: Dirty hack to avoid a bus error caused by OS X's old gcc.
++static void dummy_function_to_avoid_bus_error()
++{
++}
++#endif
+diff --git a/lib/msgpack/version.c b/lib/msgpack/version.c
+new file mode 100644
+index 000000000000..83f75108eb63
+--- /dev/null
++++ b/lib/msgpack/version.c
+@@ -0,0 +1,22 @@
++#include "msgpack.h"
++
++const char* msgpack_version(void)
++{
++    return MSGPACK_VERSION;
++}
++
++int msgpack_version_major(void)
++{
++    return MSGPACK_VERSION_MAJOR;
++}
++
++int msgpack_version_minor(void)
++{
++    return MSGPACK_VERSION_MINOR;
++}
++
++int msgpack_version_revision(void)
++{
++    return MSGPACK_VERSION_REVISION;
++}
++
+diff --git a/lib/msgpack/vrefbuffer.c b/lib/msgpack/vrefbuffer.c
+new file mode 100644
+index 000000000000..d14b71904aeb
+--- /dev/null
++++ b/lib/msgpack/vrefbuffer.c
+@@ -0,0 +1,250 @@
++/*
++ * MessagePack for C zero-copy buffer implementation
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#include "msgpack/vrefbuffer.h"
++#include <stdlib.h>
++#include <string.h>
++
++#define MSGPACK_PACKER_MAX_BUFFER_SIZE 9
++
++struct msgpack_vrefbuffer_chunk {
++    struct msgpack_vrefbuffer_chunk* next;
++    /* data ... */
++};
++
++bool msgpack_vrefbuffer_init(msgpack_vrefbuffer* vbuf,
++        size_t ref_size, size_t chunk_size)
++{
++    size_t nfirst;
++    msgpack_iovec* array;
++    msgpack_vrefbuffer_chunk* chunk;
++
++    if (ref_size == 0) {
++        ref_size = MSGPACK_VREFBUFFER_REF_SIZE;
++    }
++    if(chunk_size == 0) {
++        chunk_size = MSGPACK_VREFBUFFER_CHUNK_SIZE;
++    }
++    vbuf->chunk_size = chunk_size;
++    vbuf->ref_size =
++        ref_size > MSGPACK_PACKER_MAX_BUFFER_SIZE + 1 ?
++        ref_size : MSGPACK_PACKER_MAX_BUFFER_SIZE + 1 ;
++
++    if((sizeof(msgpack_vrefbuffer_chunk) + chunk_size) < chunk_size) {
++        return false;
++    }
++
++    nfirst = (sizeof(msgpack_iovec) < 72/2) ?
++            72 / sizeof(msgpack_iovec) : 8;
++
++    array = (msgpack_iovec*)malloc(
++            sizeof(msgpack_iovec) * nfirst);
++    if(array == NULL) {
++        return false;
++    }
++
++    vbuf->tail  = array;
++    vbuf->end   = array + nfirst;
++    vbuf->array = array;
++
++    chunk = (msgpack_vrefbuffer_chunk*)malloc(
++            sizeof(msgpack_vrefbuffer_chunk) + chunk_size);
++    if(chunk == NULL) {
++        free(array);
++        return false;
++    }
++    else {
++        msgpack_vrefbuffer_inner_buffer* const ib = &vbuf->inner_buffer;
++
++        ib->free = chunk_size;
++        ib->ptr  = ((char*)chunk) + sizeof(msgpack_vrefbuffer_chunk);
++        ib->head = chunk;
++        chunk->next = NULL;
++
++        return true;
++    }
++}
++
++void msgpack_vrefbuffer_destroy(msgpack_vrefbuffer* vbuf)
++{
++    msgpack_vrefbuffer_chunk* c = vbuf->inner_buffer.head;
++    while(true) {
++        msgpack_vrefbuffer_chunk* n = c->next;
++        free(c);
++        if(n != NULL) {
++            c = n;
++        } else {
++            break;
++        }
++    }
++    free(vbuf->array);
++}
++
++void msgpack_vrefbuffer_clear(msgpack_vrefbuffer* vbuf)
++{
++    msgpack_vrefbuffer_chunk* c = vbuf->inner_buffer.head->next;
++    msgpack_vrefbuffer_chunk* n;
++    while(c != NULL) {
++        n = c->next;
++        free(c);
++        c = n;
++    }
++
++    {
++        msgpack_vrefbuffer_inner_buffer* const ib = &vbuf->inner_buffer;
++        msgpack_vrefbuffer_chunk* chunk = ib->head;
++        chunk->next = NULL;
++        ib->free = vbuf->chunk_size;
++        ib->ptr  = ((char*)chunk) + sizeof(msgpack_vrefbuffer_chunk);
++
++        vbuf->tail = vbuf->array;
++    }
++}
++
++int msgpack_vrefbuffer_append_ref(msgpack_vrefbuffer* vbuf,
++        const char* buf, size_t len)
++{
++    if(vbuf->tail == vbuf->end) {
++        const size_t nused = (size_t)(vbuf->tail - vbuf->array);
++        const size_t nnext = nused * 2;
++
++        msgpack_iovec* nvec = (msgpack_iovec*)realloc(
++                vbuf->array, sizeof(msgpack_iovec)*nnext);
++        if(nvec == NULL) {
++            return -1;
++        }
++
++        vbuf->array = nvec;
++        vbuf->end   = nvec + nnext;
++        vbuf->tail  = nvec + nused;
++    }
++
++    vbuf->tail->iov_base = (char*)buf;
++    vbuf->tail->iov_len  = len;
++    ++vbuf->tail;
++
++    return 0;
++}
++
++int msgpack_vrefbuffer_append_copy(msgpack_vrefbuffer* vbuf,
++        const char* buf, size_t len)
++{
++    msgpack_vrefbuffer_inner_buffer* const ib = &vbuf->inner_buffer;
++    char* m;
++
++    if(ib->free < len) {
++        msgpack_vrefbuffer_chunk* chunk;
++        size_t sz = vbuf->chunk_size;
++        if(sz < len) {
++            sz = len;
++        }
++
++        if((sizeof(msgpack_vrefbuffer_chunk) + sz) < sz){
++            return -1;
++        }
++        chunk = (msgpack_vrefbuffer_chunk*)malloc(
++                sizeof(msgpack_vrefbuffer_chunk) + sz);
++        if(chunk == NULL) {
++            return -1;
++        }
++
++        chunk->next = ib->head;
++        ib->head = chunk;
++        ib->free = sz;
++        ib->ptr  = ((char*)chunk) + sizeof(msgpack_vrefbuffer_chunk);
++    }
++
++    m = ib->ptr;
++    memcpy(m, buf, len);
++    ib->free -= len;
++    ib->ptr  += len;
++
++    if(vbuf->tail != vbuf->array && m ==
++            (const char*)((vbuf->tail-1)->iov_base) + (vbuf->tail-1)->iov_len) {
++        (vbuf->tail-1)->iov_len += len;
++        return 0;
++    } else {
++        return msgpack_vrefbuffer_append_ref(vbuf, m, len);
++    }
++}
++
++int msgpack_vrefbuffer_migrate(msgpack_vrefbuffer* vbuf, msgpack_vrefbuffer* to)
++{
++    size_t sz = vbuf->chunk_size;
++    msgpack_vrefbuffer_chunk* empty;
++
++    if((sizeof(msgpack_vrefbuffer_chunk) + sz) < sz){
++        return -1;
++    }
++
++    empty = (msgpack_vrefbuffer_chunk*)malloc(
++            sizeof(msgpack_vrefbuffer_chunk) + sz);
++    if(empty == NULL) {
++        return -1;
++    }
++
++    empty->next = NULL;
++
++    {
++        const size_t nused = (size_t)(vbuf->tail - vbuf->array);
++        if(to->tail + nused < vbuf->end) {
++            msgpack_iovec* nvec;
++            const size_t tosize = (size_t)(to->tail - to->array);
++            const size_t reqsize = nused + tosize;
++            size_t nnext = (size_t)(to->end - to->array) * 2;
++            while(nnext < reqsize) {
++                size_t tmp_nnext = nnext * 2;
++                if (tmp_nnext <= nnext) {
++                    nnext = reqsize;
++                    break;
++                }
++                nnext = tmp_nnext;
++            }
++
++            nvec = (msgpack_iovec*)realloc(
++                    to->array, sizeof(msgpack_iovec)*nnext);
++            if(nvec == NULL) {
++                free(empty);
++                return -1;
++            }
++
++            to->array = nvec;
++            to->end   = nvec + nnext;
++            to->tail  = nvec + tosize;
++        }
++
++        memcpy(to->tail, vbuf->array, sizeof(msgpack_iovec)*nused);
++
++        to->tail += nused;
++        vbuf->tail = vbuf->array;
++
++        {
++            msgpack_vrefbuffer_inner_buffer* const ib = &vbuf->inner_buffer;
++            msgpack_vrefbuffer_inner_buffer* const toib = &to->inner_buffer;
++
++            msgpack_vrefbuffer_chunk* last = ib->head;
++            while(last->next != NULL) {
++                last = last->next;
++            }
++            last->next = toib->head;
++            toib->head = ib->head;
++
++            if(toib->free < ib->free) {
++                toib->free = ib->free;
++                toib->ptr  = ib->ptr;
++            }
++
++            ib->head = empty;
++            ib->free = sz;
++            ib->ptr  = ((char*)empty) + sizeof(msgpack_vrefbuffer_chunk);
++        }
++    }
++
++    return 0;
++}
+diff --git a/lib/msgpack/zone.c b/lib/msgpack/zone.c
+new file mode 100644
+index 000000000000..372a1f5b80b8
+--- /dev/null
++++ b/lib/msgpack/zone.c
+@@ -0,0 +1,222 @@
++/*
++ * MessagePack for C memory pool implementation
++ *
++ * Copyright (C) 2008-2009 FURUHASHI Sadayuki
++ *
++ *    Distributed under the Boost Software License, Version 1.0.
++ *    (See accompanying file LICENSE_1_0.txt or copy at
++ *    http://www.boost.org/LICENSE_1_0.txt)
++ */
++#include "msgpack/zone.h"
++#include <stdlib.h>
++#include <string.h>
++
++struct msgpack_zone_chunk {
++    struct msgpack_zone_chunk* next;
++    /* data ... */
++};
++
++static inline bool init_chunk_list(msgpack_zone_chunk_list* cl, size_t chunk_size)
++{
++    msgpack_zone_chunk* chunk = (msgpack_zone_chunk*)malloc(
++            sizeof(msgpack_zone_chunk) + chunk_size);
++    if(chunk == NULL) {
++        return false;
++    }
++
++    cl->head = chunk;
++    cl->free = chunk_size;
++    cl->ptr  = ((char*)chunk) + sizeof(msgpack_zone_chunk);
++    chunk->next = NULL;
++
++    return true;
++}
++
++static inline void destroy_chunk_list(msgpack_zone_chunk_list* cl)
++{
++    msgpack_zone_chunk* c = cl->head;
++    while(true) {
++        msgpack_zone_chunk* n = c->next;
++        free(c);
++        if(n != NULL) {
++            c = n;
++        } else {
++            break;
++        }
++    }
++}
++
++static inline void clear_chunk_list(msgpack_zone_chunk_list* cl, size_t chunk_size)
++{
++    msgpack_zone_chunk* c = cl->head;
++    while(true) {
++        msgpack_zone_chunk* n = c->next;
++        if(n != NULL) {
++            free(c);
++            c = n;
++        } else {
++            cl->head = c;
++            break;
++        }
++    }
++    cl->head->next = NULL;
++    cl->free = chunk_size;
++    cl->ptr  = ((char*)cl->head) + sizeof(msgpack_zone_chunk);
++}
++
++void* msgpack_zone_malloc_expand(msgpack_zone* zone, size_t size)
++{
++    msgpack_zone_chunk_list* const cl = &zone->chunk_list;
++    msgpack_zone_chunk* chunk;
++
++    size_t sz = zone->chunk_size;
++
++    while(sz < size) {
++        size_t tmp_sz = sz * 2;
++        if (tmp_sz <= sz) {
++            sz = size;
++            break;
++        }
++        sz = tmp_sz;
++    }
++
++    chunk = (msgpack_zone_chunk*)malloc(
++            sizeof(msgpack_zone_chunk) + sz);
++    if (chunk == NULL) {
++        return NULL;
++    }
++    else {
++        char* ptr = ((char*)chunk) + sizeof(msgpack_zone_chunk);
++        chunk->next = cl->head;
++        cl->head = chunk;
++        cl->free = sz - size;
++        cl->ptr  = ptr + size;
++
++        return ptr;
++    }
++}
++
++
++static inline void init_finalizer_array(msgpack_zone_finalizer_array* fa)
++{
++    fa->tail  = NULL;
++    fa->end   = NULL;
++    fa->array = NULL;
++}
++
++static inline void call_finalizer_array(msgpack_zone_finalizer_array* fa)
++{
++    msgpack_zone_finalizer* fin = fa->tail;
++    for(; fin != fa->array; --fin) {
++        (*(fin-1)->func)((fin-1)->data);
++    }
++}
++
++static inline void destroy_finalizer_array(msgpack_zone_finalizer_array* fa)
++{
++    call_finalizer_array(fa);
++    free(fa->array);
++}
++
++static inline void clear_finalizer_array(msgpack_zone_finalizer_array* fa)
++{
++    call_finalizer_array(fa);
++    fa->tail = fa->array;
++}
++
++bool msgpack_zone_push_finalizer_expand(msgpack_zone* zone,
++        void (*func)(void* data), void* data)
++{
++    msgpack_zone_finalizer_array* const fa = &zone->finalizer_array;
++    msgpack_zone_finalizer* tmp;
++
++    const size_t nused = (size_t)(fa->end - fa->array);
++
++    size_t nnext;
++    if(nused == 0) {
++        nnext = (sizeof(msgpack_zone_finalizer) < 72/2) ?
++                72 / sizeof(msgpack_zone_finalizer) : 8;
++
++    } else {
++        nnext = nused * 2;
++    }
++
++    tmp = (msgpack_zone_finalizer*)realloc(fa->array,
++                sizeof(msgpack_zone_finalizer) * nnext);
++    if(tmp == NULL) {
++        return false;
++    }
++
++    fa->array  = tmp;
++    fa->end    = tmp + nnext;
++    fa->tail   = tmp + nused;
++
++    fa->tail->func = func;
++    fa->tail->data = data;
++
++    ++fa->tail;
++
++    return true;
++}
++
++
++bool msgpack_zone_is_empty(msgpack_zone* zone)
++{
++    msgpack_zone_chunk_list* const cl = &zone->chunk_list;
++    msgpack_zone_finalizer_array* const fa = &zone->finalizer_array;
++    return cl->free == zone->chunk_size && cl->head->next == NULL &&
++        fa->tail == fa->array;
++}
++
++
++void msgpack_zone_destroy(msgpack_zone* zone)
++{
++    destroy_finalizer_array(&zone->finalizer_array);
++    destroy_chunk_list(&zone->chunk_list);
++}
++
++void msgpack_zone_clear(msgpack_zone* zone)
++{
++    clear_finalizer_array(&zone->finalizer_array);
++    clear_chunk_list(&zone->chunk_list, zone->chunk_size);
++}
++
++bool msgpack_zone_init(msgpack_zone* zone, size_t chunk_size)
++{
++    zone->chunk_size = chunk_size;
++
++    if(!init_chunk_list(&zone->chunk_list, chunk_size)) {
++        return false;
++    }
++
++    init_finalizer_array(&zone->finalizer_array);
++
++    return true;
++}
++
++msgpack_zone* msgpack_zone_new(size_t chunk_size)
++{
++    msgpack_zone* zone = (msgpack_zone*)malloc(
++            sizeof(msgpack_zone));
++    if(zone == NULL) {
++        return NULL;
++    }
++
++    zone->chunk_size = chunk_size;
++
++    if(!init_chunk_list(&zone->chunk_list, chunk_size)) {
++        free(zone);
++        return NULL;
++    }
++
++    init_finalizer_array(&zone->finalizer_array);
++
++    return zone;
++}
++
++void msgpack_zone_free(msgpack_zone* zone)
++{
++    if(zone == NULL) { return; }
++    msgpack_zone_destroy(zone);
++    free(zone);
++}
+-- 
+2.25.1
+
