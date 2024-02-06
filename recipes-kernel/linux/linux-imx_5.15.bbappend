@@ -8,6 +8,7 @@ do_copy_source () {
   configs=$(echo "${IMX_KERNEL_CONFIG_AARCH64}" | xargs)
   deltaconfigs=$(echo "${DELTA_KERNEL_DEFCONFIG}" | xargs)
   dtbes=$(echo "${KERNEL_DEVICETREE}" | xargs)
+  extras=$(echo "${EXTRA_SRC}" | xargs)
 
   # Copy config
   if [ -n "${configs}" ]; then
@@ -28,23 +29,34 @@ do_copy_source () {
     done
   fi
 
-  # Copy device trees
-  if [ -n "${dtbes}" ]; then
-    for dtbname in ${dtbes}; do
-      dtsname=$(echo "${dtbname%%.*}.dts")
-      dtsfile=$(basename -- $dtsname)
-      if [ -f ${WORKDIR}/$dtsfile ]; then
-        if [ ! -d ${S}/arch/arm64/boot/dts/adlink ]; then
-          mkdir -p ${S}/arch/arm64/boot/dts/adlink/
-        fi
-        bbnote "copy kernel dts: $dtsfile"
-        cp -f ${WORKDIR}/$dtsfile ${S}/arch/arm64/boot/dts/adlink/
-        if [ -f ${S}/arch/arm64/boot/dts/adlink/Makefile ]; then
-          if ! grep -q $dtbname ${S}/arch/arm64/boot/dts/adlink/Makefile; then
-            bbnote "Makefile: add $dtbname"
-            echo "dtb-\$(CONFIG_ARCH_MXC) += ${dtsfile%%.*}.dtb" >> ${S}/arch/arm64/boot/dts/adlink/Makefile
+  # copy dts and dtsi
+  if [ -n "${extras}" -a -n "${dtbes}" ]; then
+    if [ ! -d ${S}/arch/arm64/boot/dts/adlink ]; then
+      mkdir -p ${S}/arch/arm64/boot/dts/adlink/
+    fi
+    for extra in ${extras}; do
+      extrafile=$(basename -- ${extra})
+      extraname=$(echo ${extrafile%%.*})
+      if [ -f ${WORKDIR}/${extrafile} ]; then
+        case ${extrafile} in
+        *.dtsi)
+          bbnote "copy kernel dtsi: ${extrafile}"
+          cp -f ${WORKDIR}/${extrafile} ${S}/arch/arm64/boot/dts/adlink/
+          ;;
+        *.dts)
+          for dtb in ${dtbes}; do if [ "$dtb" = *"${extraname}"* ]; then dtbname=$(basename ${dtb}) else dtbname=""; fi; done
+          if [ -n ${dtbname} ]; then
+            bbnote "copy kernel dts: ${extrafile} for ${dtbname}"
+            cp -f ${WORKDIR}/${extrafile} ${S}/arch/arm64/boot/dts/adlink/
+            if [ -f ${S}/arch/arm64/boot/dts/adlink/Makefile ]; then
+              if ! grep -q ${extraname} ${S}/arch/arm64/boot/dts/adlink/Makefile; then
+                bbnote "Makefile: add ${dtbname}"
+                echo "dtb-\$(CONFIG_ARCH_MXC) += ${dtbname}" >> ${S}/arch/arm64/boot/dts/adlink/Makefile
+              fi
+            fi
           fi
-        fi
+          ;;
+        esac
       fi
     done
   fi
