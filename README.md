@@ -1,53 +1,101 @@
-<img src="https://www.linaro.org/assets/images/projects/yocto-project.png" width="200" align="right">
-<br>
+# Hardknott
+
+- Kernel version: 5.10
+- Released year: 2021
+- Kernel support by Adlink(continuing).
+- Manifest of the Yocto BSP is [here](https://github.com/ADLINK/adlink-manifest/tree/lec-imx-yocto-hardknott).
 
 
 
-### LEC-iMX8M Plus SMARC Module
-
-|                         SMARC Module                         | Description                                                  |
-| :----------------------------------------------------------: | :----------------------------------------------------------- |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1899/LEC-IMX8MP-F_web.jpg" width="200"/> | **LEC-iMX8M Plus**  ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8MP?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 8M Plus<br /> |
+## 1. Supported Recipes by Adlink
 
 
-
-<br>
-
-**Supported features & interfaces**
-
-* Linux Kernel version: 5.10.35
-* 40 Pin expansion Header with Eclipse Mraa library and Eclipse UPM library which supports C/C++, Python, JAVA and JavaScript
-* SEMA 4.0 (Smart Embedded Management Agent) support the functions such as CPU temperature, voltage monitoring total up time, … etc.
-* 2D / 3D Graphics Acceleration which supports Wayland
-* Support1080p60 H.265, H.264, VP9, VP8 decoder, 1080p60 H.265, H.264 encoder
-* HDMI output with the resolution up to 1920x1080@60Hz
-* 4 x USB 2.0 ports
-* 2 x 10/100 Gb LAN ports
-* USB OTG Serial Gadget supported (baud rate: 115200)
-* CAN FD Bus interface
-* Audio & speaker
-* Raspberry Pi Camera V2.1 (2 Lanes) - SONY iMX219 sensor ([Datasheet](https://www.raspberrypi.org/documentation/hardware/camera/))
-
-
-<br>
+| Resources                      | Description |
+| ------------------------------ | ----------- |
+| conf                           |  Machine file and configuration files                                        |
+| recipes-adlink                 |  Adlink tool recipes                                                         |
+| recipes-bsp                    |  Bootloader related recipes                                                  |
+| recipes-connectivity           |  Libraries and applications related to communication with other devices      |
+| recipes-extended               |  Application which are not essentially but useful for testing and debugging  |
+| recipes-fsl                    |  BB append files related to FSL receipe                                      |
+| recipes-kernel                 |  Kernel related configuration changes and patches                            |
+| recipes-multimedia             |  Codecs and support utilties for audio, images and video                     |
+| recipes-nnstreamer/nnshark     |  nnstreamer related append file                                              |
+| recipes-tools                  |  Adlink Related tools                                                        |
+| wic                            |  Wic file for Image creation                                                 |
 
 
 
-**How to build Yocto Image**
+## 2. Supported Modules
 
-* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki) for more details.
+- LEC-IMX8MP
 
-#### How to flash image to your storage
+- LEC-IMX8MM
 
-  * [How to boot the image (includes u-boot) from SD Card - LEC-iMX8MP Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card)
-  * [How to boot the image (includes u-boot) from eMMC - LEC-iMX8MP Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/03.-How-to-install-Yocto-Image-into-eMMC)
+## 3. Supported Features & Interfaces
+
+### 3.1 LEC-IMX8MP (based on I-Pi SMARC plus carrier + LEC-IMX8MP Dev Kit)
+
+| Interfaces                                 | Support |
+| ------------------------------------------ | ------- |
+| RAM [LPDDR4(2G/4G/8G)]                     | Y       |
+| NPU(Optional)                              | Y       |
+| MIPI-DSI [auo-b101uan01v7]                 | Y       |
+| LVDS [hydis-hv150ux2]                      | Y       |
+| Cameras [OV5640,OV13855]                   | Y       |
+| GPU                                        | Y       |
+| VPU                                        | Y       |
+| HDMI                                       | Y       |
+| eMMC                                       | Y       |
+| SEMA 4.0                                   | Y       |
+| Debug Header                               | Y       |
+| Audio [WM8960,tlv320aic3x]                 | Y       |
+| Ethernet - 0 & 1                           | Y       |
+| Wi-Fi(optional) [Azurewave AW-CM276NF]     | Y       |
+| Bluetooth(optional) [Azurewave AW-CM276NF] | Y       |
+| PCIe                                       | Y       |
+| USB 2.0                                    | Y       |
+| USB 3.0                                    | Y       |
+| SER                                        | Y       |
+| CAN                                        | Y       |
+| SPI                                        | Y       |
+| I2S                                        | Y       |
+| I2C                                        | Y       |
+| GPIO                                       | Y       |
+| SDIO                                       | Y       |
 
 
-### RELEASE NOTE
-* see [RELEASE.md](https://github.com/ADLINK/meta-adlink-nxp/blob/hardknott/RELEASE.md)
+
+### 3.2 LEC-IMX8MM (based on I-Pi SMARC carrier + LEC-IMX8MM Dev Kit)
+
+| Interfaces                                 | Support |
+| ------------------------------------------ | ------- |
+| RAM [LPDDR4(1G/2G/4G)]                     | Y       |
+| MIPI-DSI [auo-b101uan01v7]                 | Y       |
+| LVDS [hydis-hv150ux2]                      | Y       |
+| Cameras [OV5647,OV13855]                   | Y       |
+| GPU                                        | Y       |
+| VPU                                        | Y       |
+| HDMI                                       | Y       |
+| eMMC                                       | Y       |
+| SEMA 4.0                                   | Y       |
+| Debug Header                               | Y       |
+| Audio [WM8960,tlv320aic3x]                 | Y       |
+| Ethernet - 0 & 1                           | Y       |
+| Wi-Fi(optional) [Azurewave AW-CM276NF]     | Y       |
+| Bluetooth(optional) [Azurewave AW-CM276NF] | Y       |
+| PCIe                                       | Y       |
+| USB 2.0                                    | Y       |
+| SER                                        | Y       |
+| CAN                                        | Y       |
+| SPI                                        | Y       |
+| I2S                                        | Y       |
+| I2C                                        | Y       |
+| GPIO                                       | Y       |
+| SDIO                                       | Y       |
 
 
-<br>
 
-Please feel free to ask questions on ADLINK AAE techincal support site: https://www.adlinktech.com/en/Askanexpert 
-<br> For hardware support, please contact your local representative.
+## 4. Documentation
+
+Refer to the [wiki](https://github.com/ADLINK/meta-adlink-nxp/wiki) page for instructions on building the Yocto as well as flashing the image.
