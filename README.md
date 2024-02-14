@@ -1,36 +1,36 @@
-<img src="https://www.linaro.org/assets/images/projects/yocto-project.png" width="200" align="right">
-<br>
+This repo is dedicated to the NXP IMX-based modules. Here you can find the Yocto BSP recipes.
 
-### Supported Hardware List
+You can follow the same steps to build your own customized BSP based on your interests.
 
-|                         SMARC Module                         | Description                                                  |                       BSP (zeus) link                       |                       Download images                        |
-| :----------------------------------------------------------: | :----------------------------------------------------------- | :---------------------------------------------------------: | :----------------------------------------------------------: |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1899/LEC-IMX8MP-F_web.jpg" width="200"/> | **LEC-IMX8MP** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8MP?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 8M Plus <br/> | [Link](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus) | [click here - Beta version](https://github.com/ADLINK/meta-adlink-nxp/blob/zeus/README.md#lec-imx8m-plus-smarc-module) |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1752/LEC-iMX8M-F_(1)_web.jpg" width="200"/> | **LEC-IMX8M** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX8M?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 8M<br /> | [Link](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus) | [click here](https://github.com/ADLINK/meta-adlink-nxp/blob/zeus/README.md#lec-imx8m-smarc-module) |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1838/LEC-iMX6R2-F_web.png" alt="img" width="200" /> | **LEC-iMX6R2** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6R2?lang=en))  <br />     SMARC Short Size Module with NXP i.MX 6 <BR>     Multicore Arm® Cortex®-A9<br /> | [Link](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus) | [click here](https://github.com/ADLINK/meta-adlink-nxp/blob/zeus/README.md#lec-imx6r2-smarc-module) |
-| <img src="https://cdn.adlinktech.com/webupd/products/images/1344/LEC-iMX6_20171201_v2.jpg" alt="img" width="200" /> | **LEC-iMX6** ([More details](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en))  <br />    SMARC Short Size Module with Freescale <BR>    i.MX6 Solo, DualLite, Dual or Quad Core Processor<br /> | [Link](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus) | [click here](https://github.com/ADLINK/meta-adlink-nxp/blob/zeus/README.md#lec-imx6-smarc-module) |
+# 1. Supported Hardware
 
+| Product    |                    Hardware Documentation                    |
+| :--------- | :----------------------------------------------------------: |
+| LEC-IMX8MP | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-IMX8MP?lang=en) |
+| LEC-IMX8MM | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-IMX8MM?lang=en) |
+| LEC-IMX8M  | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-IMX8M?lang=en) |
+| LEC-IMX6   | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6?lang=en) |
+| LEC-IMX6R2 | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-iMX6R2?lang=en) |
 
+# 2. Available Branches
 
+1. [Kirkstone](https://github.com/ADLINK/meta-adlink-nxp/tree/kirkstone)
 
-<br>
+2. [Hardkott](https://github.com/ADLINK/meta-adlink-nxp/tree/hardknott)
 
-#### How to build Yocto Image
+3. [Zeus](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus)
 
-* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01-1.-Build-Yocto-Image_imx8mp) for LEC-IMX8MP
+4. [Sumo](https://github.com/ADLINK/meta-adlink-nxp/tree/sumo)
 
-* see [documentation](https://github.com/ADLINK/meta-adlink-nxp/wiki/01-2.-Build-Yocto-Image) for LEC-iMX8M, LEC-iMX6R2, LEC-iMX6
+5. [Warrior](https://github.com/ADLINK/meta-adlink-nxp/tree/warrior)
 
-#### How to flash image to your storage
+# 3. Adlink Supported Patches
 
-  * [How to boot the image (includes u-boot) from SD Card - LEC-IMX8MP Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx8m-plus-supported)
-  * [How to boot the image (includes u-boot) from SD Card - LEC-IMX8M Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx8m-supported)
-  * [How to boot the image (includes u-boot) from SD Card - LEC-iMX6R2 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx6r2-supported)
-  * [How to boot the image (includes u-boot) from SD Card - LEC-iMX6 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/02.-How-to-install-Yocto-Image-into-SD-Card#lec-imx6-supported)
-  * [How to boot the image (includes u-boot) from eMMC - LEC-IMX8MP, LEC-iMX8M, LEC-iMX6R2, LEC-iMX6 Modules](https://github.com/ADLINK/meta-adlink-nxp/wiki/03.-How-to-install-Yocto-Image-into-eMMC)
+- Patches for the NXP-based products for the Adlink dev kit will be found [here](https://github.com/ADLINK/meta-adlink-nxp/tree/kirkstone/recipes-kernel/linux/linux-imx).
+- The patches that we created and have are based on the NXP GitHub Kernel.
+- This patch is based on kernel 5.15.x version.
 
- 
+# 4. Software Documentation
 
-<br>
+Refer to the [wiki](https://github.com/ADLINK/meta-adlink-nxp/wiki) page for instructions on building the Yocto as well as flashing the image.
 
-<br> 
