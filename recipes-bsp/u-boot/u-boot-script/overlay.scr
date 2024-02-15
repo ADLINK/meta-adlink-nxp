@@ -118,24 +118,29 @@ fi;'
 #
 # starting point
 #
-
+# fn key NOT pressed during u-boot => normal boot
+if test ${fn_key} = no; then
 # 1. parse eeprom settings. e.g. sets up E_disp, E_prj, E_macs1, E_macs2, etc.
-jsinfo;
+  jsinfo;
 # 2. set overlays based on eeprom settings
-run set_overlays;
+  run set_overlays;
 # 3. check for initrd boot
-run detect_initrd;
+  run detect_initrd;
 # 4. load kernel and boot (based on mmcboot or initdboot)
-if run loadimage; then
-  if test -n ${boot_initrd} && test ${boot_initrd} = 1; then
-    if run loadinitrd; then
-      run initrdargs;
-      run initrdboot;
-    fi
+  if run loadimage; then
+    if test -n ${boot_initrd} && test ${boot_initrd} = 1; then
+      if run loadinitrd; then
+        run initrdargs;
+        run initrdboot;
+      fi
+    else
+      run emmcboot;
+    fi;
   else
-    run emmcboot;
+    run netboot;
   fi;
+# fn key pressed during u-boot => ums
 else
-  run netboot;
+  ums 0 mmc 2
 fi;
 
