@@ -69,15 +69,22 @@ fi;'
 #
 # starting point
 #
-
-# 1. parse eeprom settings. e.g. sets up E_disp, E_prj, E_macs1, E_macs2, etc.
-jsinfo
-# 2. set overlays based on eeprom settings
-run set_overlays;
-# 3. boot (based on mmcboot)
-if run loadimage; then
-  run emmcboot;
+# fn key NOT pressed during u-boot => normal boot
+if test ${fn_key} = no; then
+  # 1. parse eeprom settings. e.g. sets up E_disp, E_prj, E_macs1, E_macs2, etc.
+  jsinfo;
+  # 2. set overlays based on eeprom settings
+  run set_overlays;
+  # 3. load kernel and boot (based on mmcboot or initdboot)
+  if run loadimage; then
+    run emmcboot;
+  else
+    run netboot;
+  fi;
+# fn key pressed during u-boot => ums
 else
-  run netboot;
+  load mmc ${mmcdev}:${mmcpart} ${splashimage} ums.bmp
+  bmp display ${splashimage}
+  ums 0 mmc 2
 fi;
 
