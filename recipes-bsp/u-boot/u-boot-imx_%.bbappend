@@ -1,6 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 UBOOT_SPLASH_IMAGE ?= "splash.bmp"
+UBOOT_UMS_IMAGE ?= "ums.bmp"
 EXTRA_SRC = "${@d.getVarFlag('UBOOT_SRC_PATCHES', d.getVar('MACHINE'), True)}"
 SRC_URI:append = " ${EXTRA_SRC}"
 
@@ -64,6 +65,11 @@ do_install:append () {
 		install -m 0644 ${WORKDIR}/${UBOOT_SPLASH_IMAGE} ${DEPLOY_DIR_IMAGE}/${UBOOT_SPLASH_IMAGE}
 	else
 		bbwarn "${S}/${UBOOT_SPLASH_IMAGE} not found. No splash image for u-boot"
+	fi
+	if [ -f ${WORKDIR}/${UBOOT_UMS_IMAGE} ]; then
+		install -m 0644 ${WORKDIR}/${UBOOT_UMS_IMAGE} ${DEPLOY_DIR_IMAGE}/${UBOOT_UMS_IMAGE}
+	else
+		bbwarn "${S}/${UBOOT_UMS_IMAGE} not found. No ums image for u-boot"
 	fi
 }
 
