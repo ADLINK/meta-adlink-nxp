@@ -61,3 +61,11 @@ IMAGE_FSTYPES += " wic.bmap wic.gz"
 
 PREFERRED_VERSION_imx-gpu-viv = "6.4.3.p4.6d-aarch64"
 
+ROOTFS_POSTPROCESS_COMMAND:append = " do_custom_dconf_gdm3;"
+fakeroot do_custom_dconf_gdm3() {
+	set -x
+	if [ -x "${IMAGE_ROOTFS}/usr/share/gdm/generate-config" ]; then
+		sed -e 's,as_gdm\ pkill,dconf\ update\nas_gdm\ pkill,g' -i ${IMAGE_ROOTFS}/usr/share/gdm/generate-config
+	fi
+	set +x
+}
