@@ -62,3 +62,11 @@ PREFERRED_PROVIDER_virtual/libgpiod-tools ?= "${UBUNTU_PROVIDER}"
 IMX_GPU_VIV_VER = "${@bb.utils.contains_any('UBUNTU_TARGET_VERSION', '22.04.1 20.04.3 18.04.3 16.04.5', '6.4.3.p4.6d-aarch64', '6.4.3.p4.6-aarch64', d)}"
 PREFERRED_VERSION_imx-gpu-viv = "${IMX_GPU_VIV_VER}"
 
+ROOTFS_POSTPROCESS_COMMAND:append = " do_custom_dconf_gdm3;"
+fakeroot do_custom_dconf_gdm3() {
+	set -x
+	if [ -x "${IMAGE_ROOTFS}/usr/share/gdm/generate-config" ]; then
+		sed -e 's,as_gdm\ pkill,dconf\ update\nas_gdm\ pkill,g' -i ${IMAGE_ROOTFS}/usr/share/gdm/generate-config
+	fi
+	set +x
+}
