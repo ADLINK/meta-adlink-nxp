@@ -141,6 +141,8 @@ if test ${fn_key} = no; then
   fi;
 # fn key pressed during u-boot => ums
 else
+  load mmc ${mmcdev}:${mmcpart} ${splashimage} ums.bmp
+  bmp display ${splashimage}
   ums 0 mmc 2
 fi;
 
