@@ -67,5 +67,13 @@ fakeroot do_custom_dconf_gdm3() {
 	if [ -x "${IMAGE_ROOTFS}/usr/share/gdm/generate-config" ]; then
 		sed -e 's,as_gdm\ pkill,dconf\ update\nas_gdm\ pkill,g' -i ${IMAGE_ROOTFS}/usr/share/gdm/generate-config
 	fi
+	if [ -f "${IMAGE_ROOTFS}/usr/share/gdm/gdm.schemas" ]; then
+		mv ${IMAGE_ROOTFS}/usr/share/gdm/gdm.schemas ${IMAGE_ROOTFS}/usr/share/gdm/gdm.schemas~
+		cat ${IMAGE_ROOTFS}/usr/share/gdm/gdm.schemas~ | \
+		    tr '\n' '\f' | \
+		    sed -e 's|<key>daemon/AutomaticLoginEnable</key>\f      <signature>b</signature>\f      <default>false</default>\f    </schema>\f    <schema>\f      <key>daemon/AutomaticLogin</key>\f      <signature>s</signature>\f      <default></default>|<key>daemon/AutomaticLoginEnable</key>\f      <signature>b</signature>\f      <default>true</default>\f    </schema>\f    <schema>\f      <key>daemon/AutomaticLogin</key>\f      <signature>s</signature>\f      <default>adlink</default>|g' | \
+		    tr '\f' '\n' > ${IMAGE_ROOTFS}/usr/share/gdm/gdm.schemas
+		rm -f ${IMAGE_ROOTFS}/usr/share/gdm/gdm.schemas~
+	fi
 	set +x
 }
