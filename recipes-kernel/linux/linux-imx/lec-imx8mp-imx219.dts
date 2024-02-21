@@ -1,0 +1,61 @@
+/*
+ *
+ */
+
+
+#include "lec-imx8mp.dts"
+
+/{
+	model = "ADLINK LEC-iMX8M Plus SOM for IMX219 camera";
+};
+
+&i2c3 {
+	/delete-node/ ov5640_mipi@3c;
+
+	imx219_mipi: imx219_mipi@10 {
+		compatible = "sony,imx219";
+		reg = <0x10>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi0_pwn>, <&pinctrl_csi0_rst>;
+		clocks = <&clk IMX8MP_CLK_IPP_DO_CLKO2>;
+		clock-names = "xclk";
+		assigned-clocks = <&clk IMX8MP_CLK_IPP_DO_CLKO2>;
+		assigned-clock-parents = <&clk IMX8MP_CLK_24M>;
+		assigned-clock-rates = <24000000>;
+		csi_id = <0>;
+		powerdown-gpios = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+		mipi_csi;
+		status = "okay";
+
+		port {
+			imx219_mipi_0_ep: endpoint {
+				remote-endpoint = <&mipi_csi0_ep>;
+				data-lanes = <1 2>;
+                                clock-lanes = <0>;
+				clock-noncontinuous;
+				link-frequencies = /bits/ 64 <456000000>;
+			};
+		};
+	};
+};
+
+&mipi_csi_0 {
+	port@0 {
+		/delete-node/ endpoint;
+	};
+
+	port@1 {
+		reg = <1>;
+		mipi_csi0_ep: endpoint {
+			remote-endpoint = <&imx219_mipi_0_ep>;
+			data-lanes = <2>;
+			csis-hs-settle = <13>;
+			csis-clk-settle = <2>;
+			csis-wclk;
+			clock-noncontinuous;
+		};
+	};
+};
