@@ -42,7 +42,7 @@
 | NPU(Optional)                              | Y       |
 | MIPI-DSI [auo-b101uan01v7]                 | Y       |
 | LVDS [hydis-hv150ux2]                      | Y       |
-| Cameras [OV5640,OV13855]                   | Y       |
+| Cameras [OV5640, OV13855, IMX219]                   | Y       |
 | GPU                                        | Y       |
 | VPU                                        | Y       |
 | HDMI                                       | Y       |
