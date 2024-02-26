@@ -313,7 +313,6 @@
 	snps,force_thresh_dma_mode;
 	snps,mtl-tx-config = <&mtl_tx_setup>;
 	snps,mtl-rx-config = <&mtl_rx_setup>;
-	fsl,magic-packet;
 	status = "okay";
 
 	mdio {
@@ -326,9 +325,6 @@
 			reg = <1>;
 			eee-broken-1000t;
 			realtek,clkout-disable;
-			interrupt-parent = <&gpio4>;
-			interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
-			wakeup-source;
 		};
 	};
 
