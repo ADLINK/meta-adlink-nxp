@@ -17,7 +17,7 @@ IMAGE_BOOT_FILES = "boot.scr.uimg;boot.scr"
 IMAGE_BOOT_FILES:append:arm = " u-boot-${MACHINE}.${UBOOT_SUFFIX};u-boot.img boot.scr.uimg;boot.scr"
 
 # We do not want to install anything, only need the wic packaging"
-IMAGE_INSTALL := ""
+IMAGE_INSTALL:remove = "packagegroup-core-boot packagegroup-base-extended"
 
 # Do not pollute the initrd image with rootfs features
 IMAGE_FEATURES = ""
@@ -33,6 +33,6 @@ IMAGE_ROOTFS_SIZE = "0"
 IMAGE_ROOTFS_EXTRA_SPACE = "0"
 IMAGE_OVERHEAD_FACTOR = "1.0"
 
-RDEPENDS:${PN} += "bash"
+RDEPENDS_${PN} += "bash"
 DEPENDS += "e2fsprogs-native dosfstools-native mtools-native parted-native"
 do_image_wic[depends] = "u-boot-script:do_install"
