@@ -1,0 +1,41 @@
+From 0e16f71cc4f9620cc6295d14aa41d09d1cf4ba56 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Thu, 23 Nov 2023 14:25:11 +0800
+Subject: [PATCH 05/16] sp2-imx8mp: patch: core.c: allow dual role for imx8mp
+ with revision DWC3_REVISION_330B, i.e. 0x5533330b
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/usb/dwc3/core.c | 3 ++-
+ drivers/usb/dwc3/core.h | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index 691fd8ab72c5..f3b8a85c2efe 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -88,7 +88,8 @@ static int dwc3_get_dr_mode(struct dwc3 *dwc)
+ 		    (!IS_ENABLED(CONFIG_USB_ROLE_SWITCH) ||
+ 		     !device_property_read_bool(dwc->dev, "usb-role-switch")) &&
+ 		    !DWC3_VER_IS_PRIOR(DWC3, 330A))
+-			mode = USB_DR_MODE_PERIPHERAL;
++		    /* imx8mp: allow for dual role with no usb-role-switch in dts */
++		    mode = DWC3_VER_IS(DWC3, 330B) ? USB_DR_MODE_OTG : USB_DR_MODE_PERIPHERAL;
+ 	}
+ 
+ 	if (mode != dwc->dr_mode) {
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index 15391e5fef83..c9a144239f81 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -1229,6 +1229,7 @@ struct dwc3 {
+ #define DWC3_REVISION_300A	0x5533300a
+ #define DWC3_REVISION_310A	0x5533310a
+ #define DWC3_REVISION_330A	0x5533330a
++#define DWC3_REVISION_330B	0x5533330b
+ 
+ #define DWC31_REVISION_ANY	0x0
+ #define DWC31_REVISION_110A	0x3131302a
+-- 
+2.25.1
+

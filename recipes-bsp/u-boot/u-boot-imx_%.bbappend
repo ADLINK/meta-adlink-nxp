@@ -1,6 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-
+UBOOT_SPLASH_IMAGE ?= "splash.bmp"
+UBOOT_UMS_IMAGE ?= "ums.bmp"
 EXTRA_SRC = "${@d.getVarFlag('UBOOT_SRC_PATCHES', d.getVar('MACHINE'), True)}"
 SRC_URI:append = " ${EXTRA_SRC}"
 
@@ -21,6 +22,12 @@ do_copy_source () {
     if [ -f ${WORKDIR}/$dtsname ]; then
       bbnote "u-boot dts: ${dtsname}"
       cp -f ${WORKDIR}/$dtsname ${S}/arch/arm/dts/
+      if [ -f ${S}/arch/arm/dts/Makefile ]; then
+        if ! grep -q $dtbname ${S}/arch/arm/dts/Makefile; then
+          bbnote "Makefile: add ${dtbname}"
+          sed -e 's,dtb-$(CONFIG_ARCH_IMX8M) += \\,dtb-$(CONFIG_ARCH_IMX8M) += \\\n\t'${dtbname}' \\,g' -i ${S}/arch/arm/dts/Makefile
+        fi
+      fi
     fi
   done
 }
@@ -39,7 +46,7 @@ do_configure:prepend:lec-imx8mp () {
   #     LPDDR4_2GB, LPDDR4_2GK, LPDDR4_4GB, LPDDR4_8GB
   configs=$(echo "${UBOOT_MACHINE}" | xargs)
   extras=$(echo "${UBOOT_EXTRA_CONFIGS}" | xargs)
-  echo "Add ${extras} to ${configs}"
+  bbnote "Add ${extras} to ${configs}"
   for extra in ${extras}; do
     if [ -n $extra ]; then
       for config in $configs; do
@@ -51,3 +58,18 @@ do_configure:prepend:lec-imx8mp () {
     fi
   done
 }
+
+do_install:append () {
+	install -d ${DEPLOY_DIR_IMAGE}
+	if [ -f ${WORKDIR}/${UBOOT_SPLASH_IMAGE} ]; then
+		install -m 0644 ${WORKDIR}/${UBOOT_SPLASH_IMAGE} ${DEPLOY_DIR_IMAGE}/${UBOOT_SPLASH_IMAGE}
+	else
+		bbwarn "${S}/${UBOOT_SPLASH_IMAGE} not found. No splash image for u-boot"
+	fi
+	if [ -f ${WORKDIR}/${UBOOT_UMS_IMAGE} ]; then
+		install -m 0644 ${WORKDIR}/${UBOOT_UMS_IMAGE} ${DEPLOY_DIR_IMAGE}/${UBOOT_UMS_IMAGE}
+	else
+		bbwarn "${S}/${UBOOT_UMS_IMAGE} not found. No ums image for u-boot"
+	fi
+}
+

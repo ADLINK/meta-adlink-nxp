@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2023 ADLINK Technology Corp.
+ *
+ * Author: Po Cheng <po.cheng@adlinktech.com>
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			reserved-memory {
+				linux,cma {
+					/* 40000000 = 1073741824 (1GiB) */
+					/* 20000000 =  536870912 (500MiB) */
+					size = <0 0x30000000>; /* 1073741824 - 268435456 (250MiB) = 805306368 (750MiB) */
+				};
+			};
+		};
+	};
+};
+
