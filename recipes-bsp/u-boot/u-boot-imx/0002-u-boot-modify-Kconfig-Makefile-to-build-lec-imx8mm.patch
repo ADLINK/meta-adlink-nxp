@@ -1,25 +1,12 @@
-From 8c60a9b64ec3f47d40ed4ecbbb57cbc1e3e6311d Mon Sep 17 00:00:00 2001
+From 7d16b20317f8c4d5991a0c884b55397366869aff Mon Sep 17 00:00:00 2001
 From: Dinesh V <dinesh.v@adlinktech.com>
 Date: Mon, 28 Aug 2023 11:52:58 +0530
-Subject: [PATCH 2/3] u-boot: modify Kconfig/Makefile to build lec-imx8mm
+Subject: [PATCH] u-boot: modify Kconfig/Makefile to build lec-imx8mm
 
 ---
- arch/arm/dts/Makefile           | 1 +
  arch/arm/mach-imx/imx8m/Kconfig | 7 +++++++
- 2 files changed, 8 insertions(+)
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index 0170c9c897..c74e87bf72 100644
---- a/arch/arm/dts/Makefile
-+++ b/arch/arm/dts/Makefile
-@@ -964,6 +964,7 @@ dtb-$(CONFIG_ARCH_IMX8ULP) += \
- 	imx8ulp-watch.dtb
- 
- dtb-$(CONFIG_ARCH_IMX8M) += \
-+	uboot-lec8mm.dtb  \
- 	imx8mm-ddr4-evk.dtb \
- 	imx8mm-ddr4-ab2.dtb \
- 	imx8mm-ddr3l-val.dtb \
 diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
 index a225a9784f..d885b2f81b 100644
 --- a/arch/arm/mach-imx/imx8m/Kconfig
@@ -45,5 +32,5 @@ index a225a9784f..d885b2f81b 100644
  
  endif
 -- 
-2.25.1
+2.34.1
 
