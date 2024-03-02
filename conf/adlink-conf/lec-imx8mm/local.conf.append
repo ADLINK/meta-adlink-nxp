@@ -20,4 +20,8 @@ MACHINE_FEATURES:remove = "optee"
 DISTRO_FEATURES:remove = "optee"
 IMAGE_INSTALL:remove = "optee-test optee-os optee-client optee-examples"
 
+BBMASK:append = " \
+ubuntu-base_%.bbappend imx-image-desktop.bbappend \
+rteval_%.bbappend linux-intel_%.bbappend \
+"
 
