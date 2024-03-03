@@ -18,3 +18,9 @@ IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE I
 RELEASE_VERSION ?= "LEC-iMX8MP-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
 
 KERNEL_MODULE_AUTOLOAD += "mlan moal"
+
+BBMASK:append = " \
+ubuntu-base_%.bbappend imx-image-desktop.bbappend \
+rteval_%.bbappend linux-intel_%.bbappend \
+"
+
