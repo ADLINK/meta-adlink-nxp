@@ -1,0 +1,18 @@
+commit 7e80d680cc2eb5994c2982907286ecdf61269923
+Author: adlinkshiva <shivashankar.thiruchitrambalam@adlinktech.com>
+Date:   Wed Mar 20 20:08:29 2024 +0530
+
+    Dsi_fix_MODE_NO_EOT_PACKET
+
+diff --git a/drivers/gpu/drm/panel/panel-b101uan01.c b/drivers/gpu/drm/panel/panel-b101uan01.c
+index 75317d64f84f..5fb0c94244e3 100755
+--- a/drivers/gpu/drm/panel/panel-b101uan01.c
++++ b/drivers/gpu/drm/panel/panel-b101uan01.c
+@@ -209,6 +209,7 @@ static int b101uan01_panel_probe(struct mipi_dsi_device *dsi)
+     dsi->mode_flags = MIPI_DSI_MODE_VIDEO_HSE
+ 		            | MIPI_DSI_MODE_VIDEO
+ 		            | MIPI_DSI_MODE_VIDEO_SYNC_PULSE
++			    | MIPI_DSI_MODE_NO_EOT_PACKET
+ 		            | MIPI_DSI_MODE_LPM;
+ 
+ /*	dsi->mode_flags =  MIPI_DSI_MODE_VIDEO_HSE | MIPI_DSI_MODE_VIDEO |
