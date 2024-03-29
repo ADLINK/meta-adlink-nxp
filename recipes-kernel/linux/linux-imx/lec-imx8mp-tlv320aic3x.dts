@@ -1,0 +1,6 @@
+/*
+ * Copyright 2020 NXP
+ */
+
+#include "lec-imx8mp.dts"
+#include "tlv320aic3x.dtsi"

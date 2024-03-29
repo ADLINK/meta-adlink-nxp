@@ -27,11 +27,75 @@
 
 ## 2. Supported Modules
 
+- LEC-IMX8MP
+- LEC-IMX8MM
 - SP2-IMX8MP
 
 ## 3. Supported Features & Interfaces
 
-### 3.1 SP2-IMX8MP (SBC + LVDS/MIPI-DSI display panels)
+### 3.1 LEC-IMX8MP (based on I-Pi SMARC plus carrier + LEC-IMX8MP Dev Kit)
+
+| Interfaces                                 | Support |
+| ------------------------------------------ | ------- |
+| RAM [LPDDR4(2G)]                           | Y       |
+| NPU(Optional)                              | Y       |
+| MIPI-DSI [auo-b101uan01v7]                 | Y       |
+| LVDS [hydis-hv150ux2]                      | Y       |
+| Cameras [OV5640,OV13855]                   | Y       |
+| GPU                                        | Y       |
+| VPU                                        | Y       |
+| HDMI                                       | Y       |
+| eMMC                                       | Y       |
+| SEMA 4.0                                   | Y       |
+| Debug Header                               | Y       |
+| Audio [tlv320aic3x]                        | Y       |
+| Ethernet - 0 & 1                           | Y       |
+| Wi-Fi(optional) [Azurewave AW-CM276NF]     | Y       |
+| Bluetooth(optional) [Azurewave AW-CM276NF] | Y       |
+| PCIe                                       | Y       |
+| USB 2.0                                    | Y       |
+| USB 3.0                                    | Y       |
+| SER                                        | Y       |
+| CAN                                        | Y       |
+| SPI                                        | Y       |
+| I2S                                        | Y       |
+| I2C                                        | Y       |
+| GPIO                                       | Y       |
+| SDIO                                       | Y       |
+
+
+
+### 3.2 LEC-IMX8MM (based on I-Pi SMARC carrier + LEC-IMX8MM Dev Kit)
+
+| Interfaces                                 | Support |
+| ------------------------------------------ | ------- |
+| RAM [LPDDR4(1G/2G/4G)]                     | Y       |
+| MIPI-DSI [auo-b101uan01v7]]                | Y       |
+| LVDS [hydis-hv150ux2]                      | Y       |
+| Cameras [OV5647,OV13855]                   | Y       |
+| GPU                                        | Y       |
+| VPU                                        | Y       |
+| HDMI                                       | Y       |
+| eMMC                                       | Y       |
+| SEMA 4.0                                   | Y       |
+| Debug Header                               | Y       |
+| Audio [WM8960,tlv320aic3x]                 | Y       |
+| Ethernet - 0 & 1                           | Y       |
+| Wi-Fi(optional) [Azurewave AW-CM276NF]     | Y       |
+| Bluetooth(optional) [Azurewave AW-CM276NF] | Y       |
+| PCIe                                       | Y       |
+| USB 2.0                                    | Y       |
+| SER                                        | Y       |
+| CAN                                        | Y       |
+| SPI                                        | Y       |
+| I2S                                        | Y       |
+| I2C                                        | Y       |
+| GPIO                                       | Y       |
+| SDIO                                       | Y       |
+
+
+
+### 3.3 SP2-IMX8MP (SBC + LVDS/MIPI-DSI display panels)
 
 | Interfaces                                 | Support |
 | ------------------------------------------ | ------- |
@@ -56,6 +120,8 @@
 | I2C                                        | Y       |
 | GPIO                                       | Y       |
 | SDIO                                       | Y       |
+
+
 
 ## 4. Documentation
 
