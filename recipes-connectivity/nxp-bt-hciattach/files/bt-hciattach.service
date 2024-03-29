@@ -6,7 +6,7 @@ AllowIsolate=yes
 
 [Service]
 Type=forking
-ExecStart=/usr/bin/hciattach /dev/ttymxc0 any 115200 flow
+ExecStart=/usr/sbin/bt-hciattach.sh
 Restart=on-failure
 RestartSec=30
 
