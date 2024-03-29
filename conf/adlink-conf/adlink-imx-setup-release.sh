@@ -55,3 +55,4 @@ fi
 if [ ! "${DISTRO_NAME}" = "adlink-rtedge-desktop" ]; then
 	echo "BBMASK += \"rteval_%.bbappend\"" >> ./conf/local.conf
 fi
+

@@ -45,7 +45,6 @@ do_copy_source () {
 addtask copy_source before do_patch after do_unpack
 
 do_configure:prepend () {
-
   # Additional CONFIG_XXX for u-boot config
   # E.g. in local.conf
   #     UBOOT_EXTRA_CONFIGS = "LPDDR4_8GB"
