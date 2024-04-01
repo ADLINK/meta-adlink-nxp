@@ -3,7 +3,7 @@ DESCRIPTION = "hciattach script"
 SECTION = "app"
 LICENSE = "Proprietary"
 
-LIC_FILES_CHKSUM = "file://bt-hciattach.sh;md5=44e04cac4b1a6228da370e5ea3e2f482"
+LIC_FILES_CHKSUM = "file://bt-hciattach.sh;md5=3098eb23dc39a2aeb3d6a8cb67c29e85"
 
 SRC_URI = " \
     file://bt-hciattach.service \

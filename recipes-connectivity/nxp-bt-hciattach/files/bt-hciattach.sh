@@ -6,9 +6,9 @@ RESET_CTLR=
 initial_attach() {
 	killall hciattach
 	/usr/bin/hciattach /dev/ttymxc0 any 115200 flow
-	sleep 5
 	if [ $? -eq 0 ]; then
-		HCILIST=$(hciconfig | grep -o hci[0-9] | tr '\n' ' ' 1>/dev/null)
+		sleep 5
+		HCILIST=$(hciconfig | grep -o hci[0-9] | tr '\n' ' ')
 	else
 		exit -19
 	fi
@@ -16,7 +16,7 @@ initial_attach() {
 
 check_marvell() {
 	for ctlr in $HCILIST; do
-		VENDOR=$(hciconfig $ctlr version | grep -q -i "Manufacturer")
+		VENDOR=$(hciconfig $ctlr version | grep -i "Manufacturer")
 		case "$VENDOR" in
 			*Marvell*) RESET_CTLR=$ctlr ;;
 			*72*) RESET_CTLR=$ctlr ;;
@@ -36,7 +36,7 @@ reset_attach() {
 # ===== main =====
 initial_attach
 check_marvell
-if [ -n $RESET_CTLR ]; then
+if [ -n "$RESET_CTLR" ]; then
 	reset_attach
 fi
 
