@@ -1,0 +1,76 @@
+From 36e2a86fdc34bea459d9e3d5310ae13bd83af4d7 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Tue, 2 Jan 2024 10:11:53 +0800
+Subject: [PATCH] sp2-imx8mp: patch: board: add __weak board_fix_fdt_extra()
+ for sp2imx8mp allowing call back from already implemented board_fix_fdt()
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ arch/arm/mach-imx/imx8m/soc.c      | 12 ++++++++++--
+ board/adlink/sp2imx8mp/sp2imx8mp.c | 16 ++++++++++++++++
+ 2 files changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
+index 0d2f7a5897fe..c39a3f1be267 100644
+--- a/arch/arm/mach-imx/imx8m/soc.c
++++ b/arch/arm/mach-imx/imx8m/soc.c
+@@ -1440,11 +1440,17 @@ usb_modify_speed:
+ 
+ #ifdef CONFIG_OF_BOARD_FIXUP
+ #ifndef CONFIG_SPL_BUILD
++
++__weak int board_fix_fdt_extra(void *fdt) {
++	return 0;
++}
++
+ int board_fix_fdt(void *fdt)
+ {
++	int ret;
+ 	if (is_imx8mpul()) {
+ 		int i = 0;
+-		int nodeoff, ret;
++		int nodeoff;
+ 		const char *status = "disabled";
+ 		static const char * dsi_nodes[] = {
+ 			"/soc@0/bus@32c00000/mipi_dsi@32e60000",
+@@ -1467,7 +1473,9 @@ set_status:
+ 		}
+ 	}
+ 
+-	return 0;
++	ret = board_fix_fdt_extra(fdt);
++
++	return ret;
+ }
+ #endif
+ #endif
+diff --git a/board/adlink/sp2imx8mp/sp2imx8mp.c b/board/adlink/sp2imx8mp/sp2imx8mp.c
+index e7267627f766..a11d55073484 100644
+--- a/board/adlink/sp2imx8mp/sp2imx8mp.c
++++ b/board/adlink/sp2imx8mp/sp2imx8mp.c
+@@ -97,6 +97,22 @@ int board_early_init_f(void)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_OF_BOARD_FIXUP
++#ifndef CONFIG_SPL_BUILD
++int board_fix_fdt_extra(void *fdt)
++{
++/*
++	if (is_imx8mp()) {
++		// read eeprom
++		// parse config
++	}
++*/
++
++	return 0;
++}
++#endif
++#endif
++
+ #ifdef CONFIG_SPLASH_SOURCE
+ static struct splash_location sp2imx8mp_splash_sdcard[] = {
+ 	{
+-- 
+2.25.1
+

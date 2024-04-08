@@ -9,12 +9,11 @@
 #include "imx8mp.dtsi"
 
 / {
-
 	model = "ADLINK Smart Panel - IMX8MP board";
 	compatible = "fsl,imx8mp-evk", "fsl,imx8mp";
 
 	chosen {
-		bootargs = "console=ttymxc1,115200";
+		bootargs = "console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200";
 		stdout-path = &uart2;
 	};
 
@@ -84,30 +83,87 @@
 		status = "okay";
 	};
 
-	lvds_panel@0 {
+	reg_panel_pwren: reg-panel-pwren {
+		compatible = "regulator-fixed";
+		regulator-name = "ledpwren";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		status = "okay";
+	};
+
+	dsi_panel_7: dsi-panel@7 {
+		compatible = "ilitek,ili9881c";
+		power-supply = <&reg_panel_pwren>;
+		reset-gpios = <&gpio4 27 GPIO_ACTIVE_LOW>;
+		backlight = <&backlight>;
+		dsi-lanes = <4>;
+		dsi-format = <2>; /* 0: MIPI_DSI_FMT_RGB888, 1: MIPI_DSI_FMT_RGB666, 2: MIPI_DSI_FMT_RGB666_PACKED, 3: MIPI_DSI_FMT_RGB565 */
+		video-mode = <2>; /* 0: burst mode, 1: non-burst mode with sync event, 2: non-burst mode with sync pulse */
+		panel-width-mm = <800>;
+		panel-height-mm = <1280>;
+		status = "disabled";
+
+		port {
+			ili9881c_from_dsim: endpoint {
+				remote-endpoint = <&dsim_to_ili9881c>;
+			};
+		};
+	};
+
+	lvds_panel_7: lvds-panel@7 {
+		compatible = "lvds-panel";
+		backlight = <&backlight>;
+		enable-gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>; /* +VDD_PANEL */
+		status = "disabled";
+
+		display-timings {
+			native-mode = <&timing7>;
+			timing7: timing7 {
+				clock-frequency = <63000000>;
+				hactive = <860>;
+				vactive = <600>;
+				hfront-porch = <160>;
+				hback-porch = <160>;
+				vback-porch = <23>;
+				vfront-porch = <12>;
+				hsync-len = <1>;
+				vsync-len = <1>;
+			};
+		};
+
+		port {
+			lvds_in_1: endpoint {
+				remote-endpoint = <&lvds_out_1>;
+			};
+		};
+	};
+
+	lvds_panel_10: lvds-panel@10 {
 		compatible = "lvds-panel";
 		backlight = <&backlight>;
 		enable-gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>; /* +VDD_PANEL */
 		status = "okay";
 
 		display-timings {
-			native-mode = <&timing0>;
-			timing0: timing0 {
-				clock-frequency = <71000000>;
+			native-mode = <&timing10>;
+			timing10: timing10 {
+				clock-frequency = <76600000>;
 				hactive = <1280>;
 				vactive = <800>;
-				hfront-porch = <70>;
-				hback-porch = <80>;
+				hfront-porch = <95>;
+				hback-porch = <95>;
 				hsync-len = <10>;
-				vback-porch = <10>;
-				vfront-porch = <10>;
-				vsync-len = <3>;
+				vback-porch = <17>;
+				vfront-porch = <17>;
+				vsync-len = <2>;
 			};
 		};
 
 		port {
-			lvds_in: endpoint {
-				remote-endpoint = <&lvds_out>;
+			lvds_in_2: endpoint {
+				remote-endpoint = <&lvds_out_2>;
 			};
 		};
 	};
@@ -284,6 +340,11 @@
 	scl-gpios = <&gpio5 16 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+
+	eeprom: at24@54 {
+		compatible = "atmel,24c02", "i2c-eeprom";
+		reg = <0x54>;
+	};
 };
 
 &i2c3 {
@@ -328,8 +389,15 @@
 		port@1 {
 			reg = <1>;
 
-			lvds_out: endpoint {
-				remote-endpoint = <&lvds_in>;
+			lvds_out_1: endpoint {
+				remote-endpoint = <&lvds_in_1>;
+			};
+		};
+		port@2 {
+			reg = <2>;
+
+			lvds_out_2: endpoint {
+				remote-endpoint = <&lvds_in_2>;
 			};
 		};
 	};
@@ -337,6 +405,14 @@
 
 &ldb_phy {
 	status = "okay";
+};
+
+&mipi_dsi {
+	port@1 {
+		dsim_to_ili9881c: endpoint {
+			remote-endpoint = <&ili9881c_from_dsim>;
+		};
+	};
 };
 
 &snvs_pwrkey {
