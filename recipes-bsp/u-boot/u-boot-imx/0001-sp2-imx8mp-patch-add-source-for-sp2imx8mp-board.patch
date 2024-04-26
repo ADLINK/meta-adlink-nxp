@@ -1,8 +1,8 @@
-From 8e28752ef839cd0902b3fde1c1ca6869dbaeb710 Mon Sep 17 00:00:00 2001
+From f79f387593b4e37cead61c1b9f1ed2b972debbda Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Thu, 17 Aug 2023 11:38:54 +0800
-Subject: [PATCH 01/22] sp2-imx8mp: patch: add source for sp2imx8mp board
- sp2-imx8mp: patch: 2GB MT53E512M32D1ZW-046_WTB 2133MHz sp2-imx8mp: patch: 4GB
+Subject: [PATCH] sp2-imx8mp: patch: add source for sp2imx8mp board sp2-imx8mp:
+ patch: 2GB MT53E512M32D1ZW-046_WTB 2133MHz sp2-imx8mp: patch: 4GB
  MT53E1G32D2FW-046_WTB 2133MHz sp2-imx8mp: patch: 8GB MT53E2G32D4DE-046_AIT
  2000MHz sp2-imx8mp: patch: logo: sp2imx8mp_splash_locations and
  splash_screen_prepare to load splash.bmp from emmc/sd sp2-imx8mp: patch: env:
@@ -13,7 +13,7 @@ Subject: [PATCH 01/22] sp2-imx8mp: patch: add source for sp2imx8mp board
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
 ---
  arch/arm/mach-imx/imx8m/Kconfig               |   13 +-
- board/adlink/sp2imx8mp/Kconfig                |   17 +
+ board/adlink/sp2imx8mp/Kconfig                |   36 +
  board/adlink/sp2imx8mp/Makefile               |   20 +
  board/adlink/sp2imx8mp/ddr4_timing.c          | 1311 ++++++++++++
  .../adlink/sp2imx8mp/imximage-8mp-lpddr4.cfg  |    9 +
@@ -23,9 +23,9 @@ Signed-off-by: po.cheng <po.cheng@adlinktech.com>
  ...4_timing_MT53E512M32D1ZW-046_WTD_2000MHz.c | 1869 ++++++++++++++++
  board/adlink/sp2imx8mp/lpddr4_timing_ndm.c    | 1853 ++++++++++++++++
  board/adlink/sp2imx8mp/sp2imx8mp.c            |  621 ++++++
- board/adlink/sp2imx8mp/spl.c                  |  257 +++
+ board/adlink/sp2imx8mp/spl.c                  |  278 +++
  include/configs/sp2imx8mp.h                   |  252 +++
- 13 files changed, 9967 insertions(+), 1 deletion(-)
+ 13 files changed, 10007 insertions(+), 1 deletion(-)
  create mode 100644 board/adlink/sp2imx8mp/Kconfig
  create mode 100644 board/adlink/sp2imx8mp/Makefile
  create mode 100644 board/adlink/sp2imx8mp/ddr4_timing.c
@@ -72,10 +72,10 @@ index a225a9784f4f..472058bb4a87 100644
  endif
 diff --git a/board/adlink/sp2imx8mp/Kconfig b/board/adlink/sp2imx8mp/Kconfig
 new file mode 100644
-index 000000000000..99be7dea85c2
+index 000000000000..0bc66b0c2cf9
 --- /dev/null
 +++ b/board/adlink/sp2imx8mp/Kconfig
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,36 @@
 +if TARGET_IMX8MP_SP2
 +
 +config SYS_BOARD
@@ -90,12 +90,31 @@ index 000000000000..99be7dea85c2
 +config IMX_CONFIG
 +	default "board/adlink/sp2imx8mp/imximage-8mp-lpddr4.cfg"
 +
++choice
++	prompt "Adlink lpddr4 memory size"
++	depends on TARGET_IMX8MP_SP2
++
++config LPDDR4_2GB
++	bool "2GB lpddr4 memory"
++
++config LPDDR4_4GB
++	bool "4GB lpddr4 memory"
++
++config LPDDR4_8GB
++	bool "8GB lpddr4 memory"
++
++config LPDDR4_ALL
++	bool "All range of lpddr4 memories"
++
++endchoice
++
++
 +source "board/freescale/common/Kconfig"
 +
 +endif
 diff --git a/board/adlink/sp2imx8mp/Makefile b/board/adlink/sp2imx8mp/Makefile
 new file mode 100644
-index 000000000000..5a819e50a2da
+index 000000000000..19ef4b67c99b
 --- /dev/null
 +++ b/board/adlink/sp2imx8mp/Makefile
 @@ -0,0 +1,20 @@
@@ -113,9 +132,9 @@ index 000000000000..5a819e50a2da
 +ifdef CONFIG_IMX8M_LPDDR4_FREQ0_3200MTS
 +obj-y += lpddr4_timing_ndm.o
 +else
-+obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_MT53E512M32D1ZW-046_WTD_2000MHz.o
-+obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_MT53E2G32D4DE-046_AIT_2000MHz.o
-+obj-$(CONFIG_IMX8M_LPDDR4) += lpddr4_timing_MT53E1G32D2FW-046_WTD_2000MHz.o
++obj-$(CONFIG_LPDDR4_2GB)$(CONFIG_LPDDR4_ALL) += lpddr4_timing_MT53E512M32D1ZW-046_WTD_2000MHz.o
++obj-$(CONFIG_LPDDR4_4GB)$(CONFIG_LPDDR4_ALL) += lpddr4_timing_MT53E1G32D2FW-046_WTD_2000MHz.o
++obj-$(CONFIG_LPDDR4_8GB)$(CONFIG_LPDDR4_ALL) += lpddr4_timing_MT53E2G32D4DE-046_AIT_2000MHz.o
 +obj-$(CONFIG_IMX8M_DDR4) += ddr4_timing.o
 +endif
 +endif
@@ -9578,10 +9597,10 @@ index 000000000000..c10dc63847a4
 +#endif /* CONFIG_FSL_FASTBOOT */
 diff --git a/board/adlink/sp2imx8mp/spl.c b/board/adlink/sp2imx8mp/spl.c
 new file mode 100644
-index 000000000000..0ce25011d4af
+index 000000000000..a7b9c80fd841
 --- /dev/null
 +++ b/board/adlink/sp2imx8mp/spl.c
-@@ -0,0 +1,257 @@
+@@ -0,0 +1,278 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * Copyright 2018-2019, 2021 NXP
@@ -9693,14 +9712,35 @@ index 000000000000..0ce25011d4af
 +void spl_dram_init(void)
 +{
 +	struct { int size; struct dram_timing_info *timing; } dram_timing[] = {
++
++#if defined(CONFIG_LPDDR4_2GB) || defined(CONFIG_LPDDR4_ALL)
 +		{2, &dram_timing_2G}, /* default */
++#else
++		{2, NULL}, /* point to nothing to keep array index */
++#endif
++#if defined(CONFIG_LPDDR4_4GB) || defined(CONFIG_LPDDR4_ALL)
 +		{4, &dram_timing_4G}, /* &dram_timing_lpddr4_4gb, */
++#else
++		{4, NULL}, /* point to nothing to keep array index */
++#endif
++#if defined(CONFIG_LPDDR4_8GB) || defined(CONFIG_LPDDR4_ALL)
 +		{8, &dram_timing_8G}, /* &dram_timing_lpddr4_8gb, */
++#else
++		{8, NULL}, /* point to nothing to keep array index */
++#endif
++#if defined(CONFIG_LPDDR4_ALL)
 +		{1, &dram_timing_2G}, /* &dram_timing_lpddr4_1gb, */
 +		{2, &dram_timing_2G}, /* NULL, default to 2gb */
 +		{2, &dram_timing_2G}, /* NULL, default to 2gb */
 +		{2, &dram_timing_2G}, /* NULL, default to 2gb */
 +		{2, &dram_timing_2G}, /* NULL, default to 2gb */
++#else
++		{1, NULL}, /* point to nothing to keep array index */
++		{2, NULL}, /* point to nothing to keep array index */
++		{2, NULL}, /* point to nothing to keep array index */
++		{2, NULL}, /* point to nothing to keep array index */
++		{2, NULL}, /* point to nothing to keep array index */
++#endif
 +	};
 +	int dram_sku = get_dram_sku();
 +
