@@ -51,8 +51,16 @@ do_configure:prepend:lec-imx8mp () {
     if [ -n $extra ]; then
       for config in $configs; do
         if [ -f ${S}/configs/${config} ]; then
-          upper=$(echo ${extra} | tr '[:lower:]' '[:upper:]')
-          echo "CONFIG_${upper##CONFIG_}=y" | tee -a ${S}/configs/${config}
+          case "${extra}" in
+          NO_*)
+            upper=$(echo ${extra#NO_} | tr '[:lower:]' '[:upper:]')
+            echo "CONFIG_${upper##CONFIG_}=n" | tee -a ${S}/configs/${config}
+            ;;
+          *)
+            upper=$(echo ${extra} | tr '[:lower:]' '[:upper:]')
+            echo "CONFIG_${upper##CONFIG_}=y" | tee -a ${S}/configs/${config}
+            ;;
+          esac
         fi
       done
     fi
