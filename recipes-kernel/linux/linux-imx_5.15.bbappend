@@ -21,7 +21,7 @@ do_copy_source () {
   fi
 
   if [ -n "${deltaconfigs}" ]; then
-    for deltacfg in "${deltaconfigs}"; do
+    for deltacfg in ${deltaconfigs}; do
       if [ -f ${WORKDIR}/${deltacfg} -a ! -f ${S}/arch/${ARCH}/configs/${deltacfg} ]; then
         bbnote "copy kernel delta config: $deltacfg"
         cp -f ${WORKDIR}/${deltacfg} ${S}/arch/arm64/configs/${deltacfg}
