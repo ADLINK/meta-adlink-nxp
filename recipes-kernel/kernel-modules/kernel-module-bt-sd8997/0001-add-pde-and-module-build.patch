@@ -1,0 +1,43 @@
+From 04b7846a34e5e4cc1a6a70665272bba5bb9be5f9 Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Wed, 27 Mar 2024 17:17:26 +0530
+Subject: [PATCH] add-pde-and-module-build
+
+---
+ bt/bt_proc.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/bt/bt_proc.c b/bt/bt_proc.c
+index abc6194..8ee1b48 100755
+--- a/bt/bt_proc.c
++++ b/bt/bt_proc.c
+@@ -374,7 +374,7 @@ static void
+ proc_on_close(struct inode *inode, struct file *file)
+ {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
+-	struct proc_private_data *priv = PDE_DATA(inode);
++	struct proc_private_data *priv = pde_data(inode);
+ #else
+ 	struct proc_private_data *priv = PDE(inode)->data;
+ #endif
+@@ -428,7 +428,7 @@ static int
+ proc_open(struct inode *inode, struct file *file)
+ {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
+-	struct proc_private_data *priv = PDE_DATA(inode);
++	struct proc_private_data *priv = pde_data(inode);
+ #else
+ 	struct proc_private_data *priv = PDE(inode)->data;
+ #endif
+@@ -653,7 +653,7 @@ static int
+ bt_histogram_proc_open(struct inode *inode, struct file *file)
+ {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
+-	return single_open(file, bt_histogram_read, PDE_DATA(inode));
++	return single_open(file, bt_histogram_read, pde_data(inode));
+ #else
+ 	return single_open(file, bt_histogram_read, PDE(inode)->data);
+ #endif
+-- 
+2.43.2
+
