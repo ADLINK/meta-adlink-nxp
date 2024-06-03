@@ -1,0 +1,49 @@
+From 9e7ac9234070260d2962386509f347a4e4f27aad Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Mon, 11 Mar 2024 18:03:53 +0530
+Subject: [PATCH] lec-imx8mp-board-add-lec-imx8mp-source
+
+---
+ arch/arm/dts/Makefile           | 1 +
+ arch/arm/mach-imx/imx8m/Kconfig | 7 +++++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 8b65ac0bc6..9a270e8d7c 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -1030,6 +1030,7 @@ dtb-$(CONFIG_ARCH_IMX8ULP) += \
+ 	imx8ulp-watch.dtb
+ 
+ dtb-$(CONFIG_ARCH_IMX8M) += \
++	uboot-lec8mm.dtb  \
+ 	imx8mm-data-modul-edm-sbc.dtb \
+ 	imx8mm-ddr4-evk.dtb \
+ 	imx8mm-ddr4-ab2.dtb \
+diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
+index b124027910..5219b86af2 100644
+--- a/arch/arm/mach-imx/imx8m/Kconfig
++++ b/arch/arm/mach-imx/imx8m/Kconfig
+@@ -75,6 +75,12 @@ config TARGET_IMX8MQ_CM
+ 	select IMX8MQ
+ 	select IMX8M_LPDDR4
+ 
++config TARGET_LEC_IMX8MM
++	bool "Adlink lec-imx8mm LPDDR4 board"
++	select IMX8MM
++	select SUPPORT_SPL
++	select IMX8M_LPDDR4	
++
+ config TARGET_IMX8MQ_EVK
+ 	bool "imx8mq_evk"
+ 	select IMX8MQ
+@@ -481,5 +487,6 @@ source "board/technexion/pico-imx8mq/Kconfig"
+ source "board/variscite/imx8mn_var_som/Kconfig"
+ source "board/toradex/verdin-imx8mm/Kconfig"
+ source "board/toradex/verdin-imx8mp/Kconfig"
++source "board/adlink/lec-imx8mm/Kconfig"
+ 
+ endif
+-- 
+2.43.2
+
