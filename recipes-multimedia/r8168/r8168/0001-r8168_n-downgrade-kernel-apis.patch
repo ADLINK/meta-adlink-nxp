@@ -1,0 +1,67 @@
+From cc1ae9f88caa6b842bbd68e1064c230336c605dc Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Wed, 3 Apr 2024 16:58:23 +0530
+Subject: [PATCH] test
+
+---
+ r8168_n.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/r8168_n.c b/r8168_n.c
+index e9c0363..77f11c0 100755
+--- a/r8168_n.c
++++ b/r8168_n.c
+@@ -3715,7 +3715,7 @@ static void rtl8168_mac_loopback_test(struct rtl8168_private *tp)
+         txd->opts2 = 0;
+         while (1) {
+                 memset(tmpAddr, pattern++, len - 14);
+-                pci_dma_sync_single_for_device(tp->pci_dev,
++                dma_sync_single_for_device(&tp->pci_dev->dev,
+                                                le64_to_cpu(mapping),
+                                                len, DMA_TO_DEVICE);
+                 txd->opts1 = cpu_to_le32(DescOwn | FirstFrag | LastFrag | len);
+@@ -3743,7 +3743,7 @@ static void rtl8168_mac_loopback_test(struct rtl8168_private *tp)
+                 if (rx_len == len) {
+                         dma_sync_single_for_cpu(tp_to_dev(tp), le64_to_cpu(rxd->addr), tp->rx_buf_sz, DMA_FROM_DEVICE);
+                         i = memcmp(skb->data, rx_skb->data, rx_len);
+-                        pci_dma_sync_single_for_device(tp->pci_dev, le64_to_cpu(rxd->addr), tp->rx_buf_sz, DMA_FROM_DEVICE);
++                        dma_sync_single_for_device(&tp->pci_dev->dev, le64_to_cpu(rxd->addr), tp->rx_buf_sz, DMA_FROM_DEVICE);
+                         if (i == 0) {
+ //              dev_printk(KERN_INFO, tp_to_dev(tp), "loopback test finished\n",rx_len,len);
+                                 break;
+@@ -26446,11 +26446,11 @@ rtl8168_init_board(struct pci_dev *pdev,
+ 
+         if ((sizeof(dma_addr_t) > 4) &&
+             use_dac &&
+-            !pci_set_dma_mask(pdev, DMA_BIT_MASK(64)) &&
+-            !pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64))) {
++	    !dma_set_mask(&pdev->dev, DMA_BIT_MASK(64)) &&
++            !dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(64))) {
+                 dev->features |= NETIF_F_HIGHDMA;
+         } else {
+-                rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
++                rc = dma_set_mask(&pdev->dev, DMA_BIT_MASK(32));
+                 if (rc < 0) {
+ #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,0)
+                         if (netif_msg_probe(tp))
+@@ -26880,7 +26880,7 @@ rtl8168_init_one(struct pci_dev *pdev,
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,22)
+                 if ((tp->mcfg == CFG_METHOD_1) || (tp->mcfg == CFG_METHOD_2) || (tp->mcfg == CFG_METHOD_3)) {
+                         dev->hw_features &= ~NETIF_F_IPV6_CSUM;
+-                        netif_set_gso_max_size(dev, LSO_32K);
++                        netif_set_tso_max_size(dev, LSO_32K);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
+                         dev->gso_max_segs = NIC_MAX_PHYS_BUF_COUNT_LSO_64K;
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
+@@ -26894,7 +26894,7 @@ rtl8168_init_one(struct pci_dev *pdev,
+                                 dev->hw_features |= NETIF_F_TSO6;
+                                 //dev->features |=  NETIF_F_TSO6;
+                         }
+-                        netif_set_gso_max_size(dev, LSO_64K);
++                        netif_set_tso_max_size(dev, LSO_64K);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
+                         dev->gso_max_segs = NIC_MAX_PHYS_BUF_COUNT_LSO2;
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
+-- 
+2.43.2
+
