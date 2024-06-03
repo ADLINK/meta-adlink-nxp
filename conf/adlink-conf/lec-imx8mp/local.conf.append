@@ -22,3 +22,12 @@ KERNEL_MODULE_AUTOLOAD += "mlan moal"
 DISTRO_FEATURES:append = " security"
 DISTRO_FEATURES:append = " tpm"
 IMAGE_INSTALL:append = " tpm2-tools tpm2-tss tpm2-abrmd"
+
+DISTRO_FEATURES:append = " meta-virtualization"
+
+IMAGE_INSTALL:append = " docker-ce python3-docker-compose"
+
+#mask go based package,to resolve docker local-host connective issue 
+BBMASK = "poky/meta/recipes-devtools/go"
+BBMASK += "meta-virtualization/recipes-containers/containerd/containerd-opencontainers_git.bb"
+
