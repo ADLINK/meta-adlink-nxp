@@ -1,0 +1,25 @@
+/*
+ *
+ */
+
+
+#include "lec-imx8mm.dts"
+
+&mipi_dsi {
+	status = "okay";
+	panel@0 {
+		compatible = "adlink,lt9611-bridge";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&i2c2 {
+	lt9611@3b {
+		compatible = "adlink,lt9611";
+		reg = <0x3b>;
+		reset-gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
