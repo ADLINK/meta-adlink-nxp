@@ -14,6 +14,8 @@ SRC_URI:append:lec-imx8mp = " \
 "
 SRC_URI:append:lec-imx8mm = " \
   file://0001-Added-kernel-version-5.13.19-support.patch \
+  file://0001-add-fw-action-hotplug.patch \
+  file://0001-add-pde-and-module-build.patch \
 "
 
 
@@ -35,10 +37,10 @@ KERNEL_MODULE_AUTOLOAD += " bt8xxx"
 
 MODPROBE_CONFFILE = "${@bb.utils.contains('DISTRO_FEATURES', 'fcc', 'blacklist.conf', 'bt8xxx.conf', d)}"
 
-do_install:append () {
+do_install:append:lec-imx8mp () {
   install -d ${D}${sysconfdir}/modprobe.d
 #install -m 644 ${WORKDIR}/${MODPROBE_CONFFILE} ${D}${sysconfdir}/modprobe.d/
 }
 
-FILES_${PN} += "${sysconfdir}/modprobe.d"
+FILES_${PN}:lec-imx8mp += "${sysconfdir}/modprobe.d"
 
