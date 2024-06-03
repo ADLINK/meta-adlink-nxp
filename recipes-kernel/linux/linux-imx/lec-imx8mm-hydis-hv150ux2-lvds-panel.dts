@@ -1,0 +1,124 @@
+/*
+ *
+ */
+
+
+#include "lec-imx8mm.dts"
+
+/{
+	model = "ADLINK LEC-iMX8M Mini SOM - HYDIS-HV150UX2";
+	
+	lvds_backlight: lvds_backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm1 0 100000>;
+		enable-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;		
+		brightness-levels = < 0  1  2  3  4  5  6  7  8  9
+				     10 11 12 13 14 15 16 17 18 19
+				     20 21 22 23 24 25 26 27 28 29
+				     30 31 32 33 34 35 36 37 38 39
+				     40 41 42 43 44 45 46 47 48 49
+				     50 51 52 53 54 55 56 57 58 59
+				     60 61 62 63 64 65 66 67 68 69
+				     70 71 72 73 74 75 76 77 78 79
+				     80 81 82 83 84 85 86 87 88 89
+				     90 91 92 93 94 95 96 97 98 99
+				    100>;
+		default-brightness-level = <80>;
+		status = "okay";
+	};		
+};
+
+&pwm1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_mipi_dsi_pwm>;
+	status = "okay";
+};
+
+&iomuxc {
+	pinctrl_mipi_dsi_blkt_en: mipi_dsi_blkt_engrp {    
+		fsl,pins = <
+		    MX8MM_IOMUXC_GPIO1_IO11_GPIO1_IO11	19
+		>;
+	};
+
+	pinctrl_mipi_dsi_pwm: mipi_dsi_pwmgrp {            
+		fsl,pins = <
+		    MX8MM_IOMUXC_GPIO1_IO01_PWM1_OUT	0x116
+		>;
+	};
+
+	i2c2grp {
+		fsl,pins = <
+			MX8MM_IOMUXC_I2C2_SCL_I2C2_SCL			0x400001c3
+			MX8MM_IOMUXC_I2C2_SDA_I2C2_SDA			0x400001c3
+			MX8MM_IOMUXC_NAND_CE0_B_GPIO3_IO1	    0x156
+		>;
+	};
+
+	pinctrl_dis_bridge_enable: dsibridgeenablegrp {
+		fsl,pins = <
+			MX8MM_IOMUXC_NAND_CE0_B_GPIO3_IO1       0x19 //0x00000156
+		>;
+	};
+};
+
+&mipi_dsi {
+	status = "okay";
+
+	port@1 {
+		dsi_out: endpoint {
+			remote-endpoint = <&lvds_in>;
+			attach-bridge;
+		};
+	};
+};
+
+&i2c2 {
+	dsi_lvds_bridge: sn65dsi84@2d {
+		reg = <0x2d>;
+		status = "okay";
+		compatible = "ti,sn65dsi83";
+		pinctrl-0 = <&pinctrl_mipi_dsi_blkt_en>;
+		enable-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		backlight = <&lvds_backlight>;
+
+		ti,dsi-lanes = <4>;
+		ti,lvds-format = <1>;
+		ti,lvds-bpp = <18>;
+		ti,lvds-channels = <2>;
+		ti,width-mm = <304>;
+		ti,height-mm = <228>;
+		/*ti,burst-mode : bool */
+		ti,burst-mode;
+		/*ti,de-neg-polarity : bool*/
+		ti,de-neg-polarity;
+		
+	    display-timings {
+			lvds {
+				clock-frequency = <81000000>;
+				hactive = <1600>;
+				vactive = <1200>;
+				hback-porch = <180>;
+				hfront-porch = <180>;
+				vback-porch = <15>;
+				vfront-porch = <15>;
+				hsync-len = <200>;
+				vsync-len = <20>;
+				hsync-active = <1>;
+				vsync-active = <1>;
+				de-active = <1>;				
+				pixelclk-active = <0>;
+			};
+		};
+
+		port {
+                lvds_in: endpoint {
+                        remote-endpoint = <&dsi_out>;
+                };
+        };
+	                    
+	};
+};
+
+
