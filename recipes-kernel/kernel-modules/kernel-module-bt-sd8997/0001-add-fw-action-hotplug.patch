@@ -1,0 +1,25 @@
+From 548c26fc617f5863608ac21a649c9d2c4a652f79 Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Wed, 27 Mar 2024 14:27:24 +0530
+Subject: [PATCH] add-fw-action-hotplug
+
+---
+ bt/bt_drv.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bt/bt_drv.h b/bt/bt_drv.h
+index f02af2b..3efb01f 100755
+--- a/bt/bt_drv.h
++++ b/bt/bt_drv.h
+@@ -32,7 +32,7 @@
+ 
+ /** MAX adapter BT driver supported */
+ #define MAX_BT_ADAPTER    3
+-
++#define FW_ACTION_HOTPLUG 1
+ #ifndef BIT
+ /** BIT definition */
+ #define BIT(x) (1UL << (x))
+-- 
+2.43.2
+
