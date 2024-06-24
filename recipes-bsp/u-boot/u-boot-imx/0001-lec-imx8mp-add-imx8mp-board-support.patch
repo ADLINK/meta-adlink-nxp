@@ -1,13 +1,13 @@
-From ec2f41f5e5435e41e467573e403c780b0fc77d53 Mon Sep 17 00:00:00 2001
+From da9a1b8ec034c2b93a065788cb5cbc4cbebe5328 Mon Sep 17 00:00:00 2001
 From: Santhana Kumar A <santhanakumar@adlinktech.com>
 Date: Mon, 7 Aug 2023 12:18:36 +0530
-Subject: [PATCH] lec-imx8mp: board-add-lec-imx8mp-source
+Subject: [PATCH 1/4] lec-imx8mp: add imx8mp board support
 
 Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
 
 diff --git a/arch/arm/dts/lec-imx8mp-u-boot.dtsi b/arch/arm/dts/lec-imx8mp-u-boot.dtsi
 new file mode 100644
-index 0000000000..3fcb23543b
+index 00000000000..3fcb23543b7
 --- /dev/null
 +++ b/arch/arm/dts/lec-imx8mp-u-boot.dtsi
 @@ -0,0 +1,263 @@
@@ -275,7 +275,7 @@ index 0000000000..3fcb23543b
 +	assigned-clock-rates = <400000000>;
 +};
 diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
-index a225a9784f..3c4d4362ed 100644
+index a225a9784f4..3c4d4362edf 100644
 --- a/arch/arm/mach-imx/imx8m/Kconfig
 +++ b/arch/arm/mach-imx/imx8m/Kconfig
 @@ -241,6 +241,16 @@ config TARGET_IMX8MP_EVK
@@ -303,7 +303,7 @@ index a225a9784f..3c4d4362ed 100644
  
  endif
 diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
-index 0d2f7a5897..cee379005c 100644
+index 0d2f7a5897f..cee379005c9 100644
 --- a/arch/arm/mach-imx/imx8m/soc.c
 +++ b/arch/arm/mach-imx/imx8m/soc.c
 @@ -33,6 +33,7 @@
@@ -449,7 +449,7 @@ index 0d2f7a5897..cee379005c 100644
  
 diff --git a/board/adlink/common/Kconfig b/board/adlink/common/Kconfig
 new file mode 100644
-index 0000000000..f4ceb21469
+index 00000000000..f4ceb214698
 --- /dev/null
 +++ b/board/adlink/common/Kconfig
 @@ -0,0 +1,101 @@
@@ -556,14 +556,14 @@ index 0000000000..f4ceb21469
 +endif
 diff --git a/board/adlink/common/Makefile b/board/adlink/common/Makefile
 new file mode 100644
-index 0000000000..9b95882a1c
+index 00000000000..9b95882a1cc
 --- /dev/null
 +++ b/board/adlink/common/Makefile
 @@ -0,0 +1 @@
 +obj-y := mmc.o
 diff --git a/board/adlink/common/mmc.c b/board/adlink/common/mmc.c
 new file mode 100644
-index 0000000000..ab1652d697
+index 00000000000..ab1652d6972
 --- /dev/null
 +++ b/board/adlink/common/mmc.c
 @@ -0,0 +1,51 @@
@@ -620,7 +620,7 @@ index 0000000000..ab1652d697
 +}
 diff --git a/board/adlink/lec-imx8mp/Kconfig b/board/adlink/lec-imx8mp/Kconfig
 new file mode 100644
-index 0000000000..536d2014c5
+index 00000000000..536d2014c5b
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/Kconfig
 @@ -0,0 +1,20 @@
@@ -646,7 +646,7 @@ index 0000000000..536d2014c5
 +endif
 diff --git a/board/adlink/lec-imx8mp/Makefile b/board/adlink/lec-imx8mp/Makefile
 new file mode 100644
-index 0000000000..d532842507
+index 00000000000..d5328425079
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/Makefile
 @@ -0,0 +1,15 @@
@@ -667,7 +667,7 @@ index 0000000000..d532842507
 +endif
 diff --git a/board/adlink/lec-imx8mp/imximage-8mp-lpddr4.cfg b/board/adlink/lec-imx8mp/imximage-8mp-lpddr4.cfg
 new file mode 100644
-index 0000000000..6dedf1724a
+index 00000000000..6dedf1724ab
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/imximage-8mp-lpddr4.cfg
 @@ -0,0 +1,9 @@
@@ -682,7 +682,7 @@ index 0000000000..6dedf1724a
 +LOADER		u-boot-spl-ddr.bin	0x920000
 diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
 new file mode 100644
-index 0000000000..d7cf76216f
+index 00000000000..d7cf76216fe
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
 @@ -0,0 +1,555 @@
@@ -1243,10 +1243,10 @@ index 0000000000..d7cf76216f
 +#endif /* CONFIG_FSL_FASTBOOT */
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
 new file mode 100644
-index 0000000000..c66b2dac14
+index 00000000000..eaac6ccc99b
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
-@@ -0,0 +1,1885 @@
+@@ -0,0 +1,1884 @@
 +/*
 + * Copyright 2019 NXP
 + *
@@ -3131,10 +3131,9 @@ index 0000000000..c66b2dac14
 +	ddrc_inline_ecc_scrub_end(0x0,0x3fffffff);
 +}
 +#endif
-+
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
 new file mode 100644
-index 0000000000..3b7e49769a
+index 00000000000..3b7e49769ae
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
 @@ -0,0 +1,1885 @@
@@ -5025,10 +5024,10 @@ index 0000000000..3b7e49769a
 +#endif
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
 new file mode 100644
-index 0000000000..f01f1670cc
+index 00000000000..f96f80dfce8
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
-@@ -0,0 +1,1885 @@
+@@ -0,0 +1,1884 @@
 +/*
 + * Copyright 2019 NXP
 + *
@@ -6913,13 +6912,12 @@ index 0000000000..f01f1670cc
 +	ddrc_inline_ecc_scrub_end(0x0,0x1fffffff);
 +}
 +#endif
-+
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
 new file mode 100644
-index 0000000000..5268686eea
+index 00000000000..e667ea4cfee
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
-@@ -0,0 +1,1863 @@
+@@ -0,0 +1,1862 @@
 +/*
 + * Copyright 2019 NXP
 + *
@@ -8782,10 +8780,9 @@ index 0000000000..5268686eea
 +	.ddrphy_pie_num = ARRAY_SIZE(ddr_phy_pie),
 +	.fsp_table = { 4000, 400, 100, },
 +};
-+
 diff --git a/board/adlink/lec-imx8mp/spl.c b/board/adlink/lec-imx8mp/spl.c
 new file mode 100644
-index 0000000000..a60a0fc11b
+index 00000000000..a60a0fc11b4
 --- /dev/null
 +++ b/board/adlink/lec-imx8mp/spl.c
 @@ -0,0 +1,202 @@
@@ -8993,7 +8990,7 @@ index 0000000000..a60a0fc11b
 +}
 diff --git a/include/configs/lec-imx8mp.h b/include/configs/lec-imx8mp.h
 new file mode 100644
-index 0000000000..b15ae9d4c7
+index 00000000000..b6227e753ea
 --- /dev/null
 +++ b/include/configs/lec-imx8mp.h
 @@ -0,0 +1,251 @@
@@ -9249,5 +9246,5 @@ index 0000000000..b15ae9d4c7
 +
 +#endif
 -- 
-2.25.1
+2.34.1
 

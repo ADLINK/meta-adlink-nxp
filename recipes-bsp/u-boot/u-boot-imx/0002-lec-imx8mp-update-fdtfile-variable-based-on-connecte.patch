@@ -1,3 +1,11 @@
+From ad3ed704c1112e272a0888de0e67713121af9d5b Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar@adlinktech.com>
+Date: Fri, 21 Jun 2024 07:21:45 +0000
+Subject: [PATCH 2/4] lec-imx8mp: update fdtfile variable based on connected
+ codec
+
+Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
+
 diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
 index d7cf76216fe..73c2d5c20f0 100644
 --- a/board/adlink/lec-imx8mp/lec-imx8mp.c
@@ -36,3 +44,6 @@ index d7cf76216fe..73c2d5c20f0 100644
  
  	return 0;
  }
+-- 
+2.34.1
+

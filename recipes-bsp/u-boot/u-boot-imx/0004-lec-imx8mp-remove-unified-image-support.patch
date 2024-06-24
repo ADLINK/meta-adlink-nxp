@@ -1,5 +1,12 @@
+From f25c2228da854ce69bbf3157fc16e15148932a41 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar@adlinktech.com>
+Date: Fri, 21 Jun 2024 07:37:38 +0000
+Subject: [PATCH 4/4] lec-imx8mp: remove unified image support
+
+Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
+
 diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
-index 19c7135784..26f8643ee9 100644
+index 19c7135784a..26f8643ee97 100644
 --- a/arch/arm/mach-imx/imx8m/soc.c
 +++ b/arch/arm/mach-imx/imx8m/soc.c
 @@ -33,7 +33,6 @@
@@ -176,7 +183,7 @@ index 19c7135784..26f8643ee9 100644
  }
  
 diff --git a/board/adlink/lec-imx8mp/Kconfig b/board/adlink/lec-imx8mp/Kconfig
-index 536d2014c5..8da2060720 100644
+index 536d2014c5b..8da2060720d 100644
 --- a/board/adlink/lec-imx8mp/Kconfig
 +++ b/board/adlink/lec-imx8mp/Kconfig
 @@ -12,8 +12,27 @@ config SYS_CONFIG_NAME
@@ -210,7 +217,7 @@ index 536d2014c5..8da2060720 100644
  source "board/adlink/common/Kconfig"
  
 diff --git a/board/adlink/lec-imx8mp/Makefile b/board/adlink/lec-imx8mp/Makefile
-index d532842507..49237a04a2 100644
+index d5328425079..49237a04a22 100644
 --- a/board/adlink/lec-imx8mp/Makefile
 +++ b/board/adlink/lec-imx8mp/Makefile
 @@ -8,8 +8,8 @@ obj-y += lec-imx8mp.o
@@ -227,7 +234,7 @@ index d532842507..49237a04a2 100644
 +obj-$(CONFIG_LPDDR4_8GB) += lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.o
  endif
 diff --git a/board/adlink/lec-imx8mp/lec-imx8mp.c b/board/adlink/lec-imx8mp/lec-imx8mp.c
-index 73c2d5c20f..0bf1c42dd7 100644
+index 73c2d5c20f0..0bf1c42dd7b 100644
 --- a/board/adlink/lec-imx8mp/lec-imx8mp.c
 +++ b/board/adlink/lec-imx8mp/lec-imx8mp.c
 @@ -531,6 +531,47 @@ static void setup_codec(void)
@@ -287,7 +294,7 @@ index 73c2d5c20f..0bf1c42dd7 100644
  	return 0;
  }
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
-index a233e80fc5..621feac67e 100644
+index 2419663ffc3..78729331066 100644
 --- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
 @@ -1858,7 +1858,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
@@ -309,7 +316,7 @@ index a233e80fc5..621feac67e 100644
  	/* add inline scrb function MPlus spcific */
  	/* scrub 0-1.75G */
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
-index 1c0ce520ac..71f83551c0 100644
+index 1c0ce520ac3..71f83551c07 100644
 --- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-046_ITD_2000MHz.c
 @@ -1862,7 +1862,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
@@ -331,7 +338,7 @@ index 1c0ce520ac..71f83551c0 100644
  	ddrc_inline_ecc_scrub(0x0,0x1bffffff);
  	ddrc_inline_ecc_scrub_end(0x0,0x1fffffff);
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
-index 15360a2941..ac670b672a 100644
+index e1453fa97de..401387cae2f 100644
 --- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
 @@ -1858,7 +1858,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
@@ -353,7 +360,7 @@ index 15360a2941..ac670b672a 100644
  	/* add inline scrb function MPlus spcific */
  	/* scrub 0-1.75G */
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
-index 5268686eea..d82b04fc85 100644
+index e667ea4cfee..3ac397445de 100644
 --- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53E2G32D4DT-046_WTA_2000MHz.c
 @@ -1847,7 +1847,7 @@ static struct dram_fsp_msg ddr_dram_fsp_msg[] = {
@@ -366,7 +373,7 @@ index 5268686eea..d82b04fc85 100644
  	.ddrc_cfg_num = ARRAY_SIZE(ddr_ddrc_cfg),
  	.ddrphy_cfg = ddr_ddrphy_cfg,
 diff --git a/board/adlink/lec-imx8mp/spl.c b/board/adlink/lec-imx8mp/spl.c
-index 8435f8528f..913e2868b9 100644
+index 8435f8528fc..913e2868b98 100644
 --- a/board/adlink/lec-imx8mp/spl.c
 +++ b/board/adlink/lec-imx8mp/spl.c
 @@ -56,44 +56,9 @@ int spl_board_boot_device(enum boot_device boot_dev_spl)
@@ -416,7 +423,7 @@ index 8435f8528f..913e2868b9 100644
  
  void spl_board_init(void)
 diff --git a/include/configs/lec-imx8mp.h b/include/configs/lec-imx8mp.h
-index b6227e753e..a0ee841f0b 100644
+index b6227e753ea..a0ee841f0b5 100644
 --- a/include/configs/lec-imx8mp.h
 +++ b/include/configs/lec-imx8mp.h
 @@ -39,8 +39,6 @@
@@ -462,3 +469,6 @@ index b6227e753e..a0ee841f0b 100644
  
  #define CONFIG_MXC_UART_BASE		UART3_BASE_ADDR
  
+-- 
+2.34.1
+

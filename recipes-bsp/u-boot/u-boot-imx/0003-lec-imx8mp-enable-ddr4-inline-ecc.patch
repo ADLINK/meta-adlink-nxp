@@ -1,5 +1,12 @@
+From 7d651819b8ff41fb5f82a22148d26b179c2de985 Mon Sep 17 00:00:00 2001
+From: Santhana Kumar A <santhanakumar@adlinktech.com>
+Date: Fri, 21 Jun 2024 07:36:20 +0000
+Subject: [PATCH 3/4] lec-imx8mp: enable ddr4 inline ecc
+
+Signed-off-by: Santhana Kumar A <santhanakumar@adlinktech.com>
+
 diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
-index cee379005c9..051901ad505 100644
+index cee379005c9..19c7135784a 100644
 --- a/arch/arm/mach-imx/imx8m/soc.c
 +++ b/arch/arm/mach-imx/imx8m/soc.c
 @@ -322,6 +322,27 @@ __weak int board_phys_sdram_size(phys_size_t *size)
@@ -39,7 +46,7 @@ index cee379005c9..051901ad505 100644
  	return 0;
  }
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
-index c66b2dac14d..a233e80fc53 100644
+index eaac6ccc99b..2419663ffc3 100644
 --- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D1024M32D4DT-053_WTD_1500MHz.c
 @@ -1873,7 +1873,7 @@ struct dram_timing_info dram_timing_4GB = {
@@ -65,7 +72,7 @@ index 3b7e49769ae..1c0ce520ac3 100644
  	ddrc_inline_ecc_scrub(0x0,0x1bffffff);
  	ddrc_inline_ecc_scrub_end(0x0,0x1fffffff);
 diff --git a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
-index f01f1670cc4..15360a2941a 100644
+index f96f80dfce8..e1453fa97de 100644
 --- a/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
 +++ b/board/adlink/lec-imx8mp/lpddr4_timing_MT53D512M32D2DS-053_WTD_1500MHz.c
 @@ -1873,7 +1873,7 @@ struct dram_timing_info dram_timing_2GB = {
@@ -109,3 +116,6 @@ index a60a0fc11b4..8435f8528fc 100644
  void spl_board_init(void)
  {
  	if (IS_ENABLED(CONFIG_FSL_CAAM)) {
+-- 
+2.34.1
+
