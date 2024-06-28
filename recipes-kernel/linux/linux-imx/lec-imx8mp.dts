@@ -538,6 +538,13 @@
 		#interrupt-cells = <2>;
 		compatible = "semtech,sx1509q";
 		reg = <0x3e>;
+		label = "sx1509-carrier";
+
+		gpio-line-names = \
+			"E_GPIO1_0", "E_GPIO1_1", "E_GPIO1_2", "E_GPIO1_3", \
+			"E_GPIO1_4","E_GPIO1_5","E_GPIO1_6","E_GPIO1_7", \
+			"E_GPIO2_8","","","", \
+			"","","","";
 
 		semtech,probe-reset;
 		gpio-controller;
@@ -691,6 +698,13 @@
 		#interrupt-cells = <2>;
 		compatible = "semtech,sx1509q";
 		reg = <0x3f>;
+		label = "sx1509-module";
+
+		gpio-line-names = \
+			"","I2C_ALERT_N","S_GPIO06","S_GPIO07", \
+			"S_GPIO08","S_GPIO09","S_GPIO10","S_GPIO11", \
+			"S_GPIO12","S_GPIO13","BT_DEV_WAKE","TPM_RST_N", \
+			"WIFI_BT_3V3_EN","M2_BT_WAKE_DEV","REBOOT_COUNT","BT_REG_ON";
 
 		semtech,probe-reset;
 		gpio-controller;
@@ -698,6 +712,7 @@
 
 		interrupt-parent = <&gpio1>;
 		interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
+		
 	};
 
 	/* SX1509(1) U2606 */
@@ -725,6 +740,13 @@
 		#interrupt-cells = <2>;
 		compatible = "semtech,sx1509q";
 		reg = <0x70>;
+		label = "sx1509-module-aux";
+		
+		gpio-line-names = \
+			"","","","", \
+			"HWID_3","GPIOE_1","TPM_PP","TPM_LP", \
+			"HWID_1","HWID_2","BOMID_1","BOMID_2", \
+			"BOMID_3","","","VDD_2V5_ENT_EN";
 
 		semtech,probe-reset;
 		gpio-controller;
