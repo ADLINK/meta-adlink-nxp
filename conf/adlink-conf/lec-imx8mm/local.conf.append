@@ -14,6 +14,7 @@ DISTRO_FEATURES:append = " sensors benchmarks adlink wifi"
 MACHINE_FEATURES:append = " wifi bluetooth"
 
 IMAGE_INSTALL:append = " r8168"
+IMAGE_INSTALL:append = " libgpiod libgpiod-tools libgpiod-dev"
 
 RELEASE_VERSION ?= "LEC-iMX8MM-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
 MACHINE_FEATURES:remove = "optee"

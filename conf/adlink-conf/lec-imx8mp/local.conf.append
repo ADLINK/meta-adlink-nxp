@@ -10,6 +10,7 @@ DISTRO_FEATURES:append = " sensors benchmarks adlink wifi"
 MACHINE_FEATURES:append = " wifi bluetooth"
 IMAGE_FEATURES:append = " ssh-server-openssh"
 IMAGE_INSTALL:append = " sema cinematicexperience-rhi docker"
+IMAGE_INSTALL:append = " libgpiod libgpiod-tools libgpiod-dev"
 
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
