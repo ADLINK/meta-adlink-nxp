@@ -14,11 +14,12 @@ IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE I
 #BUILDTAG ??= "SP2-iMX8MP-1v0"
 RELEASE_VERSION ?= "SP2-iMX8MP-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
 
+USER_EXTRA_GROUPS = ",docker"
 # Set user account and password (for imx-nxp-desktop)
 #APTGET_ADD_USERS = "<user>:<password>:<shell>"
 # <password> generated with `echo "P4sSw0rD" \| openssl passwd -stdin`.
 # <shell> is the default shell (if empty, default is /bin/sh).
-APTGET_ADD_USERS = "adlink:faW.Th7HPXwiI:${USER_SHELL_BASH}"
+APTGET_ADD_USERS = "adlink:faW.Th7HPXwiI:${USER_SHELL_BASH}:{$USER_EXTRA_GROUPS}"
 
 # Set user account and password (for yocto images, e.g. core-image-xxx)
 # clear password deprecated, gen password with 'mkpasswd -m sha-512 adlink -s 00000000'
