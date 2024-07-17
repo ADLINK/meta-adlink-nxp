@@ -1,0 +1,7 @@
+
+USER_EXTRA_GROUPS = ",docker"
+# Set user account and password (for imx-nxp-desktop)
+#APTGET_ADD_USERS = "<user>:<password>:<shell>"
+# <password> generated with `echo "P4sSw0rD" \| openssl passwd -stdin`.
+# <shell> is the default shell (if empty, default is /bin/sh).
+APTGET_ADD_USERS = "adlink:faW.Th7HPXwiI:${USER_SHELL_BASH}:{$USER_EXTRA_GROUPS}"
