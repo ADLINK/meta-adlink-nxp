@@ -1,0 +1,26 @@
+From 4c3ae59c4b144e5dacdbcb81eee4b0a7e5737dd2 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Mon, 29 Jul 2024 11:28:38 +0800
+Subject: [PATCH 04/15] sp2-imx8mp: tpm: add match id st,st33htpm-i2c to
+ existing tpm_tis_i2c driver
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/char/tpm/tpm_tis_i2c.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/char/tpm/tpm_tis_i2c.c b/drivers/char/tpm/tpm_tis_i2c.c
+index a897402cc36a8..b4af67c042bfd 100644
+--- a/drivers/char/tpm/tpm_tis_i2c.c
++++ b/drivers/char/tpm/tpm_tis_i2c.c
+@@ -383,6 +383,7 @@ MODULE_DEVICE_TABLE(i2c, tpm_tis_i2c_id);
+ #ifdef CONFIG_OF
+ static const struct of_device_id of_tis_i2c_match[] = {
+ 	{ .compatible = "infineon,slb9673", },
++	{ .compatible = "st,st33htpm-i2c", },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, of_tis_i2c_match);
+-- 
+2.25.1
+
