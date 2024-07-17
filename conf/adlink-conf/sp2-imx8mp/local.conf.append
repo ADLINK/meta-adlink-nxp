@@ -1,0 +1,29 @@
+
+CONNECTIVITY_CHECK_URIS = "https://www.google.com"
+
+PACKAGECONFIG:append:pn-opencv_mx8 = " test"
+TOOLCHAIN_TARGET_TASK:append = " onnxruntime-dev"
+
+DISTRO_FEATURES:append = " sensors adlink"
+IMAGE_FEATURES:append = " ssh-server-openssh"
+IMAGE_INSTALL:append = " cinematicexperience-rhi"
+
+INHERIT += "image-buildinfo"
+IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
+
+#BUILDTAG ??= "SP2-iMX8MP-1v0"
+RELEASE_VERSION ?= "SP2-iMX8MP-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
+
+# Set user account and password (for yocto images, e.g. core-image-xxx)
+# clear password deprecated, gen password with 'mkpasswd -m sha-512 adlink -s 00000000'
+EXTRA_USERS_PARAMS = " \
+useradd -p '$6$00000000$/noRU5LR3VQ5X2EyOdcXvqd9bNRwM/PCAMxY8cvKXsjSqxezozESCRWuVphSrjGhvUjD4H9RmVBX4tcQHEQiH0' adlink; \
+usermod -a -G sudo,users,plugdev,docker adlink; \
+"
+
+KERNEL_MODULE_AUTOLOAD:append = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', ' mlan moal', '', d)}"
+
+IMAGE_FEATURES += "empty-root-password"
+IMAGE_FSTYPES += " wic.bmap wic.gz"
+
+BBMASK += "linux-intel_%.bbappend"

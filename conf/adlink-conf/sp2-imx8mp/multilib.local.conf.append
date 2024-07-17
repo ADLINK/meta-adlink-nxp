@@ -1,0 +1,6 @@
+
+require conf/multilib.conf
+MULTILIBS = "multilib:lib32"
+DEFAULTTUNE:virtclass-multilib-lib32 = "armv7a"
+IMAGE_INSTALL:append = " lib32-glib-2.0 lib32-bash lib32-glibc lib32-libgcc lib32-libstdc++"
+
