@@ -1,0 +1,881 @@
+From ad7831662399ad670acab20520ee4bd60d3cd768 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Thu, 17 Aug 2023 14:17:07 +0800
+Subject: [PATCH 2/5] sp2imx8mp: patch: msgpack: fix build, float point related
+ functions are disabled, add jsinfo cmd
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ cmd/Makefile                      |   4 +
+ cmd/jsinfo.c                      |  61 ++++++
+ include/msgpack/fbuffer.h         |   6 +
+ include/msgpack/object.h          |   9 +-
+ include/msgpack/pack.h            |   2 +
+ include/msgpack/pack_define.h     |  46 ++++-
+ include/msgpack/pack_template.h   |   4 +-
+ include/msgpack/sbuffer.h         |   6 +
+ include/msgpack/sysdep.h          |  13 +-
+ include/msgpack/unpack_define.h   |  14 ++
+ include/msgpack/unpack_template.h |   8 +
+ include/msgpack/vrefbuffer.h      |   8 +-
+ include/msgpack/zbuffer.h         |   6 +
+ lib/msgpack/Makefile              |   3 +-
+ lib/msgpack/objectc.c             |  30 ++-
+ lib/msgpack/parser.c              | 296 ++++++++++++++++++++++++++++++
+ lib/msgpack/unpack.c              |   2 +
+ 17 files changed, 504 insertions(+), 14 deletions(-)
+ create mode 100644 cmd/jsinfo.c
+ create mode 100644 lib/msgpack/parser.c
+
+diff --git a/cmd/Makefile b/cmd/Makefile
+index 0337a53b6e95..df3c109c5ba0 100644
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -219,6 +219,10 @@ obj-$(CONFIG_CMD_ETHSW) += ethsw.o
+ obj-$(CONFIG_CMD_AXI) += axi.o
+ obj-$(CONFIG_CMD_PVBLOCK) += pvblock.o
+ 
++ifeq ($(CONFIG_MSGPACK),y)
++obj-y += jsinfo.o
++endif
++
+ # Power
+ obj-$(CONFIG_CMD_PMIC) += pmic.o
+ obj-$(CONFIG_CMD_REGULATOR) += regulator.o
+diff --git a/cmd/jsinfo.c b/cmd/jsinfo.c
+new file mode 100644
+index 000000000000..07caeac4b4d2
+--- /dev/null
++++ b/cmd/jsinfo.c
+@@ -0,0 +1,61 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Serial Presence Detect - EEPROM but not for DDR modules
++ * spd_eeprom.c - based on spd_sdram.c from arch/powerpc/ (freescale mpc83xx)
++ *
++ * Created on: Aug 16, 2023
++ *
++ * (C) Copyright 2013 ADLINK, Inc.
++ *
++ * Po Cheng, ADLINK, Inc, po@adlinktech.com
++ *  *
++ */
++
++#include <common.h>
++#include <log.h>
++#include <time.h>
++#include <vsprintf.h>
++#include <i2c.h>
++#include <command.h>
++#include <env.h>
++
++#include <inttypes.h>
++#include <ctype.h>
++
++#include <errno.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#if !defined (EEPROM_SIZE)
++#  define EEPROM_SIZE 1024
++#endif
++
++extern int read_eeprom(uint8_t *buf);
++extern int parse_eeprom(uint8_t *buffer, const char *key, char *value);
++
++/*
++ * do_parse_eeprom - handles the jsinfo command.
++ */
++static int do_parse_eeprom(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++	int ret;
++	uint8_t buffer[EEPROM_SIZE];
++
++	/* read msg packed content from eeprom */
++	ret = read_eeprom(buffer);
++	if (ret)
++		return ret;
++
++	/* parse the eeprom content */
++	ret = parse_eeprom(buffer, NULL, NULL);
++
++	return (ret) ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
++}
++
++/* U_BOOT_CMD(_name, _maxargs, _rep, _cmd, _usage, _help) */
++U_BOOT_CMD(jsinfo, 1, 1, do_parse_eeprom,
++	"read msgpacked eeprom and parse to json format",
++	"    Parse MsgPacked EEPROM as json and show Adlink Specific Configurations"
++);
++
+diff --git a/include/msgpack/fbuffer.h b/include/msgpack/fbuffer.h
+index 5c847dd97b32..71ed27aca5e4 100644
+--- a/include/msgpack/fbuffer.h
++++ b/include/msgpack/fbuffer.h
+@@ -11,7 +11,13 @@
+ #define MSGPACK_FBUFFER_H
+ 
+ #include <stdio.h>
++#if !defined(_KERNEL_MODE)
++#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
++#include <log.h>
++#else
+ #include <assert.h>
++#endif
++#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff --git a/include/msgpack/object.h b/include/msgpack/object.h
+index e9431744b70b..2e46c88f462e 100644
+--- a/include/msgpack/object.h
++++ b/include/msgpack/object.h
+@@ -11,12 +11,17 @@
+ #define MSGPACK_OBJECT_H
+ 
+ #include "zone.h"
+-#include <stdio.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ 
++#if !defined(_KERNEL_MODE)
++# include <stdio.h>
++# define FILEPTR FILE*
++#else
++# define FILEPTR int
++#endif
+ 
+ /**
+  * @defgroup msgpack_object Dynamically typed object
+@@ -99,7 +104,7 @@ typedef struct msgpack_object_kv {
+ 
+ #if !defined(_KERNEL_MODE)
+ MSGPACK_DLLEXPORT
+-void msgpack_object_print(FILE* out, msgpack_object o);
++void msgpack_object_print(FILEPTR out, msgpack_object o);
+ #endif
+ 
+ MSGPACK_DLLEXPORT
+diff --git a/include/msgpack/pack.h b/include/msgpack/pack.h
+index 08ab84b5e07d..a555c2cf7a27 100644
+--- a/include/msgpack/pack.h
++++ b/include/msgpack/pack.h
+@@ -76,8 +76,10 @@ static int msgpack_pack_fix_int16(msgpack_packer* pk, int16_t d);
+ static int msgpack_pack_fix_int32(msgpack_packer* pk, int32_t d);
+ static int msgpack_pack_fix_int64(msgpack_packer* pk, int64_t d);
+ 
++#if !defined(_KERNEL_MODE)
+ static int msgpack_pack_float(msgpack_packer* pk, float d);
+ static int msgpack_pack_double(msgpack_packer* pk, double d);
++#endif
+ 
+ static int msgpack_pack_nil(msgpack_packer* pk);
+ static int msgpack_pack_true(msgpack_packer* pk);
+diff --git a/include/msgpack/pack_define.h b/include/msgpack/pack_define.h
+index ce98b67558a3..36bf3c5f5c07 100644
+--- a/include/msgpack/pack_define.h
++++ b/include/msgpack/pack_define.h
+@@ -11,7 +11,51 @@
+ #define MSGPACK_PACK_DEFINE_H
+ 
+ #include "msgpack/sysdep.h"
+-#include <limits.h>
++/* No <limits.h> so have to define it here */
++#undef CHAR_MAX
++#define CHAR_MAX    127
++#undef CHAR_MIN
++#define CHAR_MIN    -128
++
++#ifdef SIZEOF_SHORT
++#undef SIZEOF_SHORT
++#endif
++#ifdef SHRT_MAX
++#undef SHRT_MAX
++#endif
++#ifdef USHRT_MAX
++#undef USHRT_MAX
++#endif
++
++#ifdef SIZEOF_INT
++#undef SIZEOF_INT
++#endif
++#ifdef INT_MAX
++#undef INT_MAX
++#endif
++#ifdef UINT_MAX
++#undef UINT_MAX
++#endif
++
++#ifdef SIZEOF_LONG
++#undef SIZEOF_LONG
++#endif
++#ifdef LONG_MAX
++#undef LONG_MAX
++#endif
++#ifdef ULONG_MAX
++#undef ULONG_MAX
++#endif
++
++#ifdef SIZEOF_LONG_LONG
++#undef SIZEOF_LONG_LONG
++#endif
++#ifdef LLONG_MAX
++#undef LLONG_MAX
++#endif
++#ifdef ULLONG_MAX
++#undef ULLONG_MAX
++#endif
+ #include <string.h>
+ 
+ #endif /* msgpack/pack_define.h */
+diff --git a/include/msgpack/pack_template.h b/include/msgpack/pack_template.h
+index 53953fa0115c..ebf71b8640b4 100644
+--- a/include/msgpack/pack_template.h
++++ b/include/msgpack/pack_template.h
+@@ -658,7 +658,7 @@ if(sizeof(unsigned long long) == 2) {
+ /*
+  * Float
+  */
+-
++#if !defined(_KERNEL_MODE)
+ msgpack_pack_inline_func(_float)(msgpack_pack_user x, float d)
+ {
+     unsigned char buf[5];
+@@ -683,7 +683,7 @@ msgpack_pack_inline_func(_double)(msgpack_pack_user x, double d)
+     _msgpack_store64(&buf[1], mem.i);
+     msgpack_pack_append_buffer(x, buf, 9);
+ }
+-
++#endif
+ 
+ /*
+  * Nil
+diff --git a/include/msgpack/sbuffer.h b/include/msgpack/sbuffer.h
+index 572d8f27e683..de5910a086bb 100644
+--- a/include/msgpack/sbuffer.h
++++ b/include/msgpack/sbuffer.h
+@@ -12,7 +12,13 @@
+ 
+ #include <stdlib.h>
+ #include <string.h>
++#if !defined(_KERNEL_MODE)
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
++#include <log.h>
++#else
+ #include <assert.h>
++#endif
++#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff --git a/include/msgpack/sysdep.h b/include/msgpack/sysdep.h
+index 8f6f4614ba32..7662165210ee 100644
+--- a/include/msgpack/sysdep.h
++++ b/include/msgpack/sysdep.h
+@@ -10,8 +10,12 @@
+ #ifndef MSGPACK_SYSDEP_H
+ #define MSGPACK_SYSDEP_H
+ 
++/* Configure for U-Boot environment */
++#define _KERNEL_MODE
++
+ #include <stdlib.h>
+ #include <stddef.h>
++#include <net.h>
+ 
+ #ifndef MSGPACK_ENDIAN_BIG_BYTE
+ #define MSGPACK_ENDIAN_BIG_BYTE 0
+@@ -100,11 +104,18 @@
+ 
+ #elif defined(unix) || defined(__unix) || defined(__APPLE__) || defined(__OpenBSD__)
+ 
++#if !defined(_KERNEL_MODE)
+ #include <arpa/inet.h>  /* __BYTE_ORDER */
+ #   if defined(linux)
+ #       include <byteswap.h>
+ #   endif
+-
++#else
++#include <common.h>
++#   if defined(linux)
++#      include <linux/compiler.h>
++#      include <asm/unaligned.h>
++#   endif
++#endif
+ #endif
+ 
+ #if !defined(MSGPACK_ENDIAN_LITTLE_BYTE) && !defined(MSGPACK_ENDIAN_BIG_BYTE)
+diff --git a/include/msgpack/unpack_define.h b/include/msgpack/unpack_define.h
+index c7decf65994a..5b51c8ebbb94 100644
+--- a/include/msgpack/unpack_define.h
++++ b/include/msgpack/unpack_define.h
+@@ -13,7 +13,13 @@
+ #include "msgpack/sysdep.h"
+ #include <stdlib.h>
+ #include <string.h>
++#if !defined(_KERNEL_MODE)
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
++#include <log.h>
++#else
+ #include <assert.h>
++#endif
++#endif
+ #include <stdio.h>
+ 
+ #ifdef __cplusplus
+@@ -25,6 +31,14 @@ extern "C" {
+ #define MSGPACK_EMBED_STACK_SIZE 32
+ #endif
+ 
++#ifdef SIZE_MAX
++#undef SIZE_MAX
++#define SIZE_MAX    1
++#endif
++#ifdef UINT_MAX
++#undef UINT_MAX
++#define UINT_MAX    0
++#endif
+ 
+ typedef enum {
+     MSGPACK_CS_HEADER            = 0x00,  // nil
+diff --git a/include/msgpack/unpack_template.h b/include/msgpack/unpack_template.h
+index de30f3cf09f9..7db488fa572f 100644
+--- a/include/msgpack/unpack_template.h
++++ b/include/msgpack/unpack_template.h
+@@ -39,9 +39,13 @@
+ #endif
+ 
+ #if defined(_KERNEL_MODE)
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
++#include <log.h>
++#else
+ #undef  assert
+ #define assert NT_ASSERT
+ #endif
++#endif
+ 
+ msgpack_unpack_struct_decl(_stack) {
+     msgpack_unpack_object obj;
+@@ -192,8 +196,10 @@ msgpack_unpack_func(int, _execute)(msgpack_unpack_struct(_context)* ctx, const c
+                     case 0xc8: // ext 16
+                     case 0xc9: // ext 32
+                         again_fixed_trail(NEXT_CS(p), 1 << ((((unsigned int)*p) + 1) & 0x03));
++#if !defined(_KERNEL_MODE)
+                     case 0xca:  // float
+                     case 0xcb:  // double
++#endif
+                     case 0xcc:  // unsigned int  8
+                     case 0xcd:  // unsigned int 16
+                     case 0xce:  // unsigned int 32
+@@ -249,6 +255,7 @@ msgpack_unpack_func(int, _execute)(msgpack_unpack_struct(_context)* ctx, const c
+                 switch(cs) {
+                 //case MSGPACK_CS_
+                 //case MSGPACK_CS_
++#if !defined(_KERNEL_MODE)
+                 case MSGPACK_CS_FLOAT: {
+                         union { uint32_t i; float f; } mem;
+                         _msgpack_load32(uint32_t, n, &mem.i);
+@@ -263,6 +270,7 @@ msgpack_unpack_func(int, _execute)(msgpack_unpack_struct(_context)* ctx, const c
+                         mem.i = (mem.i & 0xFFFFFFFFUL) << 32UL | (mem.i >> 32UL);
+ #endif
+                         push_fixed_value(_double, mem.f); }
++#endif
+                 case MSGPACK_CS_UINT_8:
+                     push_fixed_value(_uint8, *(uint8_t*)n);
+                 case MSGPACK_CS_UINT_16:{
+diff --git a/include/msgpack/vrefbuffer.h b/include/msgpack/vrefbuffer.h
+index c2633052bdbd..b17e19d3d73e 100644
+--- a/include/msgpack/vrefbuffer.h
++++ b/include/msgpack/vrefbuffer.h
+@@ -12,9 +12,15 @@
+ 
+ #include "zone.h"
+ #include <stdlib.h>
++#if !defined(_KERNEL_MODE)
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
++#include <log.h>
++#else
+ #include <assert.h>
++#endif
++#endif
+ 
+-#if defined(unix) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__) || defined(__QNXTO__) || defined(__HAIKU__)
++#if !defined(_KERNEL_MODE) && (defined(unix) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__QNX__) || defined(__QNXTO__) || defined(__HAIKU__))
+ #include <sys/uio.h>
+ typedef struct iovec msgpack_iovec;
+ #else
+diff --git a/include/msgpack/zbuffer.h b/include/msgpack/zbuffer.h
+index c38d627e7098..890190cc2b6b 100644
+--- a/include/msgpack/zbuffer.h
++++ b/include/msgpack/zbuffer.h
+@@ -13,7 +13,13 @@
+ #include "sysdep.h"
+ #include <stdlib.h>
+ #include <string.h>
++#if !defined(_KERNEL_MODE)
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
++#include <log.h>
++#else
+ #include <assert.h>
++#endif
++#endif
+ #include <zlib.h>
+ 
+ #ifdef __cplusplus
+diff --git a/lib/msgpack/Makefile b/lib/msgpack/Makefile
+index e706c45aad86..d0f4e63956c5 100644
+--- a/lib/msgpack/Makefile
++++ b/lib/msgpack/Makefile
+@@ -5,6 +5,5 @@
+ # (C) Copyright 2000-2007
+ # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+ 
+-obj-$(CONFIG_$(SPL_)MSGPACK) += objectc.o unpack.o version.o vrefbuffer.o zone.o
+-
++obj-$(CONFIG_$(SPL_)MSGPACK) += objectc.o unpack.o version.o vrefbuffer.o zone.o parser.o
+ 
+diff --git a/lib/msgpack/objectc.c b/lib/msgpack/objectc.c
+index d8fce0ca2fdb..29edcee6d212 100644
+--- a/lib/msgpack/objectc.c
++++ b/lib/msgpack/objectc.c
+@@ -7,6 +7,7 @@
+  *    (See accompanying file LICENSE_1_0.txt or copy at
+  *    http://www.boost.org/LICENSE_1_0.txt)
+  */
++/* u-boot should behave the same way as kernel mode */
+ #if defined(_KERNEL_MODE)
+ #  undef  _NO_CRT_STDIO_INLINE
+ #  define _NO_CRT_STDIO_INLINE
+@@ -16,7 +17,6 @@
+ #include "msgpack/pack.h"
+ #include <ctype.h>
+ 
+-#include <stdio.h>
+ #include <string.h>
+ 
+ #if defined(_MSC_VER)
+@@ -32,9 +32,18 @@
+ #endif
+ 
+ #if defined(_KERNEL_MODE)
++#if !(defined(CONFIG_ARM) || defined(CONFIG_ARM64))
+ #  undef  snprintf
+ #  define snprintf _snprintf
+ #endif
++#endif
++
++#if !defined(_KERNEL_MODE)
++# include <stdio.h>
++# define FILEPTR FILE*
++#else
++# define FILEPTR int
++#endif
+ 
+ int msgpack_pack_object(msgpack_packer* pk, msgpack_object d)
+ {
+@@ -55,11 +64,13 @@ int msgpack_pack_object(msgpack_packer* pk, msgpack_object d)
+     case MSGPACK_OBJECT_NEGATIVE_INTEGER:
+         return msgpack_pack_int64(pk, d.via.i64);
+ 
++#if !defined(_KERNEL_MODE)
+     case MSGPACK_OBJECT_FLOAT32:
+         return msgpack_pack_float(pk, (float)d.via.f64);
+ 
+     case MSGPACK_OBJECT_FLOAT64:
+         return msgpack_pack_double(pk, d.via.f64);
++#endif
+ 
+     case MSGPACK_OBJECT_STR:
+         {
+@@ -127,21 +138,21 @@ int msgpack_pack_object(msgpack_packer* pk, msgpack_object d)
+ 
+ #if !defined(_KERNEL_MODE)
+ 
+-static void msgpack_object_bin_print(FILE* out, const char *ptr, size_t size)
++static void msgpack_object_bin_print(FILEPTR out, const char *ptr, size_t size)
+ {
+     size_t i;
+     for (i = 0; i < size; ++i) {
+         if (ptr[i] == '"') {
+-            fputs("\\\"", out);
++            fputs(out, "\\\"");
+         } else if (isprint((unsigned char)ptr[i])) {
+-            fputc(ptr[i], out);
++            fputc(out, ptr[i]);
+         } else {
+             fprintf(out, "\\x%02x", (unsigned char)ptr[i]);
+         }
+     }
+ }
+ 
+-void msgpack_object_print(FILE* out, msgpack_object o)
++void msgpack_object_print(FILEPTR out, msgpack_object o)
+ {
+     switch(o.type) {
+     case MSGPACK_OBJECT_NIL:
+@@ -183,7 +194,12 @@ void msgpack_object_print(FILE* out, msgpack_object o)
+ 
+     case MSGPACK_OBJECT_STR:
+         fprintf(out, "\"");
++        /* rewrite
+         fwrite(o.via.str.ptr, o.via.str.size, 1, out);
++        */
++        for (size_t i = 0; i < o.via.str.size; i++) {
++            fprintf(out, "%c", *((char*)(o.via.str.ptr)+i));
++        }
+         fprintf(out, "\"");
+         break;
+ 
+@@ -324,10 +340,12 @@ int msgpack_object_print_buffer(char *buffer, size_t buffer_size, msgpack_object
+ #endif
+         break;
+ 
++#if !defined(_KERNEL_MODE)
+     case MSGPACK_OBJECT_FLOAT32:
+     case MSGPACK_OBJECT_FLOAT64:
+         MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "%f", o.via.f64);
+         break;
++#endif
+ 
+     case MSGPACK_OBJECT_STR:
+         MSGPACK_CHECKED_CALL(ret, snprintf, aux_buffer, aux_buffer_size, "\"");
+@@ -423,9 +441,11 @@ bool msgpack_object_equal(const msgpack_object x, const msgpack_object y)
+     case MSGPACK_OBJECT_NEGATIVE_INTEGER:
+         return x.via.i64 == y.via.i64;
+ 
++#if !defined(_KERNEL_MODE)
+     case MSGPACK_OBJECT_FLOAT32:
+     case MSGPACK_OBJECT_FLOAT64:
+         return x.via.f64 == y.via.f64;
++#endif
+ 
+     case MSGPACK_OBJECT_STR:
+         return x.via.str.size == y.via.str.size &&
+diff --git a/lib/msgpack/parser.c b/lib/msgpack/parser.c
+new file mode 100644
+index 000000000000..eb79c34a2d9f
+--- /dev/null
++++ b/lib/msgpack/parser.c
+@@ -0,0 +1,296 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Serial Presence Detect - EEPROM but not for DDR modules
++ * spd_eeprom.c - based on spd_sdram.c from arch/powerpc/ (freescale mpc83xx)
++ *
++ * Created on: Aug 16, 2023
++ *
++ * (C) Copyright 2013 ADLINK, Inc.
++ *
++ * Po Cheng, ADLINK, Inc, po@adlinktech.com
++ *  *
++ */
++
++#include <log.h>
++#include <i2c.h>
++#include <msgpack.h>
++
++static char* pkey = NULL;
++static char* pval = NULL;
++
++/*
++ * read_eeprom - reads the eeprom specified by the config bus and addr on the target board
++ *        buf: output buffer
++ */
++#if !defined (EEPROM_I2CBUS)
++#  define EEPROM_I2CBUS 1
++#endif
++#if !defined (EEPROM_ADDR)
++#  define EEPROM_ADDR 0x54
++#endif
++#if !defined (EEPROM_SIZE)
++#  define EEPROM_SIZE 1024
++#endif
++int read_eeprom(uint8_t *buf)
++{
++	int ret;
++#if !CONFIG_IS_ENABLED(DM_I2C)
++	int old_bus;
++
++	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
++
++	old_bus = i2c_get_bus_num();
++	i2c_set_bus_num(EEPROM_I2CBUS);
++
++	ret = i2c_read(EEPROM_ADDR, 0, 1, buf, EEPROM_SIZE);
++	i2c_set_bus_num(old_bus);
++#else
++	struct udevice *dev;
++
++	ret = i2c_get_chip_for_busnum(EEPROM_I2CBUS, EEPROM_ADDR, 1, &dev);
++	if (!ret)
++		ret = dm_i2c_read(dev, 0, buf, EEPROM_SIZE);
++#endif
++	if (ret) {
++		log_err("%s() ret: %d, Cannot read EEPROM on I2C-%d @0x%02x\n", __func__, ret, EEPROM_I2CBUS, EEPROM_ADDR);
++		return ret;
++	}
++	return 0;
++}
++
++/*
++ * find_endflag - look for a1 2d a1 2d (our ending flag, i.e. "-":"-") in buffer
++ * returns the number of bytes of the valid msgpacked buffer or 0 for not found
++ *        buf: msg packed buff
++ *        maxlen: max length of msg packed buff
++ */
++int find_endflag(const char *const buf, size_t maxlen)
++{
++	const char ending[] = { '\xa1', '\x2d', '\xa1', '\x2d' };
++	char* pos = NULL;
++	int msglen = 0;
++
++	pos = strstr (buf, ending);
++	if (pos != NULL)
++		msglen = pos - buf + sizeof(ending);
++
++	return (msglen <= maxlen) ? msglen : 0;
++}
++
++/*
++ * env_set_kv - a callback function to set key and value
++ *              to Uboot Environment Variable if in U-Boot
++ */
++void env_set_kv(char* key, char* val) {
++	if (pkey != NULL && pval != NULL) {
++		debug("%s() pkey: %s, pval: %s, key: %s, val: %s\n", __func__, pkey, pval, key, val);
++		if (!strcasecmp(pkey, key)) {
++			strncpy(pval, val, strlen(val));
++		}
++	} else {
++		debug("%s() env_set(key: %s, val: %s)\n", __func__, key, val);
++#ifndef CONFIG_SPL_BUILD
++		env_set(key, val);
++#endif
++	}
++}
++
++/*
++ * get_msgvars - Sets the uboot env variables according to unpacked msgpack,
++ *               adopted from msgpack_object_print_buffer() fn
++ *
++ * returns -ve for error, 0 for success and +ve number for bytes copied to val.
++ */
++static int get_msgvars(msgpack_object o, void* key, void* val)
++{
++	int ret = 0;
++	/* clears val buffer everytime the fn is called */
++	memset(val, 0, 16);
++
++	switch(o.type) {
++	/* When the OBJECT is a BOOLEAN/+INTEGER/-INTEGTER, deal with env_set_kv directly with key passed in */
++	case MSGPACK_OBJECT_BOOLEAN:
++		env_set_kv(key, o.via.boolean ? "1" : "0");
++		ret = sizeof(bool);
++		break;
++
++	case MSGPACK_OBJECT_POSITIVE_INTEGER:
++		if (o.via.u64 > (~0UL)) {
++			ret = ERANGE;
++		} else {
++			sprintf(val, "%llu", (uint64_t)o.via.u64);
++			env_set_kv(key, val);
++			ret = sizeof(uint64_t);
++		}
++		break;
++
++	case MSGPACK_OBJECT_NEGATIVE_INTEGER:
++		if (o.via.i64 > ((long)(~0UL>>1)) || o.via.i64 < (-(long)(~0UL>>1) - 1)) {
++			ret = ERANGE;
++		} else {
++			sprintf(val, "%lld", (int64_t)o.via.i64);
++			env_set_kv(key, val);
++			ret = sizeof(int64_t);
++		}
++		break;
++
++#if !defined(_KERNEL_MODE)
++	/* we don't deal with these other formats for values */
++	case MSGPACK_OBJECT_NIL:
++	case MSGPACK_OBJECT_FLOAT32:
++	case MSGPACK_OBJECT_FLOAT64:
++	case MSGPACK_OBJECT_BIN:
++	case MSGPACK_OBJECT_EXT:
++		ret = ENOSYS;
++		break;
++#endif
++
++	/* When the OBJECT is a string, the caller deal with env_set
++	   NOTE: key is a string object, and some values are also strings,
++	         for the values that are BOOLEAN/+INTEGER/-INTEGER, they
++	         are dealt with directly (where key already been parsed). */
++	case MSGPACK_OBJECT_STR:
++		if (o.via.str.size > 0) {
++			memcpy(val, o.via.str.ptr, (int)o.via.str.size);
++			ret = o.via.str.size;
++		}
++		break;
++
++	/* for ARRAY, we first make incremental key names, then
++	   recursive call to parse more values */
++	case MSGPACK_OBJECT_ARRAY:
++		if(o.via.array.size != 0) {
++			int index = 0;
++			char keystr[12];
++			msgpack_object* p = o.via.array.ptr;
++			msgpack_object* const pend = o.via.array.ptr + o.via.array.size;
++			/* loop through array items */
++			sprintf(keystr, "%s%d", (char*)key, index);
++			ret = get_msgvars(*p, keystr, val);
++			if (ret > 0 && ret < 16 && ((*p).type == MSGPACK_OBJECT_STR)) {
++				env_set_kv(keystr, val);
++			}
++			++p; ++index;
++			for(; p < pend; ++p, ++index) {
++				sprintf(keystr, "%s%d", (char*)key, index);
++				ret = get_msgvars(*p, keystr, val);
++				if (ret > 0 && ret < 16 && ((*p).type == MSGPACK_OBJECT_STR)) {
++					env_set_kv(keystr, val);
++				}
++			}
++		}
++		break;
++
++	/* for MAP/DICT, we recursive call to parse more Key, Value pairs */
++	case MSGPACK_OBJECT_MAP:
++		if(o.via.map.size != 0) {
++			msgpack_object_kv* p = o.via.map.ptr;
++			msgpack_object_kv* const pend = o.via.map.ptr + o.via.map.size;
++			/* get key */
++			ret = get_msgvars(p->key, key, val);
++			if (ret > 0 && ret < 16 && ((p->key).type == MSGPACK_OBJECT_STR)) {
++				memset(key, 0, 8);
++				memcpy(key, "E_", 2);
++				memcpy(key+2, val, ret);
++			}
++			/* get value */
++			ret = get_msgvars(p->val, key, val);
++			if (ret > 0 && ret < 16 && ((p->val).type == MSGPACK_OBJECT_STR)) {
++				env_set_kv(key, val);
++			}
++
++			/* next element */
++			++p;
++			for(; p < pend; ++p) {
++				/* get key */
++				ret = get_msgvars(p->key, key, val);
++				if (ret > 0 && ret < 16 &&  ((p->key).type == MSGPACK_OBJECT_STR)) {
++					memset(key, 0, 8);
++					memcpy(key, "E_", 2);
++					memcpy(key+2, val, ret);
++				}
++				/* get value */
++				ret = get_msgvars(p->val, key, val);
++				if ((ret > 0 && ret < 16) && ((p->val).type == MSGPACK_OBJECT_STR)) {
++					if (! (strcmp(val, "-") == 0 && strcmp(key, "E_-") == 0)) {
++						env_set_kv(key, val);
++					}
++				}
++			}
++		}
++		break;
++
++	default:
++		// FIXME
++		if (o.via.u64 > (~0UL)) {
++			*((uint64_t*)val) = o.type;
++			ret = ERANGE;
++		} else {
++			*((uint64_t*)val) = o.via.u64;
++			ret = ENOMSG;
++		}
++	}
++
++	return ret;
++}
++
++/*
++ * unpack_msg - unpack msgpacked data
++ *        buf: msg packed buffer
++ *        buflen: length of msg packed buffer (i.e. size of eeprom, 
++ *                with unknowns after original msg-packed buffer)
++ */
++msgpack_unpack_return unpack_msg(const char *const buf, size_t buflen)
++{
++	/* buf is allocated by client. */
++	msgpack_unpacked result;
++	size_t off = 0;
++	msgpack_unpack_return ret;
++	char k[8]; /* our key is limited to 4 bytes */
++	char v[16]; /* our longest value should be mac address (12 bytes) */
++
++	msgpack_unpacked_init(&result);
++	ret = msgpack_unpack_next(&result, buf, buflen, &off);
++	while (ret == MSGPACK_UNPACK_SUCCESS) {
++		msgpack_object obj = result.data;
++		/* set uboot env variable accordingly */
++		get_msgvars(obj, k, v);
++		ret = msgpack_unpack_next(&result, buf, buflen, &off);
++	}
++	msgpack_unpacked_destroy(&result);
++
++	if (ret == MSGPACK_UNPACK_CONTINUE) {
++		debug("All msgpack_object in the buffer is consumed.\n");
++		ret = 0;
++	}
++	else if (ret == MSGPACK_UNPACK_PARSE_ERROR) {
++		debug("The data in the buf is invalid format.\n");
++	}
++	return ret;
++}
++
++int parse_eeprom(uint8_t *buffer, char *key, char *val) {
++	int msglen;
++	msgpack_sbuffer sbuf;
++	msgpack_sbuffer_init(&sbuf);
++
++	pkey = key;
++	pval = val;
++
++	/* find the end of msgpacked msg */
++	msglen = find_endflag(buffer, EEPROM_SIZE);
++	if (msglen > 0) {
++		/* set sbuf.data to buffer passed in for msg unpack */
++		sbuf.data = buffer;
++		sbuf.size = msglen;
++		/* msg-unpack and set uboot env variable */
++		unpack_msg(sbuf.data, sbuf.size);
++		sbuf.data = NULL;
++		msgpack_sbuffer_destroy(&sbuf);
++
++		/* json parsed into uboot environment variable */
++		return 0;
++	}
++	return -EAGAIN;
++}
++
+diff --git a/lib/msgpack/unpack.c b/lib/msgpack/unpack.c
+index 9341cb08af82..835acad06277 100644
+--- a/lib/msgpack/unpack.c
++++ b/lib/msgpack/unpack.c
+@@ -148,6 +148,7 @@ static inline int template_callback_int64(unpack_user* u, int64_t d, msgpack_obj
+     }
+ }
+ 
++#if !defined(_KERNEL_MODE)
+ static inline int template_callback_float(unpack_user* u, float d, msgpack_object* o)
+ {
+     MSGPACK_UNUSED(u);
+@@ -163,6 +164,7 @@ static inline int template_callback_double(unpack_user* u, double d, msgpack_obj
+     o->via.f64 = d;
+     return 0;
+ }
++#endif
+ 
+ static inline int template_callback_nil(unpack_user* u, msgpack_object* o)
+ {
+-- 
+2.25.1
+
