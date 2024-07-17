@@ -1,0 +1,116 @@
+From fc895444ccd655885e1e9958124165f40cbf8cb3 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Fri, 1 Dec 2023 11:27:52 +0800
+Subject: [PATCH 09/15] sp2-imx8mp: patch: pwm-bl and panel-lvds: move power
+ off at pwm-bl to panel-lvds for timing, due to hardware design limitation on
+ sp2imx8mp
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/gpu/drm/panel/panel-lvds.c | 20 ++++++++++++--------
+ drivers/video/backlight/pwm_bl.c   | 10 ++++++++--
+ include/linux/pwm_backlight.h      |  1 +
+ 3 files changed, 21 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/gpu/drm/panel/panel-lvds.c b/drivers/gpu/drm/panel/panel-lvds.c
+index daf9b80f6bb27..6d8ec34a38fab 100644
+--- a/drivers/gpu/drm/panel/panel-lvds.c
++++ b/drivers/gpu/drm/panel/panel-lvds.c
+@@ -42,6 +42,7 @@ struct panel_lvds {
+ 
+ 	enum drm_panel_orientation orientation;
+ 
++	bool skip_blpwr_off;
+ 	unsigned int enable_delay;
+ 	unsigned int post_prepare_delay;
+ 	unsigned int pre_disable_delay;
+@@ -81,13 +82,16 @@ static int panel_lvds_prepare(struct drm_panel *panel)
+ 	struct panel_lvds *lvds = to_panel_lvds(panel);
+ 
+ 	if (lvds->supply) {
+-		int err;
+-
+-		err = regulator_enable(lvds->supply);
+-		if (err < 0) {
+-			dev_err(lvds->dev, "failed to enable supply: %d\n",
+-				err);
+-			return err;
++		/* if skip_blpwr_off is set, then don't enable supply. Leave it for blpwm to enable.
++		   NOTE: supply regulator must be the same regulator as the blpwm power-supply */
++		if (!lvds->skip_blpwr_off) {
++			int err;
++			err = regulator_enable(lvds->supply);
++			if (err < 0) {
++				dev_err(lvds->dev, "failed to enable supply: %d\n",
++					err);
++				return err;
++			}
+ 		}
+ 	}
+ 
+@@ -197,7 +201,7 @@ static int panel_lvds_parse_dt(struct panel_lvds *lvds)
+ 	lvds->post_unprepare_delay = 0;
+ 	of_property_read_u32(np, "post-unprepare-delay-ms",
+ 			     &lvds->post_unprepare_delay);
+-
++	lvds->skip_blpwr_off = of_property_read_bool(np, "skip-blpwr-off");
+ 
+ 	return 0;
+ }
+diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+index 14c1cb5d62622..bbc095dc447b2 100644
+--- a/drivers/video/backlight/pwm_bl.c
++++ b/drivers/video/backlight/pwm_bl.c
+@@ -32,6 +32,7 @@ struct pwm_bl_data {
+ 	unsigned int		post_pwm_on_delay;
+ 	unsigned int		pwm_off_delay;
+ 	unsigned int		post_pwm_off_delay;
++	bool			skip_blpwr_off;
+ 	int			(*notify)(struct device *,
+ 					  int brightness);
+ 	void			(*notify_after)(struct device *,
+@@ -75,8 +76,11 @@ static void pwm_backlight_power_off(struct pwm_bl_data *pb)
+ 	if (pb->pwm_off_delay)
+ 		msleep(pb->pwm_off_delay);
+ 
+-	if (pb->power_supply)
+-		regulator_disable(pb->power_supply);
++	if (!pb->skip_blpwr_off)
++	/* if skip_blpwr_off is set, then don't disable supply. Leave it for lvds-panel to disable.
++	   NOTE: this supply regulator must be set to the lvds0-panel */
++		if (pb->power_supply)
++			regulator_disable(pb->power_supply);
+ 	pb->enabled = false;
+ 
+ 	if (pb->post_pwm_off_delay)
+@@ -280,6 +284,7 @@ static int pwm_backlight_parse_dt(struct device *dev,
+ 	of_property_read_u32(node, "pwm-off-delay-ms", &data->pwm_off_delay);
+ 	of_property_read_u32(node, "post-pwm-off-delay-ms",
+ 			     &data->post_pwm_off_delay);
++	data->skip_blpwr_off = of_property_read_bool(node, "skip-blpwr-off");
+ 
+ 	/*
+ 	 * Determine the number of brightness levels, if this property is not
+@@ -520,6 +525,7 @@ static int pwm_backlight_probe(struct platform_device *pdev)
+ 	pb->post_pwm_on_delay = data->post_pwm_on_delay;
+ 	pb->pwm_off_delay = data->pwm_off_delay;
+ 	pb->post_pwm_off_delay = data->post_pwm_off_delay;
++	pb->skip_blpwr_off = data->skip_blpwr_off;
+ 	strcpy(pb->fb_id, data->fb_id);
+ 
+ 	pb->enable_gpio = devm_gpiod_get_optional(&pdev->dev, "enable",
+diff --git a/include/linux/pwm_backlight.h b/include/linux/pwm_backlight.h
+index 6f14218bfb924..6cf772d8b48a5 100644
+--- a/include/linux/pwm_backlight.h
++++ b/include/linux/pwm_backlight.h
+@@ -17,6 +17,7 @@ struct platform_pwm_backlight_data {
+ 	unsigned int post_pwm_on_delay;
+ 	unsigned int pwm_off_delay;
+ 	unsigned int post_pwm_off_delay;
++	bool skip_blpwr_off;
+ 	int (*init)(struct device *dev);
+ 	int (*notify)(struct device *dev, int brightness);
+ 	void (*notify_after)(struct device *dev, int brightness);
+-- 
+2.25.1
+

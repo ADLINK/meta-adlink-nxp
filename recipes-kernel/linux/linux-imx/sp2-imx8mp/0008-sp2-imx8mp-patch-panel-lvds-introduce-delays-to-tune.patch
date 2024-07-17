@@ -1,0 +1,105 @@
+From 17665f0657f1eee19b13c4f142e8b2867a0b1e87 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Tue, 28 Nov 2023 17:02:42 +0800
+Subject: [PATCH 08/15] sp2-imx8mp: patch: panel-lvds: introduce delays to tune
+ lvds panel timing
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/gpu/drm/panel/panel-lvds.c | 43 ++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+diff --git a/drivers/gpu/drm/panel/panel-lvds.c b/drivers/gpu/drm/panel/panel-lvds.c
+index 1b8e3156914c1..daf9b80f6bb27 100644
+--- a/drivers/gpu/drm/panel/panel-lvds.c
++++ b/drivers/gpu/drm/panel/panel-lvds.c
+@@ -8,6 +8,7 @@
+  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+  */
+ 
++#include <linux/delay.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+@@ -40,6 +41,12 @@ struct panel_lvds {
+ 	struct gpio_desc *reset_gpio;
+ 
+ 	enum drm_panel_orientation orientation;
++
++	unsigned int enable_delay;
++	unsigned int post_prepare_delay;
++	unsigned int pre_disable_delay;
++	unsigned int disable_delay;
++	unsigned int post_unprepare_delay;
+ };
+ 
+ static inline struct panel_lvds *to_panel_lvds(struct drm_panel *panel)
+@@ -51,12 +58,21 @@ static int panel_lvds_unprepare(struct drm_panel *panel)
+ {
+ 	struct panel_lvds *lvds = to_panel_lvds(panel);
+ 
++	if (lvds->pre_disable_delay)
++		msleep(lvds->pre_disable_delay);
++
+ 	if (lvds->enable_gpio)
+ 		gpiod_set_value_cansleep(lvds->enable_gpio, 0);
+ 
++	if (lvds->disable_delay)
++		msleep(lvds->disable_delay);
++
+ 	if (lvds->supply)
+ 		regulator_disable(lvds->supply);
+ 
++	if (lvds->post_unprepare_delay)
++		msleep(lvds->post_unprepare_delay);
++
+ 	return 0;
+ }
+ 
+@@ -75,9 +91,15 @@ static int panel_lvds_prepare(struct drm_panel *panel)
+ 		}
+ 	}
+ 
++	if (lvds->enable_delay)
++		msleep(lvds->enable_delay);
++
+ 	if (lvds->enable_gpio)
+ 		gpiod_set_value_cansleep(lvds->enable_gpio, 1);
+ 
++	if (lvds->post_prepare_delay)
++		msleep(lvds->post_prepare_delay);
++
+ 	return 0;
+ }
+ 
+@@ -156,6 +178,27 @@ static int panel_lvds_parse_dt(struct panel_lvds *lvds)
+ 			   DRM_BUS_FLAG_DATA_LSB_TO_MSB :
+ 			   DRM_BUS_FLAG_DATA_MSB_TO_LSB;
+ 
++	/*
++	 * These values are optional and set as 0 by default, the out values
++	 * are modified only if a valid u32 value can be decoded.
++	 */
++	lvds->enable_delay = 0;
++	of_property_read_u32(np, "enable-delay-ms",
++			     &lvds->enable_delay);
++	lvds->post_prepare_delay = 0;
++	of_property_read_u32(np, "post-prepare-delay-ms",
++			     &lvds->post_prepare_delay);
++	lvds->pre_disable_delay = 0;
++	of_property_read_u32(np, "pre-disable-delay-ms",
++			     &lvds->pre_disable_delay);
++	lvds->disable_delay = 0;
++	of_property_read_u32(np, "disable-delay-ms",
++			     &lvds->disable_delay);
++	lvds->post_unprepare_delay = 0;
++	of_property_read_u32(np, "post-unprepare-delay-ms",
++			     &lvds->post_unprepare_delay);
++
++
+ 	return 0;
+ }
+ 
+-- 
+2.25.1
+
