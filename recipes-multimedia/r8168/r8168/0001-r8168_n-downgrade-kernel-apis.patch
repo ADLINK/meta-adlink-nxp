@@ -1,14 +1,14 @@
-From cc1ae9f88caa6b842bbd68e1064c230336c605dc Mon Sep 17 00:00:00 2001
+From 0075c40a903a95b806c3d4516397c8af607d17ea Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
-Date: Wed, 3 Apr 2024 16:58:23 +0530
-Subject: [PATCH] test
+Date: Fri, 19 Jul 2024 18:15:58 +0530
+Subject: [PATCH] r8168_n-downgrade-kernel-apis
 
 ---
- r8168_n.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ r8168_n.c | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
 
 diff --git a/r8168_n.c b/r8168_n.c
-index e9c0363..77f11c0 100755
+index e9c0363..11e5930 100755
 --- a/r8168_n.c
 +++ b/r8168_n.c
 @@ -3715,7 +3715,7 @@ static void rtl8168_mac_loopback_test(struct rtl8168_private *tp)
@@ -62,6 +62,35 @@ index e9c0363..77f11c0 100755
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
                          dev->gso_max_segs = NIC_MAX_PHYS_BUF_COUNT_LSO2;
  #if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
+@@ -29020,7 +29020,7 @@ static void r8168_csum_workaround(struct rtl8168_private *tp,
+                 struct sk_buff *segs, *nskb;
+ 
+                 features &= ~(NETIF_F_SG | NETIF_F_IPV6_CSUM | NETIF_F_TSO6);
+-                segs = skb_gso_segment(skb, features);
++     /*         segs = skb_gso_segment(skb, features);
+                 if (IS_ERR(segs) || !segs)
+                         goto drop;
+ 
+@@ -29030,7 +29030,7 @@ static void r8168_csum_workaround(struct rtl8168_private *tp,
+                         nskb->next = NULL;
+                         rtl8168_start_xmit(nskb, tp->dev);
+                 } while (segs);
+-
++	*/
+                 dev_consume_skb_any(skb);
+         } else if (skb->ip_summed == CHECKSUM_PARTIAL) {
+                 if (skb_checksum_help(skb) < 0)
+@@ -29150,8 +29150,8 @@ rtl8168_start_xmit(struct sk_buff *skb,
+                                 case __constant_htons(ETH_P_IPV6):
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)
+                                         if (msdn_giant_send_check(skb)) {
+-                                                spin_unlock_irqrestore(&tp->lock, flags);
+-                                                r8168_csum_workaround(tp, skb);
++                                                //spin_unlock_irqrestore(&tp->lock, flags);
++                                                //r8168_csum_workaround(tp, skb);
+                                                 goto out;
+                                         }
+ #endif
 -- 
 2.43.2
 

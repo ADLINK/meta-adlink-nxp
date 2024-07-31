@@ -1,7 +1,7 @@
-From 04b7846a34e5e4cc1a6a70665272bba5bb9be5f9 Mon Sep 17 00:00:00 2001
+From 815297465b838ed5ef58fd43d90a12ad6668858c Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
-Date: Wed, 27 Mar 2024 17:17:26 +0530
-Subject: [PATCH] add-pde-and-module-build
+Date: Mon, 29 Jul 2024 13:16:52 +0530
+Subject: [PATCH] Add-pde-and-module-build-support
 
 ---
  bt/bt_proc.c | 6 +++---
