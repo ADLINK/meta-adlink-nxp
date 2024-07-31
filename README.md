@@ -15,17 +15,19 @@ You can follow the same steps to build your own customized BSP based on your int
 
 # 2. Available Branches
 
-1. [Mickledore](https://github.com/ADLINK/meta-adlink-nxp/tree/mickledore)
+1. [scarthgap](https://github.com/ADLINK/meta-adlink-nxp/tree/scarthgap)
 
-2. [Kirkstone](https://github.com/ADLINK/meta-adlink-nxp/tree/kirkstone)
+2. [Mickledore](https://github.com/ADLINK/meta-adlink-nxp/tree/mickledore)
 
-3. [Hardkott](https://github.com/ADLINK/meta-adlink-nxp/tree/hardknott)
+3. [Kirkstone](https://github.com/ADLINK/meta-adlink-nxp/tree/kirkstone)
 
-4. [Zeus](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus)
+4. [Hardkott](https://github.com/ADLINK/meta-adlink-nxp/tree/hardknott)
 
-5. [Sumo](https://github.com/ADLINK/meta-adlink-nxp/tree/sumo)
+5. [Zeus](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus)
 
-6. [Warrior](https://github.com/ADLINK/meta-adlink-nxp/tree/warrior)
+6. [Sumo](https://github.com/ADLINK/meta-adlink-nxp/tree/sumo)
+
+7. [Warrior](https://github.com/ADLINK/meta-adlink-nxp/tree/warrior)
 
 # 3. Adlink Supported Patches
 
