@@ -1,13 +1,14 @@
-From d5d8fc95b8dc5f5d00079f4f0f8d110776a2b6c6 Mon Sep 17 00:00:00 2001
-From: Dinesh V <dinesh.v@adlinktech.com>
-Date: Wed, 13 Sep 2023 16:48:58 +0530
-Subject: [PATCH] Added-kernel-version-5.13.19-support.patch
+From 4f5477029ae86bf8f50bd5892d751208fda7ce23 Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Mon, 29 Jul 2024 13:41:39 +0530
+Subject: [PATCH] Added-kernel-version-update-support
 
 ---
  bt/bt_init.c    | 32 ++++++++++----------------------
+ bt/bt_main.c    |  2 +-
  bt/bt_sdiommc.c | 16 ++++++----------
- bt/mbt_char.c   | 29 ++++++++++++++++++++---------
- 3 files changed, 36 insertions(+), 41 deletions(-)
+ bt/mbt_char.c   | 42 ++++++++++++++++++++++++++++++++----------
+ 4 files changed, 49 insertions(+), 43 deletions(-)
  mode change 100755 => 100644 bt/bt_init.c
  mode change 100755 => 100644 bt/bt_sdiommc.c
  mode change 100755 => 100644 bt/mbt_char.c
@@ -78,6 +79,19 @@ index cf9bfc4..3a1c667
  		if (ret < 0) {
  			PRINTM(FATAL,
  			       "BT: bt_cal_config_ext() failed, error code = %#x cal_file=%s\n",
+diff --git a/bt/bt_main.c b/bt/bt_main.c
+index 1778ea1..7ad0a69 100755
+--- a/bt/bt_main.c
++++ b/bt/bt_main.c
+@@ -3587,7 +3587,7 @@ bt_init_module(void)
+ 	bt_root_proc_init();
+ 
+ 	/** create char device class */
+-	chardev_class = class_create(THIS_MODULE, MODULE_NAME);
++	chardev_class = class_create(MODULE_NAME);
+ 	if (IS_ERR(chardev_class)) {
+ 		PRINTM(ERROR, "Unable to allocate class\n");
+ 		bt_root_proc_remove();
 diff --git a/bt/bt_sdiommc.c b/bt/bt_sdiommc.c
 old mode 100755
 new mode 100644
@@ -116,18 +130,51 @@ index 0aef1f3..2f56aed
 diff --git a/bt/mbt_char.c b/bt/mbt_char.c
 old mode 100755
 new mode 100644
-index 2f64382..4462fe5
+index 2f64382..0ba5930
 --- a/bt/mbt_char.c
 +++ b/bt/mbt_char.c
-@@ -96,6 +96,7 @@ mbtchar_chmod(char *name, mode_t mode)
+@@ -28,6 +28,11 @@
+ #include <linux/sched/signal.h>
+ #endif
+ #include "mbt_char.h"
++#include <linux/cred.h>
++#include <linux/fs.h>
++#include <linux/mnt_idmapping.h>
++#include <linux/slab.h>
++#include <linux/user_namespace.h>
+ 
+ #ifndef MIN
+ /** Find minimum value */
+@@ -80,6 +85,10 @@ chardev_put(struct char_dev *dev)
+ 			bt_priv_put(m_dev->driver_data);
+ 	}
+ }
++struct mnt_idmap {
++	struct user_namespace *owner;
++	refcount_t count;
++};
+ 
+ /**
+  *	@brief Changes permissions of the dev
+@@ -96,6 +105,8 @@ mbtchar_chmod(char *name, mode_t mode)
  	struct iattr newattrs;
  	int ret;
  	int retrycount = 0;
++	struct mnt_idmap *idmap;
 +struct user_namespace *mnt_userns;
  
  	ENTER();
  	do {
-@@ -120,15 +121,21 @@ mbtchar_chmod(char *name, mode_t mode)
+@@ -109,7 +120,7 @@ mbtchar_chmod(char *name, mode_t mode)
+ 		}
+ 	} while (ret);
+ 	inode = path.dentry->d_inode;
+-
++	
+ 	ret = mnt_want_write(path.mnt);
+ 	if (ret)
+ 		goto out_unlock;
+@@ -120,15 +131,21 @@ mbtchar_chmod(char *name, mode_t mode)
  #endif
  	newattrs.ia_mode = (mode & S_IALLUGO) | (inode->i_mode & ~S_IALLUGO);
  	newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
@@ -135,7 +182,7 @@ index 2f64382..4462fe5
  	if (inode->i_op->setattr)
 -		ret = inode->i_op->setattr(path.dentry, &newattrs);
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 19)	
-+		ret = inode->i_op->setattr(mnt_userns,path.dentry, &newattrs);
++		ret = inode->i_op->setattr(idmap,path.dentry, &newattrs);
 +#else
 +		ret = inode->i_op->setattr(path.dentry, &newattrs);	
 +#endif			
@@ -143,7 +190,7 @@ index 2f64382..4462fe5
 -#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
 -		ret = simple_setattr(path.dentry, &newattrs);
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 19)	
-+		ret = simple_setattr(mnt_userns,path.dentry, &newattrs);
++		ret = simple_setattr(idmap,path.dentry, &newattrs);
  #else
 -		ret = inode_setattr(inode, &newattrs);
 +		ret = simple_setattr(path.dentry, &newattrs);
@@ -153,22 +200,23 @@ index 2f64382..4462fe5
  #if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
  	mutex_unlock(&inode->i_mutex);
  #else
-@@ -161,7 +168,7 @@ mbtchar_chown(char *name, uid_t user, gid_t group)
+@@ -161,7 +178,8 @@ mbtchar_chown(char *name, uid_t user, gid_t group)
  	struct iattr newattrs;
  	int ret = 0;
  	int retrycount = 0;
 -
++	struct mnt_idmap *idmap;
 +struct user_namespace *mnt_userns;
  	ENTER();
  	do {
  		os_sched_timeout(30);
-@@ -203,12 +210,16 @@ mbtchar_chown(char *name, uid_t user, gid_t group)
+@@ -203,12 +221,16 @@ mbtchar_chown(char *name, uid_t user, gid_t group)
  		newattrs.ia_valid |=
  			ATTR_KILL_SUID | ATTR_KILL_SGID | ATTR_KILL_PRIV;
  	if (inode->i_op->setattr)
 -		ret = inode->i_op->setattr(path.dentry, &newattrs);
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 19)	
-+		ret = inode->i_op->setattr(mnt_userns,path.dentry, &newattrs);
++		ret = inode->i_op->setattr(idmap,path.dentry, &newattrs);
 +#else
 +		ret = inode->i_op->setattr(path.dentry, &newattrs);	
 +#endif		
@@ -176,7 +224,7 @@ index 2f64382..4462fe5
 -#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
 -		ret = simple_setattr(path.dentry, &newattrs);
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 13, 19)	
-+		ret = simple_setattr(mnt_userns,path.dentry, &newattrs);
++		ret = simple_setattr(idmap,path.dentry, &newattrs);
  #else
 -		ret = inode_setattr(inode, &newattrs);
 +		ret = simple_setattr(path.dentry, &newattrs);
@@ -184,5 +232,5 @@ index 2f64382..4462fe5
  
  #if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
 -- 
-2.25.1
+2.43.2
 

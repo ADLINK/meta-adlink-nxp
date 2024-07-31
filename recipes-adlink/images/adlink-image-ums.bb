@@ -33,6 +33,6 @@ IMAGE_ROOTFS_SIZE = "0"
 IMAGE_ROOTFS_EXTRA_SPACE = "0"
 IMAGE_OVERHEAD_FACTOR = "1.0"
 
-RDEPENDS_${PN} += "bash"
+RDEPENDS:${PN} += "bash"
 DEPENDS += "e2fsprogs-native dosfstools-native mtools-native parted-native"
 do_image_wic[depends] = "u-boot-script:do_install"

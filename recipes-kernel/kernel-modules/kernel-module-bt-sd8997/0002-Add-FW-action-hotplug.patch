@@ -1,7 +1,7 @@
-From 548c26fc617f5863608ac21a649c9d2c4a652f79 Mon Sep 17 00:00:00 2001
+From 909f198be31f5412b5c945fbc47ddd84e522656d Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
-Date: Wed, 27 Mar 2024 14:27:24 +0530
-Subject: [PATCH] add-fw-action-hotplug
+Date: Mon, 29 Jul 2024 13:15:53 +0530
+Subject: [PATCH] Add-FW-action-hotplug
 
 ---
  bt/bt_drv.h | 2 +-

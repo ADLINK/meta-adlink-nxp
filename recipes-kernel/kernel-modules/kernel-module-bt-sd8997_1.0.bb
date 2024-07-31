@@ -13,9 +13,9 @@ SRC_URI:append:lec-imx8mp = " \
   file://0001-fix-break-due-to-change-in-timestructs-procops.patch \
 "
 SRC_URI:append:lec-imx8mm = " \
-  file://0001-Added-kernel-version-5.13.19-support.patch \
-  file://0001-add-fw-action-hotplug.patch \
-  file://0001-add-pde-and-module-build.patch \
+  file://0001-Added-kernel-version-update-support.patch \
+  file://0002-Add-FW-action-hotplug.patch \
+  file://0003-Add-pde-and-module-build-support.patch \
 "
 
 
