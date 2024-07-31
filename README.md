@@ -1,6 +1,6 @@
 # Scarthgap
 
-- Kernel version: 6.6.y
+- Kernel version: 6.6.23
 - Released year: 2024
 - Kernel support by Adlink(continuing).
 - Manifest of the Yocto BSP is [here](https://github.com/ADLINK/adlink-manifest).
@@ -62,8 +62,6 @@
 | I2C                                        | Y       |
 | GPIO                                       | Y       |
 | SDIO                                       | Y       |
-
-
 
 ### 3.2 LEC-IMX8MM (based on I-Pi SMARC carrier + LEC-IMX8MM Dev Kit)
 

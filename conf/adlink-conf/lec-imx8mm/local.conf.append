@@ -13,14 +13,27 @@ IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE I
 DISTRO_FEATURES:append = " sensors benchmarks adlink wifi meta-virtualization"
 MACHINE_FEATURES:append = " wifi bluetooth"
 
-IMAGE_INSTALL:append = " r8168 test-tools kernel-module-nxp-wlan docker-ce python3-docker-compose"
+IMAGE_INSTALL:append = " r8168 test-tools kernel-module-nxp-wlan v4l2"
 
 RELEASE_VERSION ?= "LEC-iMX8MM-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
 MACHINE_FEATURES:remove = "optee"
 DISTRO_FEATURES:remove = "optee"
 IMAGE_INSTALL:remove = "optee-test optee-os optee-client optee-examples "
 
-#mask go based package,to resolve docker local-host connective issue
-BBMASK = "poky/meta/recipes-devtools/go"
-BBMASK += "meta-virtualization/recipes-containers/containerd/containerd-opencontainers_git.bb"
+
+BBMASK = "meta-freescale/recipes-multimedia/gstreamer/"
+
+#Enable opencv based packages
+
+EXTRA_IMAGE_FEATURES = " dev-pkgs debug-tweaks tools-debug tools-sdk ssh-server-openssh"
+IMAGE_INSTALL:append = " net-tools iputils dhcpcd"
+IMAGE_INSTALL:append = " which gzip"
+IMAGE_INSTALL:append = " wget cmake git zlib patchelf"
+IMAGE_INSTALL:append = " nano grep vim tmux swig tar unzip"
+IMAGE_INSTALL:append = " parted e2fsprogs e2fsprogs-resize2fs"
+IMAGE_INSTALL:append = " opencv "
+IMAGE_INSTALL:append = " arm-compute-library tensorflow-lite onnxruntime"
+
+
+
 

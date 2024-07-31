@@ -10,7 +10,7 @@ MACHINE_EXTRA_RRECOMMENDS:remove = "kernel-module-nxp89xx"
 DISTRO_FEATURES:append = " sensors benchmarks adlink wifi"
 MACHINE_FEATURES:append = " wifi bluetooth"
 IMAGE_FEATURES:append = " ssh-server-openssh"
-IMAGE_INSTALL:append = " sema cinematicexperience-rhi docker"
+IMAGE_INSTALL:append = " sema cinematicexperience-rhi"
 
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
@@ -25,9 +25,8 @@ IMAGE_INSTALL:append = " tpm2-tools tpm2-tss tpm2-abrmd"
 
 DISTRO_FEATURES:append = " meta-virtualization"
 
-IMAGE_INSTALL:append = " docker-ce python3-docker-compose"
+IMAGE_INSTALL:append = " docker-moby docker docker-moby-contrib"
 
-#mask go based package,to resolve docker local-host connective issue 
-BBMASK = "poky/meta/recipes-devtools/go"
-BBMASK += "meta-virtualization/recipes-containers/containerd/containerd-opencontainers_git.bb"
+IMAGE_INSTALL:append = " tensorflow-lite"
 
+BBMASK ="meta-freescale/recipes-multimedia/gstreamer/"
