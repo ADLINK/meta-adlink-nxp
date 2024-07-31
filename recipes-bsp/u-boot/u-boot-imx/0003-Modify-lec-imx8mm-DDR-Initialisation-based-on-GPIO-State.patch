@@ -1,18 +1,18 @@
-From b63901badcf5e39bd1736bd8b00257d914d2c255 Mon Sep 17 00:00:00 2001
+From c6ec2047859e20377b9e19053abf7898cce082bc Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
-Date: Mon, 11 Mar 2024 18:40:35 +0530
+Date: Mon, 15 Jul 2024 15:25:18 +0530
 Subject: [PATCH] DDR-Initialisation-based-on-GPIO-State
 
 ---
- arch/arm/mach-imx/imx8m/soc.c | 59 ++++++++++++++++++++++++++++++++---
- common/board_info.c           | 20 +++++++++++-
- 2 files changed, 74 insertions(+), 5 deletions(-)
+ arch/arm/mach-imx/imx8m/soc.c | 59 +++++++++++++++++++++++++++++++++--
+ common/board_info.c           | 24 +++++++++++++-
+ 2 files changed, 79 insertions(+), 4 deletions(-)
 
 diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
-index 88e66d2709..18ca89a293 100644
+index c3282ccc213..96186b034f5 100644
 --- a/arch/arm/mach-imx/imx8m/soc.c
 +++ b/arch/arm/mach-imx/imx8m/soc.c
-@@ -48,6 +48,23 @@ struct imx_sec_config_fuse_t const imx_sec_config_fuse = {
+@@ -50,6 +50,23 @@ struct imx_sec_config_fuse_t const imx_sec_config_fuse = {
  };
  #endif
  
@@ -36,7 +36,7 @@ index 88e66d2709..18ca89a293 100644
  int timer_init(void)
  {
  #ifdef CONFIG_SPL_BUILD
-@@ -199,9 +216,27 @@ static unsigned int imx8m_find_dram_entry_in_mem_map(void)
+@@ -201,9 +218,27 @@ static unsigned int imx8m_find_dram_entry_in_mem_map(void)
  {
  	int i;
  
@@ -67,11 +67,10 @@ index 88e66d2709..18ca89a293 100644
  
  	hang();	/* Entry not found, this must never happen. */
  }
-@@ -241,11 +276,27 @@ __weak int board_phys_sdram_size(phys_size_t *size)
- {
+@@ -244,10 +279,28 @@ __weak int board_phys_sdram_size(phys_size_t *size)
  	if (!size)
  		return -EINVAL;
--
+ 
 +#if 0
  	*size = PHYS_SDRAM_SIZE;
  
@@ -93,27 +92,30 @@ index 88e66d2709..18ca89a293 100644
 +                       *size = 0x20000000;
 +                       break;
 +       }
++
  #endif
  	return 0;
  }
 diff --git a/common/board_info.c b/common/board_info.c
-index e0f2d93922..3f8ea68284 100644
+index f4c385add90..5270e464209 100644
 --- a/common/board_info.c
 +++ b/common/board_info.c
-@@ -28,7 +28,7 @@ int __weak show_board_info(void)
- 		const char *model;
- 		char str[80];
+@@ -63,6 +63,7 @@ int show_board_info(void)
+ 	if (IS_ENABLED(CONFIG_OF_CONTROL)) {
  		int ret = -ENOSYS;
--
-+#if 0
- 		if (IS_ENABLED(CONFIG_SYSINFO)) {
- 			/* This might provide more detail */
- 			ret = sysinfo_get(&dev);
-@@ -47,6 +47,24 @@ int __weak show_board_info(void)
+ 
++#if 0 
+ 		if (IS_ENABLED(CONFIG_SYSINFO))
+ 			ret = try_sysinfo();
+ 
+@@ -71,9 +72,30 @@ int show_board_info(void)
+ 			const char *model;
+ 
  			model = fdt_getprop(gd->fdt_blob, 0, "model", NULL);
- 		else
- 			model = str;
++		}
 +#else
++       const char *model;
++
 +       switch (get_dram_sku()){
 +               case 3: //4GB
 +                       model = "ADLINK lec-imx8mm LPDDR4 4GB SOM";
@@ -131,9 +133,13 @@ index e0f2d93922..3f8ea68284 100644
 +                       model = "Can not got dram sku";
 +       }
 +#endif
++
+ 			if (model)
+ 				printf("Model: %s\n", model);
+-		}
+ 	}
  
- 		if (model)
- 			printf("Model: %s\n", model);
+ 	return checkboard();
 -- 
 2.43.2
 

@@ -1,6 +1,6 @@
-From 137c61464fa9422d89d3eb0b53977940fb179baf Mon Sep 17 00:00:00 2001
+From cdb8e4895be2d496f005380e2cdb913f360c46d7 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
-Date: Tue, 19 Mar 2024 17:15:04 +0530
+Date: Mon, 15 Jul 2024 15:34:24 +0530
 Subject: [PATCH] Added-lec-imx8mm-board-support
 
 ---
@@ -38,7 +38,7 @@ Subject: [PATCH] Added-lec-imx8mm-board-support
 
 diff --git a/board/adlink/common/Kconfig b/board/adlink/common/Kconfig
 new file mode 100755
-index 0000000000..3be92e984e
+index 00000000000..3be92e984e0
 --- /dev/null
 +++ b/board/adlink/common/Kconfig
 @@ -0,0 +1,28 @@
@@ -72,7 +72,7 @@ index 0000000000..3be92e984e
 +	  Enable USB type-c port controller (TCPC) driver
 diff --git a/board/adlink/common/Makefile b/board/adlink/common/Makefile
 new file mode 100755
-index 0000000000..9f86829c45
+index 00000000000..9f86829c45f
 --- /dev/null
 +++ b/board/adlink/common/Makefile
 @@ -0,0 +1,25 @@
@@ -103,7 +103,7 @@ index 0000000000..9f86829c45
 +endif
 diff --git a/board/adlink/common/mmc.c b/board/adlink/common/mmc.c
 new file mode 100755
-index 0000000000..ab1652d697
+index 00000000000..ab1652d6972
 --- /dev/null
 +++ b/board/adlink/common/mmc.c
 @@ -0,0 +1,51 @@
@@ -160,7 +160,7 @@ index 0000000000..ab1652d697
 +}
 diff --git a/board/adlink/common/tcpc.c b/board/adlink/common/tcpc.c
 new file mode 100755
-index 0000000000..f7d6ea66d3
+index 00000000000..f7d6ea66d3b
 --- /dev/null
 +++ b/board/adlink/common/tcpc.c
 @@ -0,0 +1,1036 @@
@@ -1202,7 +1202,7 @@ index 0000000000..f7d6ea66d3
 +}
 diff --git a/board/adlink/common/tcpc.h b/board/adlink/common/tcpc.h
 new file mode 100755
-index 0000000000..ff749518a8
+index 00000000000..ff749518a8b
 --- /dev/null
 +++ b/board/adlink/common/tcpc.h
 @@ -0,0 +1,469 @@
@@ -1677,7 +1677,7 @@ index 0000000000..ff749518a8
 +#endif /* __TCPCI_H */
 diff --git a/board/adlink/lec-imx8mm/Kconfig b/board/adlink/lec-imx8mm/Kconfig
 new file mode 100755
-index 0000000000..346e73a596
+index 00000000000..346e73a5962
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/Kconfig
 @@ -0,0 +1,14 @@
@@ -1697,7 +1697,7 @@ index 0000000000..346e73a596
 +endif
 diff --git a/board/adlink/lec-imx8mm/Makefile b/board/adlink/lec-imx8mm/Makefile
 new file mode 100755
-index 0000000000..9a97076061
+index 00000000000..9a970760615
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/Makefile
 @@ -0,0 +1,15 @@
@@ -1718,7 +1718,7 @@ index 0000000000..9a97076061
 +endif
 diff --git a/board/adlink/lec-imx8mm/lec-imx8mm.c b/board/adlink/lec-imx8mm/lec-imx8mm.c
 new file mode 100755
-index 0000000000..27c7c104e8
+index 00000000000..27c7c104e8a
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/lec-imx8mm.c
 @@ -0,0 +1,185 @@
@@ -1909,7 +1909,7 @@ index 0000000000..27c7c104e8
 +#endif /* CONFIG_FSL_FASTBOOT */
 diff --git a/board/adlink/lec-imx8mm/lpddr4_timing.h b/board/adlink/lec-imx8mm/lpddr4_timing.h
 new file mode 100755
-index 0000000000..d682afefbb
+index 00000000000..d682afefbb9
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/lpddr4_timing.h
 @@ -0,0 +1,14 @@
@@ -1929,7 +1929,7 @@ index 0000000000..d682afefbb
 +#endif /* __LPDDR4_TIMING_H__ */
 diff --git a/board/adlink/lec-imx8mm/lpddr4_timing_MT53E128M32D1ZW-046_WTB_1500MHz.c b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E128M32D1ZW-046_WTB_1500MHz.c
 new file mode 100755
-index 0000000000..b966f92124
+index 00000000000..b966f921241
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E128M32D1ZW-046_WTB_1500MHz.c
 @@ -0,0 +1,1853 @@
@@ -3788,7 +3788,7 @@ index 0000000000..b966f92124
 +
 diff --git a/board/adlink/lec-imx8mm/lpddr4_timing_MT53E1G32D2FW-046_WTB_1500MHz.c b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E1G32D2FW-046_WTB_1500MHz.c
 new file mode 100755
-index 0000000000..01aa67999d
+index 00000000000..01aa67999dc
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E1G32D2FW-046_WTB_1500MHz.c
 @@ -0,0 +1,1854 @@
@@ -5648,7 +5648,7 @@ index 0000000000..01aa67999d
 +
 diff --git a/board/adlink/lec-imx8mm/lpddr4_timing_MT53E256M32D1ZW-046_WTB_1500MHz.c b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E256M32D1ZW-046_WTB_1500MHz.c
 new file mode 100755
-index 0000000000..3f39031d38
+index 00000000000..3f39031d386
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E256M32D1ZW-046_WTB_1500MHz.c
 @@ -0,0 +1,1853 @@
@@ -7507,7 +7507,7 @@ index 0000000000..3f39031d38
 +
 diff --git a/board/adlink/lec-imx8mm/lpddr4_timing_MT53E512M32D1ZW-046_WTB_1500MHz.c b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E512M32D1ZW-046_WTB_1500MHz.c
 new file mode 100755
-index 0000000000..744f14e9c6
+index 00000000000..744f14e9c61
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/lpddr4_timing_MT53E512M32D1ZW-046_WTB_1500MHz.c
 @@ -0,0 +1,1853 @@
@@ -9366,7 +9366,7 @@ index 0000000000..744f14e9c6
 +
 diff --git a/board/adlink/lec-imx8mm/spl.c b/board/adlink/lec-imx8mm/spl.c
 new file mode 100755
-index 0000000000..0da67288ed
+index 00000000000..1eaccff8676
 --- /dev/null
 +++ b/board/adlink/lec-imx8mm/spl.c
 @@ -0,0 +1,390 @@
@@ -9391,7 +9391,7 @@ index 0000000000..0da67288ed
 +#include <asm/arch/sys_proto.h>
 +#include <asm/mach-imx/boot_mode.h>
 +#include <asm/arch/ddr.h>
-+
++#include <asm-generic/sections.h>
 +#include <power/pmic.h>
 +#ifdef CONFIG_POWER_PCA9450
 +#include <power/pca9450.h>
@@ -9762,7 +9762,7 @@ index 0000000000..0da67288ed
 +}
 diff --git a/include/configs/lec-imx8mm.h b/include/configs/lec-imx8mm.h
 new file mode 100755
-index 0000000000..463ab5a73d
+index 00000000000..463ab5a73d7
 --- /dev/null
 +++ b/include/configs/lec-imx8mm.h
 @@ -0,0 +1,268 @@
@@ -9908,7 +9908,7 @@ index 0000000000..463ab5a73d
 +	"mmcpart=1\0" \
 +	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 +	"mmcautodetect=yes\0" \
-+	"mmcargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} root=${mmcroot}\0 " \
++	"mmcargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} root=${mmcroot} systemd.unified_cgroup_hierarchy=0\0 " \
 +	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bsp_script};\0" \
 +	"bootscript=echo Running bootscript from mmc ...; " \
 +		"source\0" \
