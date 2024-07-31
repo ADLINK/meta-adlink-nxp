@@ -1,18 +1,17 @@
-From cabe9c52411bf79370bf24700bcf701e29a3e5f4 Mon Sep 17 00:00:00 2001
-From: Dinesh V <dinesh.v@adlinktech.com>
-Date: Mon, 28 Aug 2023 11:44:27 +0530
-Subject: [PATCH] Modify UART4 peripherals domain permission to fix kernel
- crash
+From 0682793786cf8141bbb404e49424ce2c22c0d468 Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Wed, 13 Mar 2024 15:17:23 +0530
+Subject: [PATCH] Modify-UART4-peripherals-domain-permission-to-fix-ke
 
 ---
  plat/imx/imx8m/imx8mm/imx8mm_bl31_setup.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/plat/imx/imx8m/imx8mm/imx8mm_bl31_setup.c b/plat/imx/imx8m/imx8mm/imx8mm_bl31_setup.c
-index 8702d5160..5e681f99f 100644
+index b2e9d10ae..a8e2bb6d1 100644
 --- a/plat/imx/imx8m/imx8mm/imx8mm_bl31_setup.c
 +++ b/plat/imx/imx8m/imx8mm/imx8mm_bl31_setup.c
-@@ -108,7 +108,7 @@ static const struct imx_rdc_cfg rdc[] = {
+@@ -116,7 +116,7 @@ static const struct imx_rdc_cfg rdc[] = {
  	RDC_MDAn(RDC_MDA_M4, DID1),
  
  	/* peripherals domain permission */
@@ -22,5 +21,5 @@ index 8702d5160..5e681f99f 100644
  	RDC_PDAPn(RDC_PDAP_UART1, D0R | D0W),
  
 -- 
-2.25.1
+2.43.2
 
