@@ -1,20 +1,20 @@
-From 7f2ec4179135b30100db4f3c36ac467d30de8187 Mon Sep 17 00:00:00 2001
+From e90bcee2e33d7c03a7ceeee0fcaf465bd2ef3230 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
-Date: Wed, 27 Mar 2024 11:28:10 +0530
+Date: Thu, 18 Jul 2024 16:28:39 +0530
 Subject: [PATCH] Added-wm8960-Support
 
 ---
  sound/soc/fsl/Kconfig      |  12 +
  sound/soc/fsl/Makefile     |   3 +
- sound/soc/fsl/imx-wm8960.c | 721 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 736 insertions(+)
+ sound/soc/fsl/imx-wm8960.c | 729 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 744 insertions(+)
  create mode 100755 sound/soc/fsl/imx-wm8960.c
 
 diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
-index 389a48e5c22f..bc25d3f802d9 100644
+index 8d3d2f48aea8..125dbf4c27fc 100644
 --- a/sound/soc/fsl/Kconfig
 +++ b/sound/soc/fsl/Kconfig
-@@ -284,6 +284,18 @@ config SND_SOC_EUKREA_TLV320
+@@ -287,6 +287,18 @@ config SND_SOC_EUKREA_TLV320
  	help
  	  Enable I2S based access to the TLV320AIC23B codec attached
  	  to the SSI interface
@@ -34,7 +34,7 @@ index 389a48e5c22f..bc25d3f802d9 100644
  config SND_SOC_IMX_ES8328
  	tristate "SoC Audio support for i.MX boards with the ES8328 codec"
 diff --git a/sound/soc/fsl/Makefile b/sound/soc/fsl/Makefile
-index cdbc985abda1..53f12d852251 100644
+index cc52e6de7068..3e803265791b 100644
 --- a/sound/soc/fsl/Makefile
 +++ b/sound/soc/fsl/Makefile
 @@ -72,6 +72,7 @@ obj-$(CONFIG_SND_SOC_IMX_HDMI_DMA) += imx-hdmi-dma.o hdmi_pcm.o
@@ -56,10 +56,10 @@ index cdbc985abda1..53f12d852251 100644
  obj-$(CONFIG_SND_SOC_IMX_HDMI) += snd-soc-imx-hdmi.o
 diff --git a/sound/soc/fsl/imx-wm8960.c b/sound/soc/fsl/imx-wm8960.c
 new file mode 100755
-index 000000000000..6e5556ec2d68
+index 000000000000..8f228400d0fd
 --- /dev/null
 +++ b/sound/soc/fsl/imx-wm8960.c
-@@ -0,0 +1,721 @@
+@@ -0,0 +1,729 @@
 +/*
 + * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
 + *
@@ -87,6 +87,16 @@ index 000000000000..6e5556ec2d68
 +#include <linux/mfd/syscon.h>
 +#include "../codecs/wm8960.h"
 +#include "../fsl/fsl_sai.h"
++
++enum of_gpio_flags {
++	OF_GPIO_ACTIVE_LOW = 0x1,
++	OF_GPIO_SINGLE_ENDED = 0x2,
++	OF_GPIO_OPEN_DRAIN = 0x4,
++	OF_GPIO_TRANSITORY = 0x8,
++	OF_GPIO_PULL_UP = 0x10,
++	OF_GPIO_PULL_DOWN = 0x20,
++	OF_GPIO_PULL_DISABLE = 0x40,
++};
 +
 +struct imx_wm8960_data {
 +	enum of_gpio_flags hp_active_low;
@@ -690,13 +700,11 @@ index 000000000000..6e5556ec2d68
 +		goto fail;
 +	}
 +
-+	data->imx_hp_jack_gpio.gpio = of_get_named_gpio_flags(pdev->dev.of_node,
-+							      "hp-det-gpios", 0,
-+							      &data->hp_active_low);
++	data->imx_hp_jack_gpio.gpio = of_get_named_gpio(pdev->dev.of_node,
++							      "hp-det-gpios", 0);
 +
-+	data->imx_mic_jack_gpio.gpio = of_get_named_gpio_flags(pdev->dev.of_node,
-+							       "mic-det-gpios", 0,
-+							       &data->mic_active_low);
++	data->imx_mic_jack_gpio.gpio = of_get_named_gpio(pdev->dev.of_node,
++							       "mic-det-gpios", 0);
 +
 +	if (gpio_is_valid(data->imx_hp_jack_gpio.gpio) &&
 +	    gpio_is_valid(data->imx_mic_jack_gpio.gpio) &&

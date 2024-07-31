@@ -1,0 +1,66 @@
+From 08ccaf2bec024f4211352207ee4df0f02bf265cc Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Mon, 22 Jul 2024 11:57:16 +0530
+Subject: [PATCH] use-buit-in-wifi-bt-firmware-thermal-TJ-point-to-100
+
+---
+ drivers/bluetooth/btmrvl_sdio.c             | 4 ++--
+ drivers/net/wireless/marvell/mwifiex/sdio.h | 7 +++----
+ kernel/dma/mapping.c                        | 2 ++
+ 3 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/bluetooth/btmrvl_sdio.c b/drivers/bluetooth/btmrvl_sdio.c
+index d76c799553aa..0cb093c5056b 100644
+--- a/drivers/bluetooth/btmrvl_sdio.c
++++ b/drivers/bluetooth/btmrvl_sdio.c
+@@ -290,7 +290,7 @@ static const struct btmrvl_sdio_device btmrvl_sdio_sd8987 = {
+ 
+ static const struct btmrvl_sdio_device btmrvl_sdio_sd8997 = {
+ 	.helper         = NULL,
+-	.firmware       = "mrvl/sdsd8997_combo_v4.bin",
++	.firmware       = "nxp/sdsd8997_combo_v4.bin",
+ 	.reg            = &btmrvl_reg_89xx,
+ 	.support_pscan_win_report = true,
+ 	.sd_blksz_fw_dl = 256,
+@@ -1778,4 +1778,4 @@ MODULE_FIRMWARE("mrvl/sd8887_uapsta.bin");
+ MODULE_FIRMWARE("mrvl/sd8897_uapsta.bin");
+ MODULE_FIRMWARE("mrvl/sdsd8977_combo_v2.bin");
+ MODULE_FIRMWARE("mrvl/sd8987_uapsta.bin");
+-MODULE_FIRMWARE("mrvl/sdsd8997_combo_v4.bin");
++MODULE_FIRMWARE("nxp/sdsd8997_combo_v4.bin");
+diff --git a/drivers/net/wireless/marvell/mwifiex/sdio.h b/drivers/net/wireless/marvell/mwifiex/sdio.h
+index a5112cb35cdc..7a3a0f051a31 100644
+--- a/drivers/net/wireless/marvell/mwifiex/sdio.h
++++ b/drivers/net/wireless/marvell/mwifiex/sdio.h
+@@ -24,12 +24,11 @@
+ #define SD8897_DEFAULT_FW_NAME "mrvl/sd8897_uapsta.bin"
+ #define SD8887_DEFAULT_FW_NAME "mrvl/sd8887_uapsta.bin"
+ #define SD8801_DEFAULT_FW_NAME "mrvl/sd8801_uapsta.bin"
+-#define SD8977_DEFAULT_FW_NAME "mrvl/sdsd8977_combo_v2.bin"
++#define SD8977_DEFAULT_FW_NAME "nxp/sdsd8977_combo_v2.bin"
+ #define SD8978_SDIOUART_FW_NAME "mrvl/sdiouartiw416_combo_v0.bin"
+ #define SD8987_DEFAULT_FW_NAME "mrvl/sd8987_uapsta.bin"
+-#define SD8997_DEFAULT_FW_NAME "mrvl/sdsd8997_combo_v4.bin"
+-#define SD8997_SDIOUART_FW_NAME "mrvl/sdiouart8997_combo_v4.bin"
+-
++#define SD8997_DEFAULT_FW_NAME "nxp/sdsd8997_combo_v4.bin"
++#define SD8997_SDIOUART_FW_NAME "nxp/sdsd8997_combo_v4.bin"
+ #define BLOCK_MODE	1
+ #define BYTE_MODE	0
+ 
+diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
+index e323ca48f7f2..f1f20a896b03 100644
+--- a/kernel/dma/mapping.c
++++ b/kernel/dma/mapping.c
+@@ -499,6 +499,8 @@ void *dma_alloc_attrs(struct device *dev, size_t size, dma_addr_t *dma_handle,
+ {
+ 	const struct dma_map_ops *ops = get_dma_ops(dev);
+ 	void *cpu_addr;
++	
++	dma_set_mask_and_coherent(dev,DMA_BIT_MASK(32));
+ 
+ 	WARN_ON_ONCE(!dev->coherent_dma_mask);
+ 
+-- 
+2.43.2
+
