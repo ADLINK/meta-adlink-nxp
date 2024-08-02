@@ -38,7 +38,7 @@
 				status = "okay";
 
 				panel-timing {
-					clock-frequency = <71000000>;
+					clock-frequency = <72400000>;
 					hactive = <1280>;
 					vactive = <800>;
 					hback-porch = <80>;
@@ -47,6 +47,8 @@
 					vfront-porch = <10>;
 					hsync-len = <10>;
 					vsync-len = <3>;
+					de-active = <1>;
+					pixelclk-active = <1>;
 				};
 			};
 		};

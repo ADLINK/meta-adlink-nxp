@@ -51,6 +51,8 @@
 					vfront-porch = <15>;
 					hsync-len = <20>;
 					vsync-len = <5>;
+					de-active = <1>;
+					pixelclk-active = <1>;
 				};
 			};
 		};
