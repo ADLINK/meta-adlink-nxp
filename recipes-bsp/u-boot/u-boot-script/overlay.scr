@@ -14,6 +14,9 @@ if test -n ${E_disp}; then
   fi;
 fi;
 if test -n ${E_eth}; then
+  if test ${E_eth} = 0; then
+    setenv overlays ${overlays} eth1-overlay.dtbo;
+  fi
   if test ${E_eth} = 1; then
     setenv overlays ${overlays} eth0-overlay.dtbo;
   fi
