@@ -23,17 +23,4 @@ IMAGE_INSTALL:remove = "optee-test optee-os optee-client optee-examples "
 
 BBMASK = "meta-freescale/recipes-multimedia/gstreamer/"
 
-#Enable opencv based packages
-
-EXTRA_IMAGE_FEATURES = " dev-pkgs debug-tweaks tools-debug tools-sdk ssh-server-openssh"
-IMAGE_INSTALL:append = " net-tools iputils dhcpcd"
-IMAGE_INSTALL:append = " which gzip"
-IMAGE_INSTALL:append = " wget cmake git zlib patchelf"
-IMAGE_INSTALL:append = " nano grep vim tmux swig tar unzip"
-IMAGE_INSTALL:append = " parted e2fsprogs e2fsprogs-resize2fs"
-IMAGE_INSTALL:append = " opencv "
-IMAGE_INSTALL:append = " arm-compute-library tensorflow-lite onnxruntime"
-
-
-
 
