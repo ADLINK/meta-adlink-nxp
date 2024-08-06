@@ -12,11 +12,11 @@ do_compile() {
 }
 
 do_install() {
-    install -d -m 0755 ${D}/usr${base_bindir}
-    install -m 0755 ${WORKDIR}/v4lcap ${D}/usr${base_bindir}/
+    install -d -m 0755 ${D}${base_bindir}
+    install -m 0755 ${WORKDIR}/v4lcap ${D}${base_bindir}/
 }
 
 do_package_qa() {
 }
 
-FILES_${PN} += " /usr${base_bindir}/v4lcap"
+FILES:${PN} += "${base_bindir}/v4lcap"
