@@ -8,15 +8,13 @@ SRC_URI = "\
 S = "${WORKDIR}"
 
 do_compile() {
-	${CC} ${WORKDIR}/v4lcap_mplane.c -o ${WORKDIR}/v4lcap
+	${CC} ${WORKDIR}/v4lcap_mplane.c ${LDFLAGS} -o ${WORKDIR}/v4lcap
 }
 
 do_install() {
-    install -d -m 0755 ${D}${base_bindir}
-    install -m 0755 ${WORKDIR}/v4lcap ${D}${base_bindir}/
+	install -d ${D}${sbindir}
+	install -m 0755 ${WORKDIR}/v4lcap ${D}${sbindir}/
 }
 
-do_package_qa() {
-}
+FILES:${PN} += "${sbindir}/v4lcap"
 
-FILES:${PN} += "${base_bindir}/v4lcap"
