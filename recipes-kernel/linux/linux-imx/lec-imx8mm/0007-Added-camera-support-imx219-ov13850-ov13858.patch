@@ -1,7 +1,7 @@
-From 287ded1b3f364eb255ffdfec364fa2f2c7e5a368 Mon Sep 17 00:00:00 2001
+From 2f31d39e8231990633aaf258a11a22dc12a2ecf0 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Fri, 19 Jul 2024 17:41:25 +0530
-Subject: [PATCH] Added-camera-support-imx219-ov13850-ov13858
+Subject: [PATCH 07/10] Added-camera-support-imx219-ov13850-ov13858
 
 ---
  drivers/media/i2c/Kconfig                     |   21 +
@@ -18,7 +18,7 @@ Subject: [PATCH] Added-camera-support-imx219-ov13850-ov13858
  create mode 100644 drivers/media/i2c/ov13855.c
 
 diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 70e20b7a5663..80126265678f 100644
+index 70e20b7a56637..80126265678fc 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -291,6 +291,27 @@ config VIDEO_OV08D10
@@ -50,7 +50,7 @@ index 70e20b7a5663..80126265678f 100644
  	tristate "OmniVision OV08X40 sensor support"
  	help
 diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index 9a9ed3f325a4..4b3702784955 100644
+index 9a9ed3f325a42..4b37027849554 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -125,6 +125,8 @@ obj-$(CONFIG_VIDEO_SAA7185) += saa7185.o
@@ -63,7 +63,7 @@ index 9a9ed3f325a4..4b3702784955 100644
  obj-$(CONFIG_VIDEO_TC358743) += tc358743.o
  obj-$(CONFIG_VIDEO_TC358746) += tc358746.o
 diff --git a/drivers/media/i2c/imx219.c b/drivers/media/i2c/imx219.c
-index 3afa3f79c8a2..af68c33a1ff0 100644
+index 3afa3f79c8a26..af68c33a1ff02 100644
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
 @@ -21,13 +21,14 @@
@@ -251,7 +251,7 @@ index 3afa3f79c8a2..af68c33a1ff0 100644
  	 * to be able to read the CHIP_ID register
 diff --git a/drivers/media/i2c/ov13850.c b/drivers/media/i2c/ov13850.c
 new file mode 100644
-index 000000000000..98a48f51496d
+index 0000000000000..98a48f51496d3
 --- /dev/null
 +++ b/drivers/media/i2c/ov13850.c
 @@ -0,0 +1,1939 @@
@@ -2196,7 +2196,7 @@ index 000000000000..98a48f51496d
 +
 diff --git a/drivers/media/i2c/ov13855.c b/drivers/media/i2c/ov13855.c
 new file mode 100644
-index 000000000000..e8899b41569b
+index 0000000000000..e8899b41569bb
 --- /dev/null
 +++ b/drivers/media/i2c/ov13855.c
 @@ -0,0 +1,1320 @@
@@ -3521,7 +3521,7 @@ index 000000000000..e8899b41569b
 +MODULE_LICENSE("GPL v2");
 +
 diff --git a/drivers/media/i2c/ov13858.c b/drivers/media/i2c/ov13858.c
-index 35652b362347..6d4c96a78b91 100644
+index 35652b3623472..6d4c96a78b91a 100644
 --- a/drivers/media/i2c/ov13858.c
 +++ b/drivers/media/i2c/ov13858.c
 @@ -1,14 +1,22 @@
@@ -3747,7 +3747,7 @@ index 35652b362347..6d4c96a78b91 100644
  	.probe = ov13858_probe,
  	.remove = ov13858_remove,
 diff --git a/drivers/media/platform/mxc/capture/mx6s_capture.c b/drivers/media/platform/mxc/capture/mx6s_capture.c
-index 737d251e3912..1262e4f04272 100644
+index 737d251e3912c..1262e4f04272a 100644
 --- a/drivers/media/platform/mxc/capture/mx6s_capture.c
 +++ b/drivers/media/platform/mxc/capture/mx6s_capture.c
 @@ -260,12 +260,54 @@ static struct mx6s_fmt formats[] = {
@@ -3840,7 +3840,7 @@ index 737d251e3912..1262e4f04272 100644
  			pr_debug("   fmt not supported\n");
  			return -EINVAL;
 diff --git a/drivers/media/platform/mxc/capture/mxc_mipi_csi.c b/drivers/media/platform/mxc/capture/mxc_mipi_csi.c
-index 358d91e95442..930fdf670b5a 100644
+index 358d91e954429..930fdf670b5a1 100644
 --- a/drivers/media/platform/mxc/capture/mxc_mipi_csi.c
 +++ b/drivers/media/platform/mxc/capture/mxc_mipi_csi.c
 @@ -313,6 +313,18 @@ static const struct csis_pix_format mipi_csis_formats[] = {
@@ -3886,7 +3886,7 @@ index 358d91e95442..930fdf670b5a 100644
  };
  
 diff --git a/drivers/media/platform/mxc/capture/ov5647_mipi.c b/drivers/media/platform/mxc/capture/ov5647_mipi.c
-index 7869d45a425f..48b9887cfc2d 100644
+index 7869d45a425f4..48b9887cfc2d6 100644
 --- a/drivers/media/platform/mxc/capture/ov5647_mipi.c
 +++ b/drivers/media/platform/mxc/capture/ov5647_mipi.c
 @@ -299,7 +299,7 @@ static struct regulator *gpo_regulator;
@@ -3995,5 +3995,5 @@ index 7869d45a425f..48b9887cfc2d 100644
  
  module_i2c_driver(ov5647_i2c_driver);
 -- 
-2.43.2
+2.25.1
 

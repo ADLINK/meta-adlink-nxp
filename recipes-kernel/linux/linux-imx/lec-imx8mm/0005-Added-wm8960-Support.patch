@@ -1,7 +1,7 @@
-From e90bcee2e33d7c03a7ceeee0fcaf465bd2ef3230 Mon Sep 17 00:00:00 2001
+From 2d5b5595df1aceddd65530b5b162cefb63b7757b Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Thu, 18 Jul 2024 16:28:39 +0530
-Subject: [PATCH] Added-wm8960-Support
+Subject: [PATCH 05/10] Added-wm8960-Support
 
 ---
  sound/soc/fsl/Kconfig      |  12 +
@@ -11,7 +11,7 @@ Subject: [PATCH] Added-wm8960-Support
  create mode 100755 sound/soc/fsl/imx-wm8960.c
 
 diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
-index 8d3d2f48aea8..125dbf4c27fc 100644
+index 8d3d2f48aea85..125dbf4c27fc2 100644
 --- a/sound/soc/fsl/Kconfig
 +++ b/sound/soc/fsl/Kconfig
 @@ -287,6 +287,18 @@ config SND_SOC_EUKREA_TLV320
@@ -34,7 +34,7 @@ index 8d3d2f48aea8..125dbf4c27fc 100644
  config SND_SOC_IMX_ES8328
  	tristate "SoC Audio support for i.MX boards with the ES8328 codec"
 diff --git a/sound/soc/fsl/Makefile b/sound/soc/fsl/Makefile
-index cc52e6de7068..3e803265791b 100644
+index cc52e6de70682..3e803265791b7 100644
 --- a/sound/soc/fsl/Makefile
 +++ b/sound/soc/fsl/Makefile
 @@ -72,6 +72,7 @@ obj-$(CONFIG_SND_SOC_IMX_HDMI_DMA) += imx-hdmi-dma.o hdmi_pcm.o
@@ -56,7 +56,7 @@ index cc52e6de7068..3e803265791b 100644
  obj-$(CONFIG_SND_SOC_IMX_HDMI) += snd-soc-imx-hdmi.o
 diff --git a/sound/soc/fsl/imx-wm8960.c b/sound/soc/fsl/imx-wm8960.c
 new file mode 100755
-index 000000000000..8f228400d0fd
+index 0000000000000..8f228400d0fd7
 --- /dev/null
 +++ b/sound/soc/fsl/imx-wm8960.c
 @@ -0,0 +1,729 @@
@@ -790,5 +790,5 @@ index 000000000000..8f228400d0fd
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:imx-wm8960");
 -- 
-2.43.2
+2.25.1
 

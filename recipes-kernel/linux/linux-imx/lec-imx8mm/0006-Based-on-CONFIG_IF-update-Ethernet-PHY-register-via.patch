@@ -1,14 +1,14 @@
-From 9ceb2b51fec6e76aba63577a00aeeb676185db73 Mon Sep 17 00:00:00 2001
+From ec640d22c06945bd7cd071352bb7fd92ba83ed5f Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Thu, 21 Mar 2024 13:44:26 +0530
-Subject: [PATCH] Based-on-CONFIG_IF-update-Ethernet-PHY-register-via
+Subject: [PATCH 06/10] Based-on-CONFIG_IF-update-Ethernet-PHY-register-via
 
 ---
  drivers/net/phy/davicom.c | 93 ++++++++++++++++++++++++++++++++++++++-
  1 file changed, 91 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/phy/davicom.c b/drivers/net/phy/davicom.c
-index 4ac4bce1bf32..e4e195943b58 100644
+index 4ac4bce1bf323..e4e195943b584 100644
 --- a/drivers/net/phy/davicom.c
 +++ b/drivers/net/phy/davicom.c
 @@ -24,6 +24,7 @@
@@ -133,5 +133,5 @@ index 4ac4bce1bf32..e4e195943b58 100644
  };
  
 -- 
-2.43.2
+2.25.1
 

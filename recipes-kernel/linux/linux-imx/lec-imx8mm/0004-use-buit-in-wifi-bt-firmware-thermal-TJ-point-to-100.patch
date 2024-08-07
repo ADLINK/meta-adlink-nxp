@@ -1,7 +1,7 @@
-From 08ccaf2bec024f4211352207ee4df0f02bf265cc Mon Sep 17 00:00:00 2001
+From 9483e5441ea0ec8ab16e25ec626a87438ca26e01 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Mon, 22 Jul 2024 11:57:16 +0530
-Subject: [PATCH] use-buit-in-wifi-bt-firmware-thermal-TJ-point-to-100
+Subject: [PATCH 04/10] use-buit-in-wifi-bt-firmware-thermal-TJ-point-to-100
 
 ---
  drivers/bluetooth/btmrvl_sdio.c             | 4 ++--
@@ -10,7 +10,7 @@ Subject: [PATCH] use-buit-in-wifi-bt-firmware-thermal-TJ-point-to-100
  3 files changed, 7 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/bluetooth/btmrvl_sdio.c b/drivers/bluetooth/btmrvl_sdio.c
-index d76c799553aa..0cb093c5056b 100644
+index d76c799553aaa..0cb093c5056b8 100644
 --- a/drivers/bluetooth/btmrvl_sdio.c
 +++ b/drivers/bluetooth/btmrvl_sdio.c
 @@ -290,7 +290,7 @@ static const struct btmrvl_sdio_device btmrvl_sdio_sd8987 = {
@@ -29,7 +29,7 @@ index d76c799553aa..0cb093c5056b 100644
 -MODULE_FIRMWARE("mrvl/sdsd8997_combo_v4.bin");
 +MODULE_FIRMWARE("nxp/sdsd8997_combo_v4.bin");
 diff --git a/drivers/net/wireless/marvell/mwifiex/sdio.h b/drivers/net/wireless/marvell/mwifiex/sdio.h
-index a5112cb35cdc..7a3a0f051a31 100644
+index a5112cb35cdcd..7a3a0f051a314 100644
 --- a/drivers/net/wireless/marvell/mwifiex/sdio.h
 +++ b/drivers/net/wireless/marvell/mwifiex/sdio.h
 @@ -24,12 +24,11 @@
@@ -49,7 +49,7 @@ index a5112cb35cdc..7a3a0f051a31 100644
  #define BYTE_MODE	0
  
 diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
-index e323ca48f7f2..f1f20a896b03 100644
+index e323ca48f7f2a..f1f20a896b039 100644
 --- a/kernel/dma/mapping.c
 +++ b/kernel/dma/mapping.c
 @@ -499,6 +499,8 @@ void *dma_alloc_attrs(struct device *dev, size_t size, dma_addr_t *dma_handle,
@@ -62,5 +62,5 @@ index e323ca48f7f2..f1f20a896b03 100644
  	WARN_ON_ONCE(!dev->coherent_dma_mask);
  
 -- 
-2.43.2
+2.25.1
 

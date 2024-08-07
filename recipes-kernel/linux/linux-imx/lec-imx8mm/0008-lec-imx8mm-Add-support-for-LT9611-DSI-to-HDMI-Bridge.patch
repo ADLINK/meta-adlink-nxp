@@ -1,7 +1,7 @@
-From 4aa4616d3f3ced13a879f89526719430586b0689 Mon Sep 17 00:00:00 2001
+From 4e73677ba242dc60f72df121dbd37116097193c8 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Thu, 18 Jul 2024 17:25:28 +0530
-Subject: [PATCH] lec-imx8mm-Add-support-for-LT9611-DSI-to-HDMI-Bridge
+Subject: [PATCH 08/10] lec-imx8mm-Add-support-for-LT9611-DSI-to-HDMI-Bridge
 
 ---
  drivers/gpu/drm/bridge/Kconfig       |   8 +
@@ -12,7 +12,7 @@ Subject: [PATCH] lec-imx8mm-Add-support-for-LT9611-DSI-to-HDMI-Bridge
  create mode 100644 drivers/gpu/drm/bridge/lt9611-i2c.c
 
 diff --git a/drivers/gpu/drm/bridge/Kconfig b/drivers/gpu/drm/bridge/Kconfig
-index f46f7dcb8e87..a0501f0c2f3f 100644
+index f46f7dcb8e875..a0501f0c2f3fe 100644
 --- a/drivers/gpu/drm/bridge/Kconfig
 +++ b/drivers/gpu/drm/bridge/Kconfig
 @@ -145,6 +145,14 @@ config DRM_LONTIUM_LT9611UXC
@@ -31,7 +31,7 @@ index f46f7dcb8e87..a0501f0c2f3f 100644
  	tristate "ITE IT66121 HDMI bridge"
  	depends on OF
 diff --git a/drivers/gpu/drm/bridge/Makefile b/drivers/gpu/drm/bridge/Makefile
-index 4d3a9ec08b25..d383a429fff0 100644
+index 4d3a9ec08b254..d383a429fff03 100644
 --- a/drivers/gpu/drm/bridge/Makefile
 +++ b/drivers/gpu/drm/bridge/Makefile
 @@ -9,6 +9,7 @@ obj-$(CONFIG_DRM_LONTIUM_LT8912B) += lontium-lt8912b.o
@@ -44,7 +44,7 @@ index 4d3a9ec08b25..d383a429fff0 100644
  obj-$(CONFIG_DRM_MAX96752_LVDS) += max96752-lvds.o
 diff --git a/drivers/gpu/drm/bridge/lt9611-i2c.c b/drivers/gpu/drm/bridge/lt9611-i2c.c
 new file mode 100644
-index 000000000000..91672dc8848e
+index 0000000000000..91672dc8848e1
 --- /dev/null
 +++ b/drivers/gpu/drm/bridge/lt9611-i2c.c
 @@ -0,0 +1,980 @@
@@ -1029,7 +1029,7 @@ index 000000000000..91672dc8848e
 +MODULE_DESCRIPTION("Lontium bridge IC LT9611 that convert mipi to hdmi)");
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
-index f2114eb22b5f..7209dc6ff84b 100644
+index f2114eb22b5fd..7209dc6ff84bd 100644
 --- a/drivers/gpu/drm/panel/panel-simple.c
 +++ b/drivers/gpu/drm/panel/panel-simple.c
 @@ -4179,6 +4179,9 @@ static const struct panel_desc arm_rtsm = {
@@ -1116,5 +1116,5 @@ index f2114eb22b5f..7209dc6ff84b 100644
  	}
  };
 -- 
-2.43.2
+2.25.1
 

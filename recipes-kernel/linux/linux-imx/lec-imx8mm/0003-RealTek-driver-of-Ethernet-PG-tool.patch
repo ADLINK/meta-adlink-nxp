@@ -1,7 +1,7 @@
-From 556e753eb34a26cd8f165d4313df5bfbcd3979c8 Mon Sep 17 00:00:00 2001
+From 7595737acfacfc25a5c46ffdbf13c3de07588aca Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Mon, 18 Mar 2024 16:07:41 +0530
-Subject: [PATCH] RealTek-driver-of-Ethernet-PG-tool
+Subject: [PATCH 03/10] RealTek-driver-of-Ethernet-PG-tool
 
 ---
  drivers/net/ethernet/realtek/Makefile |   1 +
@@ -12,7 +12,7 @@ Subject: [PATCH] RealTek-driver-of-Ethernet-PG-tool
  create mode 100755 drivers/net/ethernet/realtek/pgdrv.h
 
 diff --git a/drivers/net/ethernet/realtek/Makefile b/drivers/net/ethernet/realtek/Makefile
-index 2e1d78b106b0..57d174383e82 100644
+index 2e1d78b106b0a..57d174383e824 100644
 --- a/drivers/net/ethernet/realtek/Makefile
 +++ b/drivers/net/ethernet/realtek/Makefile
 @@ -3,6 +3,7 @@
@@ -25,7 +25,7 @@ index 2e1d78b106b0..57d174383e82 100644
  obj-$(CONFIG_ATP) += atp.o
 diff --git a/drivers/net/ethernet/realtek/pgdrv.c b/drivers/net/ethernet/realtek/pgdrv.c
 new file mode 100755
-index 000000000000..bd30ecce3424
+index 0000000000000..2bbd3ec1a6ba4
 --- /dev/null
 +++ b/drivers/net/ethernet/realtek/pgdrv.c
 @@ -0,0 +1,587 @@
@@ -618,7 +618,7 @@ index 000000000000..bd30ecce3424
 +MODULE_DESCRIPTION("RealTek driver of Ethernet PG tool");
 diff --git a/drivers/net/ethernet/realtek/pgdrv.h b/drivers/net/ethernet/realtek/pgdrv.h
 new file mode 100755
-index 000000000000..6704f0390bd5
+index 0000000000000..aee299bf84d7a
 --- /dev/null
 +++ b/drivers/net/ethernet/realtek/pgdrv.h
 @@ -0,0 +1,90 @@
@@ -713,5 +713,5 @@ index 000000000000..6704f0390bd5
 +
 +#endif // end of #ifndef _PG_DRV_H
 -- 
-2.43.2
+2.25.1
 

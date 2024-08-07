@@ -1,19 +1,19 @@
-From 6b1049fdcc8af8abbd0bbe4c3f71fef96a04171c Mon Sep 17 00:00:00 2001
+From b1a17763cc0feac3aa4f0870f18c8672331e02f3 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Thu, 21 Mar 2024 11:49:48 +0530
-Subject: [PATCH] Added-TPM2.0-Support-and-ADLINK-Config-macro
+Subject: [PATCH 02/10] Added-TPM2.0-Support-and-ADLINK-Config-macro
 
 ---
  drivers/char/tpm/tpm-interface.c | 17 ++++++-
  drivers/char/tpm/tpm.h           | 24 +++++++++
- drivers/char/tpm/tpm_tis_core.c  | 87 +++++++++++++++++++++++++++-----
+ drivers/char/tpm/tpm_tis_core.c  | 84 +++++++++++++++++++++++++++-----
  drivers/char/tpm/tpm_tis_core.h  | 15 ++++++
  drivers/char/tpm/tpm_tis_i2c.c   |  1 +
  init/Kconfig                     |  6 +++
- 6 files changed, 135 insertions(+), 15 deletions(-)
+ 6 files changed, 133 insertions(+), 14 deletions(-)
 
 diff --git a/drivers/char/tpm/tpm-interface.c b/drivers/char/tpm/tpm-interface.c
-index 0f941cb32eb1..b0a51918fdd9 100644
+index 66b16d26eecc7..126eb433430b4 100644
 --- a/drivers/char/tpm/tpm-interface.c
 +++ b/drivers/char/tpm/tpm-interface.c
 @@ -65,6 +65,7 @@ static ssize_t tpm_try_transmit(struct tpm_chip *chip, void *buf, size_t bufsiz)
@@ -69,7 +69,7 @@ index 0f941cb32eb1..b0a51918fdd9 100644
  	return ret;
  }
 diff --git a/drivers/char/tpm/tpm.h b/drivers/char/tpm/tpm.h
-index f6c99b3f0045..bbf652f6a0df 100644
+index 61445f1dc46df..8e5f62e738657 100644
 --- a/drivers/char/tpm/tpm.h
 +++ b/drivers/char/tpm/tpm.h
 @@ -37,9 +37,16 @@
@@ -107,7 +107,7 @@ index f6c99b3f0045..bbf652f6a0df 100644
  
  #define TPM_TAG_RQU_COMMAND 193
  
-@@ -259,8 +277,14 @@ int tpm_pm_resume(struct device *dev);
+@@ -260,8 +278,14 @@ int tpm_class_shutdown(struct device *dev);
  
  static inline void tpm_msleep(unsigned int delay_msec)
  {
@@ -123,10 +123,10 @@ index f6c99b3f0045..bbf652f6a0df 100644
  
  int tpm_chip_bootstrap(struct tpm_chip *chip);
 diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
-index 5889d9edaf94..df807ce2e807 100644
+index 1b350412d8a6b..2e5790c10d1d0 100644
 --- a/drivers/char/tpm/tpm_tis_core.c
 +++ b/drivers/char/tpm/tpm_tis_core.c
-@@ -213,7 +213,12 @@ static int __tpm_tis_request_locality(struct tpm_chip *chip, int l)
+@@ -223,7 +223,12 @@ static int __tpm_tis_request_locality(struct tpm_chip *chip, int l)
  		do {
  			if (check_locality(chip, l))
  				return l;
@@ -139,10 +139,10 @@ index 5889d9edaf94..df807ce2e807 100644
  		} while (time_before(jiffies, stop));
  	}
  	return -1;
-@@ -267,6 +272,13 @@ static u8 tpm_tis_status(struct tpm_chip *chip)
- 
+@@ -278,6 +283,14 @@ static u8 tpm_tis_status(struct tpm_chip *chip)
  	return status;
  }
+ 
 +static bool tpm_tis_check_data(struct tpm_chip *chip, char *buf,size_t len) {
 +       struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
 +
@@ -150,42 +150,41 @@ index 5889d9edaf94..df807ce2e807 100644
 +               return priv->phy_ops->check_data(priv, buf, len);
 +       return true;
 +}
- 
++
  static void tpm_tis_ready(struct tpm_chip *chip)
  {
-@@ -275,7 +287,7 @@ static void tpm_tis_ready(struct tpm_chip *chip)
- 	/* this causes the current command to be aborted */
+ 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+@@ -286,6 +299,7 @@ static void tpm_tis_ready(struct tpm_chip *chip)
  	tpm_tis_write8(priv, TPM_STS(priv->locality), TPM_STS_COMMAND_READY);
  }
--
+ 
 +#ifndef CONFIG_TCG_TIS_I2C
  static int get_burstcount(struct tpm_chip *chip)
  {
  	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
-@@ -300,13 +312,21 @@ static int get_burstcount(struct tpm_chip *chip)
+@@ -310,6 +324,7 @@ static int get_burstcount(struct tpm_chip *chip)
  	} while (time_before(jiffies, stop));
  	return -EBUSY;
  }
--
 +#endif
+ 
  static int recv_data(struct tpm_chip *chip, u8 *buf, size_t count)
  {
- 	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
+@@ -317,6 +332,13 @@ static int recv_data(struct tpm_chip *chip, u8 *buf, size_t count)
  	int size = 0, burstcnt, rc;
  
  	while (size < count) {
 +#ifdef CONFIG_TCG_TIS_I2C
-+               if (priv->interface_id) {
-+                       burstcnt = 1280;
-+               } else {
-+                       burstcnt = 32;
-+               }
++		if (priv->interface_id) {
++			burstcnt = 1280;
++		} else {
++			burstcnt = 32;
++		}
 +#else
-+
  		rc = wait_for_tpm_stat(chip,
  				 TPM_STS_DATA_AVAIL | TPM_STS_VALID,
  				 chip->timeout_c,
-@@ -318,6 +338,7 @@ static int recv_data(struct tpm_chip *chip, u8 *buf, size_t count)
+@@ -328,6 +350,7 @@ static int recv_data(struct tpm_chip *chip, u8 *buf, size_t count)
  			dev_err(&chip->dev, "Unable to read burstcount\n");
  			return burstcnt;
  		}
@@ -193,7 +192,7 @@ index 5889d9edaf94..df807ce2e807 100644
  		burstcnt = min_t(int, burstcnt, count - size);
  
  		rc = tpm_tis_read_bytes(priv, TPM_DATA_FIFO(priv->locality),
-@@ -403,7 +424,8 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+@@ -434,7 +457,8 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
  	int rc, status, burstcnt;
  	size_t count = 0;
@@ -203,24 +202,24 @@ index 5889d9edaf94..df807ce2e807 100644
  
  	status = tpm_tis_status(chip);
  	if ((status & TPM_STS_COMMAND_READY) == 0) {
-@@ -415,6 +437,16 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+@@ -446,7 +470,15 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  			goto out_err;
  		}
  	}
+-
 +#ifdef CONFIG_TCG_TIS_I2C
-+       while (count < len) {
-+               if (priv->interface_id) {
-+                       burstcnt = 1280;
-+               } else {
-+                       burstcnt = 32;
-+               }
-+
-+               burstcnt = min_t(int, burstcnt, len - count);
++	while (count < len) {
++		if (priv->interface_id) {
++			burstcnt = 1280;
++		} else {
++			burstcnt = 32;
++		}
++		burstcnt = min_t(int, burstcnt, len - count);
 +#else
- 
  	while (count < len - 1) {
  		burstcnt = get_burstcount(chip);
-@@ -424,13 +456,14 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 		if (burstcnt < 0) {
+@@ -455,13 +487,14 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  			goto out_err;
  		}
  		burstcnt = min_t(int, burstcnt, len - count - 1);
@@ -236,18 +235,19 @@ index 5889d9edaf94..df807ce2e807 100644
  		if (wait_for_tpm_stat(chip, TPM_STS_VALID, chip->timeout_c,
  					&priv->int_queue, false) < 0) {
  			rc = -ETIME;
-@@ -441,7 +474,9 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+@@ -472,8 +505,9 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  			rc = -EIO;
  			goto out_err;
  		}
 +#endif
  	}
+-
 +#ifndef CONFIG_TCG_TIS_I2C
- 
  	/* write last byte */
  	rc = tpm_tis_write8(priv, TPM_DATA_FIFO(priv->locality), buf[count]);
-@@ -458,7 +493,7 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
- 		rc = -EIO;
+ 	if (rc < 0)
+@@ -495,7 +529,7 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 		dev_err(&chip->dev, "CRC mismatch for command.\n");
  		goto out_err;
  	}
 -
@@ -255,7 +255,7 @@ index 5889d9edaf94..df807ce2e807 100644
  	return 0;
  
  out_err:
-@@ -495,20 +530,28 @@ static void disable_interrupts(struct tpm_chip *chip)
+@@ -536,19 +570,27 @@ static void tpm_tis_disable_interrupts(struct tpm_chip *chip)
  static int tpm_tis_send_main(struct tpm_chip *chip, const u8 *buf, size_t len)
  {
  	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
@@ -278,21 +278,18 @@ index 5889d9edaf94..df807ce2e807 100644
 +//			break;
 +//		else if (rc != -EIO)
  			/* Data transfer failed, not recoverable */
--			return rc;
--	}
 +//			return rc;
 +//	}
 +
-+       for (i = 0; i < TPM_RETRY && !data_valid; i++) {
-+               rc = tpm_tis_send_data(chip, buf, len);
-+               if (rc < 0)
-+                       return rc;
-+               data_valid = tpm_tis_check_data(chip, buf, len);
-+       }
++	for (i = 0; i < TPM_RETRY && !data_valid; i++) {
++		rc = tpm_tis_send_data(chip, buf, len);
++		if (rc < 0)
+ 			return rc;
++		data_valid = tpm_tis_check_data(chip, buf, len);
+ 	}
  
- 	rc = tpm_tis_verify_crc(priv, len, buf);
- 	if (rc < 0) {
-@@ -740,7 +783,7 @@ static int probe_itpm(struct tpm_chip *chip)
+ 	/* go and do it */
+@@ -775,7 +817,7 @@ static int probe_itpm(struct tpm_chip *chip)
  
  static bool tpm_tis_req_canceled(struct tpm_chip *chip, u8 status)
  {
@@ -301,7 +298,7 @@ index 5889d9edaf94..df807ce2e807 100644
  
  	if (!test_bit(TPM_TIS_DEFAULT_CANCELLATION, &priv->flags)) {
  		switch (priv->manufacturer_id) {
-@@ -755,6 +798,8 @@ static bool tpm_tis_req_canceled(struct tpm_chip *chip, u8 status)
+@@ -790,6 +832,8 @@ static bool tpm_tis_req_canceled(struct tpm_chip *chip, u8 status)
  	}
  
  	return status == TPM_STS_COMMAND_READY;
@@ -309,40 +306,42 @@ index 5889d9edaf94..df807ce2e807 100644
 +	return ((status & TPM_STS_COMMAND_READY) == TPM_STS_COMMAND_READY);
  }
  
- static irqreturn_t tis_int_handler(int dummy, void *dev_id)
-@@ -763,6 +808,9 @@ static irqreturn_t tis_int_handler(int dummy, void *dev_id)
+ static irqreturn_t tpm_tis_revert_interrupts(struct tpm_chip *chip)
+@@ -848,7 +892,10 @@ static irqreturn_t tis_int_handler(int dummy, void *dev_id)
+ 	struct tpm_chip *chip = dev_id;
  	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
  	u32 interrupt;
- 	int i, rc;
+-	int rc;
++	int i, rc;
 +#ifdef CONFIG_TCG_TIS_I2C
 +       u32 BusInterface;
 +#endif
  
  	rc = tpm_tis_read32(priv, TPM_INT_STATUS(priv->locality), &interrupt);
  	if (rc < 0)
-@@ -1131,6 +1179,17 @@ int tpm_tis_core_init(struct device *dev, struct tpm_tis_data *priv, int irq,
+@@ -1234,6 +1281,17 @@ int tpm_tis_core_init(struct device *dev, struct tpm_tis_data *priv, int irq,
  	dev_info(dev, "%s TPM (device-id 0x%X, rev-id %d)\n",
  		 (chip->flags & TPM_CHIP_FLAG_TPM2) ? "2.0" : "1.2",
  		 vendor >> 16, rid);
 +#ifdef CONFIG_TCG_TIS_I2C
-+       rc = tpm_tis_read32(priv, TPM_INTF_CAPABILITY(0), &BusInterface);
-+       if (rc < 0)
-+               goto out_err;
++	rc = tpm_tis_read32(priv, TPM_INTF_CAPABILITY(0), &BusInterface);
++	if (rc < 0)
++		goto out_err;
 +
-+       priv->interface_id = BusInterface;
++	priv->interface_id = BusInterface;
 +
-+       dev_info(dev, " TPM %s / Interface : %s)\n",
-+               (chip->flags & TPM_CHIP_FLAG_TPM2) ? "2.0" : "1.2",
-+               (priv->interface_id) ? "I2C" : "SPI" );
++	dev_info(dev, " TPM %s / Interface : %s)\n",
++		(chip->flags & TPM_CHIP_FLAG_TPM2) ? "2.0" : "1.2",
++		(priv->interface_id) ? "I2C" : "SPI" );
 +#endif
  
  	probe = probe_itpm(chip);
  	if (probe < 0) {
 diff --git a/drivers/char/tpm/tpm_tis_core.h b/drivers/char/tpm/tpm_tis_core.h
-index 610bfadb6acf..44283ab6adf4 100644
+index 13e99cf65efe4..a8cd87ad1cd71 100644
 --- a/drivers/char/tpm/tpm_tis_core.h
 +++ b/drivers/char/tpm/tpm_tis_core.h
-@@ -74,6 +74,11 @@ enum tis_defaults {
+@@ -75,6 +75,11 @@ enum tis_defaults {
  #define	TPM_STS(l)			(0x0018 | ((l) << 12))
  #define	TPM_STS3(l)			(0x001b | ((l) << 12))
  #define	TPM_DATA_FIFO(l)		(0x0024 | ((l) << 12))
@@ -354,9 +353,9 @@ index 610bfadb6acf..44283ab6adf4 100644
  
  #define	TPM_DID_VID(l)			(0x0F00 | ((l) << 12))
  #define	TPM_RID(l)			(0x0F04 | ((l) << 12))
-@@ -92,6 +97,12 @@ enum tpm_tis_flags {
- 
+@@ -94,6 +99,12 @@ enum tpm_tis_flags {
  struct tpm_tis_data {
+ 	struct tpm_chip *chip;
  	u16 manufacturer_id;
 +#ifdef CONFIG_TCG_TIS_I2C
 +       /* fix BHO I2C implementation */
@@ -367,7 +366,7 @@ index 610bfadb6acf..44283ab6adf4 100644
  	struct mutex locality_count_mutex;
  	unsigned int locality_count;
  	int locality;
-@@ -127,6 +138,8 @@ struct tpm_tis_phy_ops {
+@@ -132,6 +143,8 @@ struct tpm_tis_phy_ops {
  			   const u8 *value, enum tpm_tis_io_mode mode);
  	int (*verify_crc)(struct tpm_tis_data *data, size_t len,
  			  const u8 *value);
@@ -376,7 +375,7 @@ index 610bfadb6acf..44283ab6adf4 100644
  };
  
  static inline int tpm_tis_read_bytes(struct tpm_tis_data *data, u32 addr,
-@@ -147,6 +160,7 @@ static inline int tpm_tis_read16(struct tpm_tis_data *data, u32 addr,
+@@ -152,6 +165,7 @@ static inline int tpm_tis_read16(struct tpm_tis_data *data, u32 addr,
  	__le16 result_le;
  	int rc;
  
@@ -384,7 +383,7 @@ index 610bfadb6acf..44283ab6adf4 100644
  	rc = data->phy_ops->read_bytes(data, addr, sizeof(u16),
  				       (u8 *)&result_le, TPM_TIS_PHYS_16);
  	if (!rc)
-@@ -161,6 +175,7 @@ static inline int tpm_tis_read32(struct tpm_tis_data *data, u32 addr,
+@@ -166,6 +180,7 @@ static inline int tpm_tis_read32(struct tpm_tis_data *data, u32 addr,
  	__le32 result_le;
  	int rc;
  
@@ -393,10 +392,10 @@ index 610bfadb6acf..44283ab6adf4 100644
  				       (u8 *)&result_le, TPM_TIS_PHYS_32);
  	if (!rc)
 diff --git a/drivers/char/tpm/tpm_tis_i2c.c b/drivers/char/tpm/tpm_tis_i2c.c
-index 9586e0857a3e..c021e60be818 100644
+index a897402cc36a8..b4af67c042bfd 100644
 --- a/drivers/char/tpm/tpm_tis_i2c.c
 +++ b/drivers/char/tpm/tpm_tis_i2c.c
-@@ -384,6 +384,7 @@ MODULE_DEVICE_TABLE(i2c, tpm_tis_i2c_id);
+@@ -383,6 +383,7 @@ MODULE_DEVICE_TABLE(i2c, tpm_tis_i2c_id);
  #ifdef CONFIG_OF
  static const struct of_device_id of_tis_i2c_match[] = {
  	{ .compatible = "infineon,slb9673", },
@@ -405,7 +404,7 @@ index 9586e0857a3e..c021e60be818 100644
  };
  MODULE_DEVICE_TABLE(of, of_tis_i2c_match);
 diff --git a/init/Kconfig b/init/Kconfig
-index de255842f5d0..cafcb4fbadde 100644
+index 18fece8fe0857..d93ac40165638 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -16,6 +16,12 @@ config CC_VERSION_TEXT
@@ -422,5 +421,5 @@ index de255842f5d0..cafcb4fbadde 100644
  	def_bool $(success,test "$(cc-name)" = GCC)
  
 -- 
-2.43.2
+2.25.1
 
