@@ -1,11 +1,9 @@
-From 7fce9403c95068884665a66b400551996036e249 Mon Sep 17 00:00:00 2001
+From b1625d52bbc550da8c7581e60eb0a5dbd58af596 Mon Sep 17 00:00:00 2001
 From: "arun.tamilselvan" <arun.tamilselvan@adlinktech.com>
 Date: Mon, 29 Jul 2024 12:30:12 +0530
-Subject: [PATCH] LEC-IMX8MP-Port-LEC-iMX8MP-platfrom-base-on-i.MX8MP
+Subject: [PATCH 1/2] LEC-IMX8MP-Port-LEC-iMX8MP-platfrom-base-on-i.MX8MP
 
 ---
- arch/arm64/boot/dts/Makefile                  |    1 +
- arch/arm64/boot/dts/adlink/Makefile           |    9 +
  drivers/bluetooth/btmrvl_sdio.c               |    2 +-
  drivers/gpu/drm/panel/Kconfig                 |    9 +
  drivers/gpu/drm/panel/Makefile                |    1 +
@@ -28,42 +26,15 @@ Subject: [PATCH] LEC-IMX8MP-Port-LEC-iMX8MP-platfrom-base-on-i.MX8MP
  sound/soc/fsl/Kconfig                         |   13 +
  sound/soc/fsl/Makefile                        |    2 +
  sound/soc/fsl/imx-tlv320aic3x.c               |  249 +++
- 24 files changed, 5306 insertions(+), 35 deletions(-)
- create mode 100644 arch/arm64/boot/dts/adlink/Makefile
+ 22 files changed, 5296 insertions(+), 35 deletions(-)
  create mode 100644 drivers/gpu/drm/panel/panel-b101uan01.c
  create mode 100644 drivers/media/i2c/ov13850.c
  create mode 100644 drivers/media/i2c/ov13855.c
  create mode 100644 drivers/thermal/of_thermal.c
  create mode 100644 sound/soc/fsl/imx-tlv320aic3x.c
 
-diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
-index 30dd6347a929..50efac63a471 100644
---- a/arch/arm64/boot/dts/Makefile
-+++ b/arch/arm64/boot/dts/Makefile
-@@ -1,5 +1,6 @@
- # SPDX-License-Identifier: GPL-2.0
- subdir-y += actions
-+subdir-y += adlink
- subdir-y += allwinner
- subdir-y += altera
- subdir-y += amazon
-diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
-new file mode 100644
-index 000000000000..6a97078ca79b
---- /dev/null
-+++ b/arch/arm64/boot/dts/adlink/Makefile
-@@ -0,0 +1,9 @@
-+# SPDX-License-Identifier: GPL-2.0
-+
-+dtb-$(CONFIG_ARCH_MXC) += lec-imx8mp.dtb \
-+                        lec-imx8mp-hydis-hv150ux2.dtb \
-+                        lec-imx8mp-auoB101UAN01-mipi-panel.dtb \
-+                        lec-imx8mp-wifi.dtb \
-+                        lec-imx8mp-tlv320aic3x.dtb \
-+                        lec-imx8mp-tlv320-lvds.dtb
-+
 diff --git a/drivers/bluetooth/btmrvl_sdio.c b/drivers/bluetooth/btmrvl_sdio.c
-index d76c799553aa..5b48a6a02776 100644
+index d76c799553aaa..5b48a6a02776a 100644
 --- a/drivers/bluetooth/btmrvl_sdio.c
 +++ b/drivers/bluetooth/btmrvl_sdio.c
 @@ -290,7 +290,7 @@ static const struct btmrvl_sdio_device btmrvl_sdio_sd8987 = {
@@ -76,7 +47,7 @@ index d76c799553aa..5b48a6a02776 100644
  	.support_pscan_win_report = true,
  	.sd_blksz_fw_dl = 256,
 diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index 8fcb3e26909c..73f33f0ae7e1 100644
+index 8fcb3e26909c8..73f33f0ae7e18 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
 @@ -496,6 +496,15 @@ config DRM_PANEL_RAYDIUM_RM67191
@@ -96,7 +67,7 @@ index 8fcb3e26909c..73f33f0ae7e1 100644
  	tristate "Raydium RM68200 720x1280 DSI video mode panel"
  	depends on OF
 diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index e1bd080a06c6..9523565435a8 100644
+index e1bd080a06c62..9523565435a89 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
 @@ -89,3 +89,4 @@ obj-$(CONFIG_DRM_PANEL_VISIONOX_R66451) += panel-visionox-r66451.o
@@ -106,7 +77,7 @@ index e1bd080a06c6..9523565435a8 100644
 +obj-$(CONFIG_DRM_PANEL_AUO_B101UAN1V7) += panel-b101uan01.o
 diff --git a/drivers/gpu/drm/panel/panel-b101uan01.c b/drivers/gpu/drm/panel/panel-b101uan01.c
 new file mode 100644
-index 000000000000..369eb281ba05
+index 0000000000000..369eb281ba05f
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-b101uan01.c
 @@ -0,0 +1,360 @@
@@ -471,7 +442,7 @@ index 000000000000..369eb281ba05
 +MODULE_DESCRIPTION("B101UAN01");
 +MODULE_LICENSE("GPL v2");
 diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
-index f2114eb22b5f..a0baa0e64db3 100644
+index f2114eb22b5fd..a0baa0e64db3a 100644
 --- a/drivers/gpu/drm/panel/panel-simple.c
 +++ b/drivers/gpu/drm/panel/panel-simple.c
 @@ -2212,6 +2212,39 @@ static const struct panel_desc innolux_at043tn24 = {
@@ -525,7 +496,7 @@ index f2114eb22b5f..a0baa0e64db3 100644
  		.data = &innolux_at043tn24,
  	}, {
 diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
-index 70e20b7a5663..001fa9db4811 100644
+index 70e20b7a56637..001fa9db4811b 100644
 --- a/drivers/media/i2c/Kconfig
 +++ b/drivers/media/i2c/Kconfig
 @@ -255,6 +255,26 @@ config VIDEO_MT9V111
@@ -556,7 +527,7 @@ index 70e20b7a5663..001fa9db4811 100644
  	tristate "OmniVision OG01A1B sensor support"
  	help
 diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
-index 9a9ed3f325a4..ca33697869f0 100644
+index 9a9ed3f325a42..ca33697869f03 100644
 --- a/drivers/media/i2c/Makefile
 +++ b/drivers/media/i2c/Makefile
 @@ -126,6 +126,8 @@ obj-$(CONFIG_VIDEO_SONY_BTF_MPX) += sony-btf-mpx.o
@@ -570,7 +541,7 @@ index 9a9ed3f325a4..ca33697869f0 100644
  obj-$(CONFIG_VIDEO_TDA1997X) += tda1997x.o
 diff --git a/drivers/media/i2c/ov13850.c b/drivers/media/i2c/ov13850.c
 new file mode 100644
-index 000000000000..1fcd332840b3
+index 0000000000000..1fcd332840b38
 --- /dev/null
 +++ b/drivers/media/i2c/ov13850.c
 @@ -0,0 +1,1940 @@
@@ -2516,7 +2487,7 @@ index 000000000000..1fcd332840b3
 +
 diff --git a/drivers/media/i2c/ov13855.c b/drivers/media/i2c/ov13855.c
 new file mode 100644
-index 000000000000..c007d64c6229
+index 0000000000000..c007d64c6229f
 --- /dev/null
 +++ b/drivers/media/i2c/ov13855.c
 @@ -0,0 +1,1314 @@
@@ -3835,7 +3806,7 @@ index 000000000000..c007d64c6229
 +MODULE_DESCRIPTION("ov13855 sensor driver");
 +MODULE_LICENSE("GPL v2");
 diff --git a/drivers/net/phy/dp83867.c b/drivers/net/phy/dp83867.c
-index e397e7d642d9..54860a222d2f 100644
+index e397e7d642d92..54860a222d2f9 100644
 --- a/drivers/net/phy/dp83867.c
 +++ b/drivers/net/phy/dp83867.c
 @@ -928,6 +928,36 @@ static int dp83867_config_init(struct phy_device *phydev)
@@ -3876,7 +3847,7 @@ index e397e7d642d9..54860a222d2f 100644
  	return 0;
  }
 diff --git a/drivers/net/wireless/marvell/mwifiex/sdio.h b/drivers/net/wireless/marvell/mwifiex/sdio.h
-index a5112cb35cdc..3e37f7c63571 100644
+index a5112cb35cdcd..3e37f7c635717 100644
 --- a/drivers/net/wireless/marvell/mwifiex/sdio.h
 +++ b/drivers/net/wireless/marvell/mwifiex/sdio.h
 @@ -24,10 +24,10 @@
@@ -3893,7 +3864,7 @@ index a5112cb35cdc..3e37f7c63571 100644
  
  #define BLOCK_MODE	1
 diff --git a/drivers/staging/media/imx/imx8-isi-cap.c b/drivers/staging/media/imx/imx8-isi-cap.c
-index c3d6bbeed6a2..04cbb3054e4a 100644
+index c3d6bbeed6a2f..04cbb3054e4ae 100644
 --- a/drivers/staging/media/imx/imx8-isi-cap.c
 +++ b/drivers/staging/media/imx/imx8-isi-cap.c
 @@ -54,7 +54,23 @@ struct mxc_isi_fmt mxc_isi_src_formats[] = {
@@ -3967,7 +3938,7 @@ index c3d6bbeed6a2..04cbb3054e4a 100644
  	}
  	mutex_unlock(&mdev->graph_mutex);
 diff --git a/drivers/staging/media/imx/imx8-isi-fmt.c b/drivers/staging/media/imx/imx8-isi-fmt.c
-index db11c809a3d3..d276edc35108 100644
+index db11c809a3d38..d276edc351088 100644
 --- a/drivers/staging/media/imx/imx8-isi-fmt.c
 +++ b/drivers/staging/media/imx/imx8-isi-fmt.c
 @@ -97,7 +97,28 @@ struct mxc_isi_fmt mxc_isi_out_formats[] = {
@@ -4001,7 +3972,7 @@ index db11c809a3d3..d276edc35108 100644
  
  size_t mxc_isi_out_formats_size = ARRAY_SIZE(mxc_isi_out_formats);
 diff --git a/drivers/staging/media/imx/imx8-isi-hw.c b/drivers/staging/media/imx/imx8-isi-hw.c
-index f3b2b98798be..7f2143fec18d 100644
+index f3b2b98798be2..7f2143fec18df 100644
 --- a/drivers/staging/media/imx/imx8-isi-hw.c
 +++ b/drivers/staging/media/imx/imx8-isi-hw.c
 @@ -655,6 +655,11 @@ void mxc_isi_channel_config_loc(struct mxc_isi_dev *mxc_isi,
@@ -4017,7 +3988,7 @@ index f3b2b98798be..7f2143fec18d 100644
  }
  EXPORT_SYMBOL_GPL(mxc_isi_channel_config_loc);
 diff --git a/drivers/staging/media/imx/imx8-mipi-csi2-sam.c b/drivers/staging/media/imx/imx8-mipi-csi2-sam.c
-index c6af060c4497..dd456a78afa2 100644
+index c6af060c44977..dd456a78afa20 100644
 --- a/drivers/staging/media/imx/imx8-mipi-csi2-sam.c
 +++ b/drivers/staging/media/imx/imx8-mipi-csi2-sam.c
 @@ -1186,6 +1186,7 @@ static int mipi_csis_get_fmt(struct v4l2_subdev *mipi_sd,
@@ -4045,7 +4016,7 @@ index c6af060c4497..dd456a78afa2 100644
  
 diff --git a/drivers/thermal/of_thermal.c b/drivers/thermal/of_thermal.c
 new file mode 100644
-index 000000000000..35c79443ff2e
+index 0000000000000..35c79443ff2ee
 --- /dev/null
 +++ b/drivers/thermal/of_thermal.c
 @@ -0,0 +1,1208 @@
@@ -5258,7 +5229,7 @@ index 000000000000..35c79443ff2e
 +}
 +
 diff --git a/include/linux/tpm.h b/include/linux/tpm.h
-index 4ee9d13749ad..1b695de74c25 100644
+index 4ee9d13749adc..1b695de74c258 100644
 --- a/include/linux/tpm.h
 +++ b/include/linux/tpm.h
 @@ -186,7 +186,11 @@ enum tpm2_timeouts {
@@ -5274,7 +5245,7 @@ index 4ee9d13749ad..1b695de74c25 100644
  	TPM2_DURATION_DEFAULT   = 120000,
  };
 diff --git a/net/wireless/wext-core.c b/net/wireless/wext-core.c
-index a161c64d1765..b04b4a4a2cf7 100644
+index a161c64d1765e..b04b4a4a2cf76 100644
 --- a/net/wireless/wext-core.c
 +++ b/net/wireless/wext-core.c
 @@ -981,6 +981,11 @@ static int wireless_process_ioctl(struct net *net, struct iwreq *iwr,
@@ -5290,7 +5261,7 @@ index a161c64d1765..b04b4a4a2cf7 100644
  }
  
 diff --git a/sound/soc/codecs/tlv320aic3x.c b/sound/soc/codecs/tlv320aic3x.c
-index 56e795a00e22..db2e2e66de50 100644
+index 56e795a00e22f..db2e2e66de50b 100644
 --- a/sound/soc/codecs/tlv320aic3x.c
 +++ b/sound/soc/codecs/tlv320aic3x.c
 @@ -91,34 +91,34 @@ struct aic3x_priv {
@@ -5357,7 +5328,7 @@ index 56e795a00e22..db2e2e66de50 100644
  
  static bool aic3x_volatile_reg(struct device *dev, unsigned int reg)
 diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
-index 8d3d2f48aea8..cbd4f0c790ef 100644
+index 8d3d2f48aea85..cbd4f0c790efe 100644
 --- a/sound/soc/fsl/Kconfig
 +++ b/sound/soc/fsl/Kconfig
 @@ -324,6 +324,19 @@ config SND_SOC_IMX_SPDIF
@@ -5381,7 +5352,7 @@ index 8d3d2f48aea8..cbd4f0c790ef 100644
  	tristate "Generic ASoC Sound Card with ASRC support"
  	depends on OF && I2C
 diff --git a/sound/soc/fsl/Makefile b/sound/soc/fsl/Makefile
-index cc52e6de7068..5ed3f056b753 100644
+index cc52e6de70682..5ed3f056b753b 100644
 --- a/sound/soc/fsl/Makefile
 +++ b/sound/soc/fsl/Makefile
 @@ -20,6 +20,7 @@ snd-soc-fsl-ssi-y := fsl_ssi.o
@@ -5402,7 +5373,7 @@ index cc52e6de7068..5ed3f056b753 100644
  snd-soc-fsl-hdmi-objs := fsl_hdmi.o
 diff --git a/sound/soc/fsl/imx-tlv320aic3x.c b/sound/soc/fsl/imx-tlv320aic3x.c
 new file mode 100644
-index 000000000000..4dcaef80216a
+index 0000000000000..4dcaef80216a2
 --- /dev/null
 +++ b/sound/soc/fsl/imx-tlv320aic3x.c
 @@ -0,0 +1,249 @@

@@ -1,17 +1,17 @@
-From 4ca9a04bc5e7f72d7bc566e4c9865c4de13d4cf7 Mon Sep 17 00:00:00 2001
+From 4113187b0c820ae59d489b0c03028d7ee493955d Mon Sep 17 00:00:00 2001
 From: Adlink CCoE <dinesh.v@adlinktech.com>
 Date: Thu, 18 Aug 2022 15:10:12 +0530
-Subject: [PATCH 3/3] Allocated CMA range based on 2G Ram Size
+Subject: [PATCH 2/2] Allocated CMA range based on 2G Ram Size
 
 ---
  arch/arm64/boot/dts/freescale/imx8mp.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/arch/arm64/boot/dts/freescale/imx8mp.dtsi b/arch/arm64/boot/dts/freescale/imx8mp.dtsi
-index 50fa108127ed..d3b061d5dba5 100755
+index 9335f1713ce64..6cefca8735771 100644
 --- a/arch/arm64/boot/dts/freescale/imx8mp.dtsi
 +++ b/arch/arm64/boot/dts/freescale/imx8mp.dtsi
-@@ -186,7 +186,7 @@ ocram: ocram@900000 {
+@@ -227,7 +227,7 @@ ocram: ocram@900000 {
  		linux,cma {
  			compatible = "shared-dma-pool";
  			reusable;
