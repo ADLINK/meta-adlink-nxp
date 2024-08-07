@@ -1,7 +1,7 @@
-From 4694fef7b1fbe52fec5befbd2eb95f7ef974a76d Mon Sep 17 00:00:00 2001
+From f8ef7e455e8ec3fb66b2e9145f6bea221d0b1b38 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Tue, 2 Apr 2024 17:36:13 +0530
-Subject: [PATCH] Added-support-for-panel-b101uan01
+Subject: [PATCH 09/10] Added-support-for-panel-b101uan01
 
 ---
  drivers/gpu/drm/panel/Kconfig           |   9 +
@@ -11,10 +11,10 @@ Subject: [PATCH] Added-support-for-panel-b101uan01
  create mode 100644 drivers/gpu/drm/panel/panel-b101uan01.c
 
 diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index 77d6491e17c0..60250b30f5e6 100644
+index 8fcb3e26909c8..97b6caa4cfcaa 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
-@@ -426,6 +426,15 @@ config DRM_PANEL_RAYDIUM_RM67191
+@@ -496,6 +496,15 @@ config DRM_PANEL_RAYDIUM_RM67191
  	  Say Y here if you want to enable support for Raydium RM67191 FHD
  	  (1080x1920) DSI panel.
  
@@ -31,17 +31,17 @@ index 77d6491e17c0..60250b30f5e6 100644
  	tristate "Raydium RM68200 720x1280 DSI video mode panel"
  	depends on OF
 diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index a5097fa55a79..b362652a274f 100644
+index e1bd080a06c62..9523565435a89 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
-@@ -75,3 +75,4 @@ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+@@ -89,3 +89,4 @@ obj-$(CONFIG_DRM_PANEL_VISIONOX_R66451) += panel-visionox-r66451.o
  obj-$(CONFIG_DRM_PANEL_WIDECHIPS_WS2401) += panel-widechips-ws2401.o
  obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
  obj-$(CONFIG_DRM_PANEL_WKS_101WX001) += panel-wks-101wx001.o
 +obj-$(CONFIG_DRM_PANEL_AUO_B101UAN1V7) += panel-b101uan01.o
 diff --git a/drivers/gpu/drm/panel/panel-b101uan01.c b/drivers/gpu/drm/panel/panel-b101uan01.c
 new file mode 100644
-index 000000000000..369eb281ba05
+index 0000000000000..369eb281ba05f
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-b101uan01.c
 @@ -0,0 +1,360 @@
@@ -406,5 +406,5 @@ index 000000000000..369eb281ba05
 +MODULE_DESCRIPTION("B101UAN01");
 +MODULE_LICENSE("GPL v2");
 -- 
-2.43.2
+2.25.1
 
