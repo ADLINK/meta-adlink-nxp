@@ -1,27 +1,14 @@
-From dd74d5bb39dc03d2009727c29fa01f6adbc32793 Mon Sep 17 00:00:00 2001
+From 0152c299238ddb4c200b1f58b376556053d7de09 Mon Sep 17 00:00:00 2001
 From: "deepak.s" <deepak.s@adlinktech.com>
 Date: Mon, 15 Jul 2024 14:26:04 +0530
-Subject: [PATCH] u-boot-modify-Kconfig-Makefile-to-build-lec-imx8mm
+Subject: [PATCH 2/3] u-boot-modify-Kconfig-Makefile-to-build-lec-imx8mm
 
 ---
- arch/arm/dts/Makefile           | 1 +
  arch/arm/mach-imx/imx8m/Kconfig | 7 +++++++
- 2 files changed, 8 insertions(+)
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index e494d16ffce..c2b38320f60 100644
---- a/arch/arm/dts/Makefile
-+++ b/arch/arm/dts/Makefile
-@@ -1117,6 +1117,7 @@ dtb-$(CONFIG_ARCH_IMX8ULP) += \
- 	imx8ulp-watch.dtb
- 
- dtb-$(CONFIG_ARCH_IMX8M) += \
-+	uboot-lec8mm.dtb  \
- 	imx8mm-data-modul-edm-sbc.dtb \
- 	imx8mm-ddr4-evk.dtb \
- 	imx8mm-ddr4-ab2.dtb \
 diff --git a/arch/arm/mach-imx/imx8m/Kconfig b/arch/arm/mach-imx/imx8m/Kconfig
-index 473cfa8e5e3..ba9630a224d 100644
+index 473cfa8e5e39..2cc6147e9ba7 100644
 --- a/arch/arm/mach-imx/imx8m/Kconfig
 +++ b/arch/arm/mach-imx/imx8m/Kconfig
 @@ -75,6 +75,12 @@ config TARGET_IMX8MQ_CM
@@ -32,7 +19,7 @@ index 473cfa8e5e3..ba9630a224d 100644
 +	bool "Adlink lec-imx8mm LPDDR4 board"
 +	select IMX8MM
 +	select SUPPORT_SPL
-+	select IMX8M_LPDDR4	
++	select IMX8M_LPDDR4
 +
  config TARGET_IMX8MQ_EVK
  	bool "imx8mq_evk"
@@ -45,5 +32,5 @@ index 473cfa8e5e3..ba9630a224d 100644
  
  endif
 -- 
-2.43.2
+2.25.1
 
