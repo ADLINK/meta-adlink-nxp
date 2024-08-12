@@ -1,19 +1,19 @@
-From fc895444ccd655885e1e9958124165f40cbf8cb3 Mon Sep 17 00:00:00 2001
+From 2af3f49161a6f43d183e9fef16c9066f685b6592 Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Fri, 1 Dec 2023 11:27:52 +0800
-Subject: [PATCH 09/15] sp2-imx8mp: patch: pwm-bl and panel-lvds: move power
- off at pwm-bl to panel-lvds for timing, due to hardware design limitation on
+Subject: [PATCH] sp2-imx8mp: patch: pwm-bl and panel-lvds: move power off at
+ pwm-bl to panel-lvds for timing, due to hardware design limitation on
  sp2imx8mp
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
 ---
- drivers/gpu/drm/panel/panel-lvds.c | 20 ++++++++++++--------
+ drivers/gpu/drm/panel/panel-lvds.c | 28 ++++++++++++++++++----------
  drivers/video/backlight/pwm_bl.c   | 10 ++++++++--
  include/linux/pwm_backlight.h      |  1 +
- 3 files changed, 21 insertions(+), 10 deletions(-)
+ 3 files changed, 27 insertions(+), 12 deletions(-)
 
 diff --git a/drivers/gpu/drm/panel/panel-lvds.c b/drivers/gpu/drm/panel/panel-lvds.c
-index daf9b80f6bb27..6d8ec34a38fab 100644
+index daf9b80f6bb27..d57ab96241cb6 100644
 --- a/drivers/gpu/drm/panel/panel-lvds.c
 +++ b/drivers/gpu/drm/panel/panel-lvds.c
 @@ -42,6 +42,7 @@ struct panel_lvds {
@@ -24,7 +24,22 @@ index daf9b80f6bb27..6d8ec34a38fab 100644
  	unsigned int enable_delay;
  	unsigned int post_prepare_delay;
  	unsigned int pre_disable_delay;
-@@ -81,13 +82,16 @@ static int panel_lvds_prepare(struct drm_panel *panel)
+@@ -67,8 +68,12 @@ static int panel_lvds_unprepare(struct drm_panel *panel)
+ 	if (lvds->disable_delay)
+ 		msleep(lvds->disable_delay);
+ 
+-	if (lvds->supply)
+-		regulator_disable(lvds->supply);
++	/* if skip_blpwr_off is set, then don't disable supply. Leave it for blpwm to disable.
++	   NOTE: supply regulator must be the same regulator as the blpwm power-supply */
++	if (!lvds->skip_blpwr_off) {
++		if (lvds->supply)
++			regulator_disable(lvds->supply);
++	}
+ 
+ 	if (lvds->post_unprepare_delay)
+ 		msleep(lvds->post_unprepare_delay);
+@@ -81,13 +86,16 @@ static int panel_lvds_prepare(struct drm_panel *panel)
  	struct panel_lvds *lvds = to_panel_lvds(panel);
  
  	if (lvds->supply) {
@@ -48,7 +63,7 @@ index daf9b80f6bb27..6d8ec34a38fab 100644
  		}
  	}
  
-@@ -197,7 +201,7 @@ static int panel_lvds_parse_dt(struct panel_lvds *lvds)
+@@ -197,7 +205,7 @@ static int panel_lvds_parse_dt(struct panel_lvds *lvds)
  	lvds->post_unprepare_delay = 0;
  	of_property_read_u32(np, "post-unprepare-delay-ms",
  			     &lvds->post_unprepare_delay);
