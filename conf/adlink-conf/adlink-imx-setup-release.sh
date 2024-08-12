@@ -48,7 +48,7 @@ else
 	echo "BBMASK += \"ubuntu-base_%.bbappend\"" >> ./conf/local.conf
 fi
 
-if [ "$MULTILIB" = "lib32" ];
+if [ "$MULTILIB" = "lib32" ]; then
 	cat ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/multilib.local.conf.append >> ./conf/local.conf
 fi
 
