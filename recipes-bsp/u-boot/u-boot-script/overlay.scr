@@ -11,6 +11,8 @@ if test -n ${E_disp}; then
     setenv overlays ${overlays} 7rlcd-overlay.dtbo;
   elif test ${E_disp} = 10; then
     setenv overlays ${overlays} 10inch-overlay.dtbo;
+  elif test ${E_disp} = 23; then
+    setenv overlays ${overlays} 23inch-overlay.dtbo;
   fi;
 fi;
 if test -n ${E_eth}; then
