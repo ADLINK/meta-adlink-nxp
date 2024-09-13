@@ -163,6 +163,7 @@
 			"Ext Spk", "LINE_OUT";
 		mux-int-port = <1>;
 		mux-ext-port = <3>;
+		status = "disabled";
 	};
 
 	lvds_backlight: lvds_backlight {
@@ -606,6 +607,7 @@
 		VDDIO-supply = <&reg_ext_audio_1v8>;
 		VDDD-supply = <&reg_ext_audio_1v8>;
 		clocks = <&ex_audio_clk>;
+		status = "disabled";
 	};
 
 	eeprom@50 {
