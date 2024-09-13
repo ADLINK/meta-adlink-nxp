@@ -632,7 +632,7 @@ index 000000000000..eb79c34a2d9f
 +	char* pos = NULL;
 +	int msglen = 0;
 +
-+	pos = strstr (buf, ending);
++	pos = memmem (buf, EEPROM_SIZE, ending, 4);
 +	if (pos != NULL)
 +		msglen = pos - buf + sizeof(ending);
 +

@@ -1,0 +1,75 @@
+From 2f696cd486b61c39589403cf17927ff69ef473f3 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Fri, 13 Sep 2024 11:43:31 +0800
+Subject: [PATCH 1/2] lib: string: Add memmem library function
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ include/linux/string.h |  3 +++
+ lib/string.c           | 36 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 39 insertions(+)
+
+diff --git a/include/linux/string.h b/include/linux/string.h
+index df1c1c5669c4..c93ebea87ee8 100644
+--- a/include/linux/string.h
++++ b/include/linux/string.h
+@@ -125,6 +125,9 @@ extern int memcmp(const void *,const void *,__kernel_size_t);
+ #ifndef __HAVE_ARCH_MEMCHR
+ extern void * memchr(const void *,int,__kernel_size_t);
+ #endif
++#ifndef __HAVE_ARCH_MEMMEM
++extern void * memmem(const void *,__kernel_size_t,const void *,__kernel_size_t);
++#endif
+ #ifndef __HAVE_ARCH_MEMCHR_INV
+ void *memchr_inv(const void *, int, size_t);
+ #endif
+diff --git a/lib/string.c b/lib/string.c
+index 78bd65c41369..721b253c8765 100644
+--- a/lib/string.c
++++ b/lib/string.c
+@@ -718,6 +718,42 @@ void *memchr(const void *s, int c, size_t n)
+ }
+ 
+ #endif
++
++#ifndef __HAVE_ARCH_MEMMEM
++/**
++ * memmem - Find a sequence in an area of memory
++ * @a: The memory area
++ * @len1: Size of the memory area
++ * @b: The sequence to search for
++ * @len2: Size of the sequence
++ *
++ * returns the address of the first occurrence of @b, or %NULL
++ * if @b is not found
++ */
++void *memmem (const void *m, size_t ml, const void *s, size_t sl)
++{
++	const char * start = m;
++	const char * end = m + ml;
++
++	if (sl > ml)
++		return NULL;
++
++	while (start < end)
++	{
++		size_t len = sl;
++		const char * ptr1 = start;
++		const char * ptr2 = s;
++		while (len > 0 && *ptr1++ == *ptr2++)
++			len--;
++		if (len == 0)
++			return (void *)start;
++		start++;
++	}
++
++	return NULL;
++}
++#endif
++
+ #ifndef __HAVE_ARCH_MEMCHR_INV
+ static void *check_bytes8(const u8 *start, u8 value, unsigned int bytes)
+ {
+-- 
+2.25.1
+
