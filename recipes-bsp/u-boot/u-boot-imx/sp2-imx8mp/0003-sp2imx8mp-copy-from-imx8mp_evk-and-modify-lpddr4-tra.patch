@@ -1,7 +1,7 @@
-From e09f89385693cd10b64a8e40690e97a8d91f103c Mon Sep 17 00:00:00 2001
+From 21ff1260c942a4c101c140b98232f8eeff36e24f Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Mon, 22 Jul 2024 15:10:01 +0800
-Subject: [PATCH 3/5] sp2imx8mp: copy from imx8mp_evk and modify lpddr4
+Subject: [PATCH 4/7] sp2imx8mp: copy from imx8mp_evk and modify lpddr4
  training for SPL
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>

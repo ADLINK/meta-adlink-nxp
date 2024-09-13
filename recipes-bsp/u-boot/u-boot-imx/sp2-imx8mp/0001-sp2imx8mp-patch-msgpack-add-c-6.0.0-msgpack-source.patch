@@ -1,7 +1,7 @@
-From 04d87d7d1acee9602fb8ab744066a70ef803f257 Mon Sep 17 00:00:00 2001
+From d3f55c4ec2d8f9013aeb92260b3c3e21ede26481 Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Thu, 17 Aug 2023 11:24:51 +0800
-Subject: [PATCH 1/5] sp2imx8mp: patch: msgpack: add c-6.0.0 msgpack source
+Subject: [PATCH 2/7] sp2imx8mp: patch: msgpack: add c-6.0.0 msgpack source
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
 ---

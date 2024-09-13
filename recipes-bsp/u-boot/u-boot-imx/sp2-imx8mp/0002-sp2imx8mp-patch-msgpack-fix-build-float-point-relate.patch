@@ -1,7 +1,7 @@
-From ad7831662399ad670acab20520ee4bd60d3cd768 Mon Sep 17 00:00:00 2001
+From 7a589280726b0ee171cc8e200ce7479fbc1094fd Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Thu, 17 Aug 2023 14:17:07 +0800
-Subject: [PATCH 2/5] sp2imx8mp: patch: msgpack: fix build, float point related
+Subject: [PATCH 3/7] sp2imx8mp: patch: msgpack: fix build, float point related
  functions are disabled, add jsinfo cmd
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
@@ -556,7 +556,7 @@ index d8fce0ca2fdb..29edcee6d212 100644
          return x.via.str.size == y.via.str.size &&
 diff --git a/lib/msgpack/parser.c b/lib/msgpack/parser.c
 new file mode 100644
-index 000000000000..eb79c34a2d9f
+index 000000000000..d98dd4252dfa
 --- /dev/null
 +++ b/lib/msgpack/parser.c
 @@ -0,0 +1,296 @@
@@ -632,7 +632,7 @@ index 000000000000..eb79c34a2d9f
 +	char* pos = NULL;
 +	int msglen = 0;
 +
-+	pos = strstr (buf, ending);
++	pos = memmem (buf, EEPROM_SIZE, ending, 4);
 +	if (pos != NULL)
 +		msglen = pos - buf + sizeof(ending);
 +
