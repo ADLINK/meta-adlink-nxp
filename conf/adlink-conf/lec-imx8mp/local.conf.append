@@ -1,7 +1,7 @@
 
 CONNECTIVITY_CHECK_URIS = "https://www.google.com"
 
-CORE_IMAGE_EXTRA_INSTALL:append = " packagegroup-adlink"
+CORE_IMAGE_EXTRA_INSTALL:append = "${@bb.utils.contains_any('IMAGE_BASENAME', 'imx-image-full imx-image-multimedia', 'packagegroup-adlink', '', d)}"
 
 PACKAGECONFIG:append:pn-opencv_mx8 = " test"
 TOOLCHAIN_TARGET_TASK:append = " onnxruntime-dev"
@@ -10,7 +10,6 @@ MACHINE_EXTRA_RRECOMMENDS:remove = "kernel-module-nxp89xx"
 DISTRO_FEATURES:append = " sensors benchmarks adlink wifi"
 MACHINE_FEATURES:append = " wifi bluetooth"
 IMAGE_FEATURES:append = " ssh-server-openssh"
-IMAGE_INSTALL:append = " sema cinematicexperience-rhi"
 
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
@@ -21,12 +20,10 @@ RELEASE_VERSION ?= "LEC-iMX8MP-${@'PREBUILD-%s' % (lambda dt: (dt.date.today()._
 KERNEL_MODULE_AUTOLOAD += "mlan moal"
 DISTRO_FEATURES:append = " security"
 DISTRO_FEATURES:append = " tpm"
-IMAGE_INSTALL:append = " tpm2-tools tpm2-tss tpm2-abrmd"
 
 DISTRO_FEATURES:append = " meta-virtualization"
 
-IMAGE_INSTALL:append = " docker-moby docker docker-moby-contrib"
-
-IMAGE_INSTALL:append = " tensorflow-lite"
+IMAGE_INSTALL:append = "${@bb.utils.contains_any('IMAGE_BASENAME', 'imx-image-full imx-image-multimedia', 'sema cinematicexperience-rhi docker tensorflow-lite \
+			tpm2-tss tpm2-abrmd docker-moby-contrib docker-moby tpm2-tools', '', d)}"
 
 BBMASK ="meta-freescale/recipes-multimedia/gstreamer/"

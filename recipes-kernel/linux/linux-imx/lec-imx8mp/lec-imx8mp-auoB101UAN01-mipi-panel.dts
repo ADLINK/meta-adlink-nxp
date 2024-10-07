@@ -28,8 +28,8 @@
 	panel@0 {
 		compatible = "auo,b101uan01v7";
 		reg = <0>;
-		pinctrl-0 = <&pinctrl_lvds_pwr_en>;
-		pinctrl-1 = <&pinctrl_lcd0_vdd_en>;
+		pinctrl-0 = <&pinctrl_disp_pwr_en>;
+		pinctrl-1 = <&pinctrl_disp_vdd_en>;
 		enable-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 
