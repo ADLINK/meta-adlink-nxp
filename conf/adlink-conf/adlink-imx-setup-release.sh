@@ -56,3 +56,5 @@ if [ ! "${DISTRO_NAME}" = "adlink-rtedge-desktop" ]; then
 	echo "BBMASK += \"rteval_%.bbappend\"" >> ./conf/local.conf
 fi
 
+# nxp-wlan-sdk bbappend is not buildable, mask it
+echo "BBMASK += \"nxp-wlan-sdk_%.bbappend\"" >> ./conf/local.conf
