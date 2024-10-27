@@ -1,0 +1,137 @@
+From: Francis Lee <francis.lee@mitwell.com.tw>
+Date: Thu, 29 Aug 2024 16:32:26 +0800
+
+---
+diff --git a/Documentation/devicetree/bindings/net/ti,dp83867.yaml b/Documentation/devicetree/bindings/net/ti,dp83867.yaml
+index b8c0e4b5b494..393b9b7c569f 100644
+--- a/Documentation/devicetree/bindings/net/ti,dp83867.yaml
++++ b/Documentation/devicetree/bindings/net/ti,dp83867.yaml
+@@ -118,6 +118,24 @@ properties:
+       Transmitt FIFO depth- see dt-bindings/net/ti-dp83867.h for applicable
+       values.
+ 
++  ti,led-0-mode:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description: |
++      LED0 mode. See dt-bindings/net/ti-dp83867.h for applicable values. 
++      When omitted, set to PHY's default DP83867_LED_LINKUP.
++
++  ti,led-1-mode:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description: |
++      LED1 mode. See dt-bindings/net/ti-dp83867.h for applicable values. 
++      When omitted, set to PHY's default DP83867_LED_LINKUP.
++
++  ti,led-2-mode:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description: |
++      LED2 mode. See dt-bindings/net/ti-dp83867.h for applicable values. 
++      When omitted, set to PHY's default DP83867_LED_LINKUP.
++
+ required:
+   - reg
+ 
+@@ -137,5 +155,6 @@ examples:
+         ti,clk-output-sel = <DP83867_CLK_O_SEL_CHN_A_RCLK>;
+         ti,rx-internal-delay = <DP83867_RGMIIDCTL_2_25_NS>;
+         ti,tx-internal-delay = <DP83867_RGMIIDCTL_2_75_NS>;
++        ti,led-0-mode = <DP83867_LED_ACTIVITY>
+       };
+     };
+
+diff --git a/drivers/net/phy/dp83867.c b/drivers/net/phy/dp83867.c
+index f7436191fa80..e0521a358f65 100644
+--- a/drivers/net/phy/dp83867.c
++++ b/drivers/net/phy/dp83867.c
+@@ -26,6 +26,7 @@
+ #define MII_DP83867_MICR	0x12
+ #define MII_DP83867_ISR		0x13
+ #define DP83867_CFG2		0x14
++#define DP83867_LEDCR1		0x18
+ #define DP83867_CFG3		0x1e
+ #define DP83867_CTRL		0x1f
+ 
+@@ -151,6 +152,14 @@
+ /* FLD_THR_CFG */
+ #define DP83867_FLD_THR_CFG_ENERGY_LOST_THR_MASK	0x7
+ 
++/* LEDCR1 bits */
++#define DP83867_LEDCR1_LED_0_SHIFT	0
++#define DP83867_LEDCR1_LED_0_MASK	GENMASK(3, 0)
++#define DP83867_LEDCR1_LED_1_SHIFT	4
++#define DP83867_LEDCR1_LED_1_MASK	GENMASK(7, 4)
++#define DP83867_LEDCR1_LED_2_SHIFT	8
++#define DP83867_LEDCR1_LED_2_MASK	GENMASK(11, 8)
++
+ enum {
+ 	DP83867_PORT_MIRROING_KEEP,
+ 	DP83867_PORT_MIRROING_EN,
+@@ -168,6 +177,9 @@ struct dp83867_private {
+ 	bool set_clk_output;
+ 	u32 clk_output_sel;
+ 	bool sgmii_ref_clk_en;
++	u32 led_0_mode;
++	u32 led_1_mode;
++	u32 led_2_mode;
+ };
+ 
+ static int dp83867_ack_interrupt(struct phy_device *phydev)
+@@ -658,6 +670,21 @@ static int dp83867_of_init(struct phy_device *phydev)
+ 			   dp83867->rx_fifo_depth);
+ 		return -EINVAL;
+ 	}
++	
++	ret = of_property_read_u32(of_node, "ti,led-0-mode",
++		&dp83867->led_0_mode);
++	if (ret)
++		dp83867->led_0_mode = DP83867_LED_LINKUP;
++
++	ret = of_property_read_u32(of_node, "ti,led-1-mode",
++		&dp83867->led_1_mode);
++	if (ret)
++		dp83867->led_1_mode = DP83867_LED_LINKUP;
++
++	ret = of_property_read_u32(of_node, "ti,led-2-mode",
++		&dp83867->led_2_mode);
++	if (ret)
++		dp83867->led_2_mode = DP83867_LED_LINKUP;
+ 
+ 	return 0;
+ }
+@@ -871,6 +898,15 @@ static int dp83867_config_init(struct phy_device *phydev)
+ 					 BIT(8));
+ 	}
+ 
++	val = phy_read(phydev, DP83867_LEDCR1);
++	val &= ~(DP83867_LEDCR1_LED_2_MASK |
++		DP83867_LEDCR1_LED_1_MASK |
++		DP83867_LEDCR1_LED_0_MASK);
++	val |= (dp83867->led_2_mode << DP83867_LEDCR1_LED_2_SHIFT) |
++	(dp83867->led_1_mode << DP83867_LEDCR1_LED_1_SHIFT) |
++	(dp83867->led_0_mode << DP83867_LEDCR1_LED_0_SHIFT);
++	phy_write(phydev, DP83867_LEDCR1, val);
++
+ 	val = phy_read(phydev, DP83867_CFG3);
+ 	/* Enable Interrupt output INT_OE in CFG3 register */
+ 	if (phy_interrupt_is_valid(phydev))
+diff --git a/include/dt-bindings/net/ti-dp83867.h b/include/dt-bindings/net/ti-dp83867.h
+index 6fc4b445d3a1..5ed268680b64 100644
+--- a/include/dt-bindings/net/ti-dp83867.h
++++ b/include/dt-bindings/net/ti-dp83867.h
+@@ -50,4 +50,14 @@
+ #define DP83867_CLK_O_SEL_REF_CLK		0xC
+ /* Special flag to indicate clock should be off */
+ #define DP83867_CLK_O_SEL_OFF			0xFFFFFFFF
++
++/* LEDCR1 bits */
++#define DP83867_LED_LINKUP		0x0
++#define DP83867_LED_ACTIVITY		0x1
++#define DP83867_LED_RX_ACTIVITY		0x2
++#define DP83867_LED_TX_ACTIVITY		0x3
++#define DP83867_LED_1000BT_LINKUP	0x5
++#define DP83867_LED_100BTX_LINKUP	0x6
++#define DP83867_LED_LINKUP_ACTIVITY	0xB
++
+ #endif
+-- 
+2.34.1

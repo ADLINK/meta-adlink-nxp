@@ -35,6 +35,9 @@ do_copy_source () {
     if [ ${MACHINE} = "lec-imx8mp" ]; then
      cp -f ${WORKDIR}/tlv320aic3x.dtsi ${S}/arch/arm64/boot/dts/adlink/
    fi  
+   if [ ${MACHINE} = "osm-imx93" ]; then
+     cp -f ${WORKDIR}/imx93.dtsi ${S}/arch/arm64/boot/dts/adlink/
+   fi   
   
 }
 

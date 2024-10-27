@@ -1,0 +1,10 @@
+
+CONNECTIVITY_CHECK_URIS = "https://www.google.com"
+
+IMAGE_INSTALL:append = " packagegroup-imx-ml"
+
+# Switch to Debian packaging and include package-management in the image
+PACKAGE_CLASSES = "package_deb"
+EXTRA_IMAGE_FEATURES += "package-management"
+
+BBMASK += "packagegroup-adlink.bbappend nnshark_2023.11.imx.bbappend"

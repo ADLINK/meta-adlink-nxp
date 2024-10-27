@@ -1,7 +1,6 @@
 #!/bin/sh
 
-TOKEN_PRE="ghp_"
-TOKEN_POST="DiFPUbMC2PjG06sFvpuDrsBdJAH5bO0bSQd9"
+
 CWD=$(pwd)
 PROGNAME="$CWD/imx-setup-release.sh"
 
@@ -18,6 +17,5 @@ if [ -f ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append ]
 	cat ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append >> ./conf/local.conf
 fi
 
-echo "PA_USER ?= \"adlink-guest\"" >> ./conf/local.conf
-echo "PA_TOKEN ?= \""${TOKEN_PRE}${TOKEN_POST}"\"" >> ./conf/local.conf
+
 

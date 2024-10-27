@@ -1,0 +1,21 @@
+From: Francis Lee <francis.lee@mitwell.com.tw>
+Date: Thu, 29 Aug 2024 16:32:26 +0800
+
+---
+diff --git a/drivers/tty/serial/fsl_lpuart.c b/drivers/tty/serial/fsl_lpuart.c
+index 38ce0344edbd..72bdfd44ff75 100644
+--- a/drivers/tty/serial/fsl_lpuart.c
++++ b/drivers/tty/serial/fsl_lpuart.c
+@@ -247,7 +247,9 @@
+ 
+ #define DRIVER_NAME	"fsl-lpuart"
+ #define DEV_NAME	"ttyLP"
+-#define UART_NR		6
++/* Increase UART_NR from 6 to 8 to support lpuart7 and lpuart8 and avoid
++initialization failures, modified by Francis 2024/2/23 */
++#define UART_NR		8
+ 
+ /* IMX lpuart has four extra unused regs located at the beginning */
+ #define IMX_REG_OFF	0x10
+-- 
+2.34.1
