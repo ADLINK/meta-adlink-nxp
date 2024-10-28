@@ -10,14 +10,14 @@ IMAGE_INSTALL:append = " cinematicexperience-rhi"
 
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
-
-#BUILDTAG ??= "SP2-iMX8MP-1v0"
-RELEASE_VERSION ?= "SP2-iMX8MP-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
+BUILDTAG ??= "v2.01.03"
+RELEASE_VERSION ?= "${@'v%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s.r%s' % (d.getVar('BUILDTAG', True), d.getVar('BUILD_NUMBER', True))}"
 
 # Set user account and password (for yocto images, e.g. core-image-xxx)
-# clear password deprecated, gen password with 'mkpasswd -m sha-512 adlink -s 00000000'
+# clear password deprecated, gen password with 'openssl passwd P4SsW0rD'
+INHERIT += "extrausers"
 EXTRA_USERS_PARAMS = " \
-useradd -p '$6$00000000$/noRU5LR3VQ5X2EyOdcXvqd9bNRwM/PCAMxY8cvKXsjSqxezozESCRWuVphSrjGhvUjD4H9RmVBX4tcQHEQiH0' adlink; \
+useradd -p '$(openssl passwd adlink)' adlink; \
 usermod -a -G sudo,users,plugdev,docker adlink; \
 "
 
