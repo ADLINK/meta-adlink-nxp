@@ -1,0 +1,76 @@
+From 50eace0cd983a5f8eb6cf31f65a6495b56b9fdae Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Wed, 30 Oct 2024 17:19:38 +0800
+Subject: [PATCH] cmd: add panel cmd to set it on or off
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ cmd/Makefile |  5 ++---
+ cmd/panel.c  | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 3 deletions(-)
+ create mode 100644 cmd/panel.c
+
+diff --git a/cmd/Makefile b/cmd/Makefile
+index 55c794fe9daa..8ea7af32ae73 100644
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -188,9 +188,8 @@ obj-$(CONFIG_CMD_ETHSW) += ethsw.o
+ obj-$(CONFIG_CMD_AXI) += axi.o
+ obj-$(CONFIG_CMD_PVBLOCK) += pvblock.o
+ 
+-ifeq ($(CONFIG_MSGPACK),y)
+-obj-y += jsinfo.o
+-endif
++obj-$(CONFIG_MSGPACK) += jsinfo.o
++obj-$(CONFIG_PANEL) += panel.o
+ 
+ # Power
+ obj-$(CONFIG_CMD_PMIC) += pmic.o
+diff --git a/cmd/panel.c b/cmd/panel.c
+new file mode 100644
+index 000000000000..8aed4fe92239
+--- /dev/null
++++ b/cmd/panel.c
+@@ -0,0 +1,39 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * (C) Copyright 2018
++ * DENX Software Engineering, Anatolij Gustschin <agust@denx.de>
++ *
++ * cls - clear screen command
++ */
++#include <common.h>
++#include <command.h>
++#include <dm.h>
++#include <panel.h>
++#include <backlight.h>
++
++/* Disable panel */
++static int do_panel(struct cmd_tbl *cmdtp, int flag, int argc,
++		   char *const argv[])
++{
++	struct udevice *dev;
++	if (uclass_first_device_err(UCLASS_PANEL, &dev)) {
++		printf("\rCouldn't get PANEL device\n");
++		return CMD_RET_FAILURE;
++	}
++
++	if (argc > 1 && argc <= 2) {
++		if (strcmp(argv[1], "on") == 0) {
++			panel_set_backlight(dev, 80);
++			panel_enable_backlight(dev);
++			return CMD_RET_SUCCESS;
++		} else if (strcmp(argv[1], "off") == 0) {
++			panel_set_backlight(dev, BACKLIGHT_OFF);
++			panel_enable_backlight(dev);
++			return CMD_RET_SUCCESS;			
++		}
++	}
++	return CMD_RET_FAILURE;
++}
++
++U_BOOT_CMD(panel, 2, 1, do_panel, "turn panel on or off", "<on|off>\n" "    e.g panel off");
++
+-- 
+2.25.1
+
