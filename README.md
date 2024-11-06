@@ -1,6 +1,6 @@
 # Mickledore
 
-- Kernel version: 6.1.55
+- Kernel version: 6.1.55 / 6.1.33
 - Released year: 2023
 - Kernel support by Adlink(continuing).
 - Manifest of the Yocto BSP is [here](https://github.com/ADLINK/adlink-manifest/tree/lec-imx-yocto-mickledore).
@@ -28,6 +28,7 @@
 ## 2. Supported Modules
 
 - LEC-IMX8MP
+- OSM-IMX93
 
 ## 3. Supported Features & Interfaces
 
