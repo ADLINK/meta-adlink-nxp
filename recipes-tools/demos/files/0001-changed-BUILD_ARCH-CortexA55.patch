@@ -1,0 +1,26 @@
+From 1f689d7ab79dcbdf230d5370d59e05ec10c876b4 Mon Sep 17 00:00:00 2001
+From: Ohtokani Pinzon <ohtokani.pinzon@nxp.com>
+Date: Mon, 17 Jul 2023 11:00:06 -0700
+Subject: [PATCH] changed BUILD_ARCH = CortexA55
+
+Signed-off-by: Ohtokani Pinzon <ohtokani.pinzon@nxp.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 09f3d9a..0a7cc10 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,7 +6,7 @@ CPLUS_FLAGS =
+ 
+ INSTALLDIR := ./release
+ 
+-BUILD_ARCH = CortexA53
++BUILD_ARCH = CortexA55
+ export BUILD_ARCH
+ 
+ all: VOICESEEKER VOICESPOT
+-- 
+2.25.1
+
