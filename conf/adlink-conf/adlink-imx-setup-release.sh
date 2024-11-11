@@ -47,3 +47,19 @@ fi
 
 # nxp-wlan-sdk bbappend is not buildable, mask it
 echo "BBMASK += \"nxp-wlan-sdk_%.bbappend\"" >> ./conf/local.conf
+
+# hook the nxp hab boot stuff
+if [ "$HAB" = "1" ]; then
+	echo "IMAGE_FEATURES[validitems] += \"hab\"" >> ./conf/local.conf
+	echo "EXTRA_IMAGE_FEATURES:append = \" hab \"" >> ./conf/local.conf
+	hook_in_layer meta-adlink-nxp/meta-adlink-hab
+	case "$MACHINE" in
+	*mx8m*)
+		echo "HAB_VER = \"habv4\"" >> ./conf/local.conf
+		;;
+	*)
+		echo "HAB_VER = \"ahab\"" >> ./conf/local.conf
+		;;
+	esac
+fi
+
