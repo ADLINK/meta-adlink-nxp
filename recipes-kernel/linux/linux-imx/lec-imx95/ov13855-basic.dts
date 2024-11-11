@@ -1,0 +1,147 @@
+
+&scmi_iomuxc {
+	pinctrl_csi_mclk: csi_mclk {
+		fsl,pins = <
+			IMX95_PAD_CCM_CLKO1__CCMSRCGPCMIX_TOP_CLKO_1	0x39e
+		>;
+	};
+};
+
+&lpi2c3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	/*
+	ov5640_0: ov5640_mipi@3c {
+		compatible = "ovti,ov5640";
+		reg = <0x3c>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi_mclk>;
+		clocks = <&scmi_clk IMX95_CLK_CCMCKO1>;
+		clock-names = "xclk";
+		assigned-clocks = <&scmi_clk IMX95_CLK_CCMCKO1>;
+		assigned-clock-parents = <&osc_24m>;
+		assigned-clock-rates = <24000000>;
+		powerdown-gpios = <&i2c3_adl1000 10 GPIO_ACTIVE_HIGH>; 	//CN_GPIO0_CAM0_PWR#_1V8
+		reset-gpios = <&i2c3_adl1000 12 GPIO_ACTIVE_LOW>;	//CN_GPIO2_CAM0_RST#_1V8
+		status = "okay";
+
+		port {
+			ov13855_mipi_0_ep: endpoint {
+				remote-endpoint = <&mipi_csi0_ep>;
+				data-lanes = <1 2>;
+				clock-lanes = <0>;
+			};
+		};
+	};
+	*/
+	
+	ov13855_mipi: ov13855_mipi@36 {
+		compatible = "ov13855_mipi";
+		reg = <0x36>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi_mclk>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+		clocks = <&scmi_clk IMX95_CLK_CCMCKO1>;
+		clock-names = "csi_mclk";
+		assigned-clocks = <&scmi_clk IMX95_CLK_CCMCKO1>;
+		assigned-clock-parents = <&osc_24m>;
+		assigned-clock-rates = <24000000>;
+
+		//pwn-gpios = <&i2c2_gpio_expander_71 0 GPIO_ACTIVE_HIGH>; 	//CN_GPIO1_CAM1_PWR#_1V8
+		//rst-gpios = <&i2c2_gpio_expander_71 1 GPIO_ACTIVE_LOW>;	//CN_GPIO3_CAM1_RST#_1V8
+		pwn-gpios = <&i2c3_adl1000 11 GPIO_ACTIVE_HIGH>; 	//CN_GPIO1_CAM1_PWR#_1V8
+		rst-gpios = <&i2c3_adl1000 13 GPIO_ACTIVE_LOW>;	//CN_GPIO3_CAM1_RST#_1V8
+		//pwn-gpios = <&i2c3_adl1000 11 GPIO_ACTIVE_HIGH>; 	//CN_GPIO1_CAM1_PWR#_1V8
+		//rst-gpios = <&i2c3_adl1000 13 GPIO_ACTIVE_LOW>;	//CN_GPIO3_CAM1_RST#_1V8
+		virtual_channel = <0>;
+		mipi_csi;
+
+		port@0 {
+			ov13855_mipi_0_ep: endpoint {
+				remote-endpoint = <&mipi_csi0_ep>;
+				data-lanes = <1 2 3 4>;
+				clock-lanes = <0>;
+			};
+		};
+	};
+	
+
+};
+
+&dphy_rx {
+	status = "okay";
+};
+
+&mipi_csi0 {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			mipi_csi0_ep: endpoint {
+				remote-endpoint = <&ov13855_mipi_0_ep>;
+				data-lanes = <1 2 3 4>;
+				clock-lanes = <0>;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+				mipi_csi0_out: endpoint {
+				remote-endpoint = <&formatter_0_in>;
+				//remote-endpoint = <&isi_in_2>;
+			};
+		};
+	};
+};
+
+&csi_pixel_formatter_0 {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+
+			formatter_0_in: endpoint {
+				remote-endpoint = <&mipi_csi0_out>;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+
+			formatter_0_out: endpoint {
+				remote-endpoint = <&isi_in_2>;
+			};
+		};
+	};
+};
+
+&isi {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@2 {
+			reg = <2>;
+
+			isi_in_2: endpoint {
+				remote-endpoint = <&formatter_0_out>;
+				//remote-endpoint = <&mipi_csi0_out>;
+			};
+		};
+	};
+};
+
+

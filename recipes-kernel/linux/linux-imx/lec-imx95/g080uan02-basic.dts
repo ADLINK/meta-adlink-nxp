@@ -1,0 +1,72 @@
+
+
+
+&{/} {
+
+	lcd0_backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&tpm6 2 6666667 PWM_POLARITY_INVERTED>;
+		brightness-levels = <0 45 63 88 119 158 203 255>;
+		default-brightness-level = <6>;
+		enable-gpios = <&i2c3_adl1000 9 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+
+&display_pixel_link {
+	status = "okay";
+};
+
+&dpu {
+	assigned-clocks = <&scmi_clk IMX95_CLK_DISP1PIX>,
+			  <&scmi_clk IMX95_CLK_VIDEOPLL1_VCO>,
+			  <&scmi_clk IMX95_CLK_VIDEOPLL1>;
+	assigned-clock-parents = <&scmi_clk IMX95_CLK_VIDEOPLL1>;
+	assigned-clock-rates = <0>, <4008000000>, <445333334>;
+};
+
+&mipi_dsi {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	panel@0 {
+		compatible = "auo,g080uan02";
+		reg = <0>;
+		enable-gpios = <&i2c3_adl1000 8 GPIO_ACTIVE_HIGH>; //LCD0_VDD_EN_1V8
+		dsi-lanes = <4>;
+		v3p3-supply = <&reg_3p3v>;
+		v1p8-supply = <&reg_1p8v>;
+		backlight = <&lcd0_backlight>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dsi_out>;
+			};
+		};
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+
+			dsi_out: endpoint {
+				remote-endpoint = <&panel_in>;
+			};
+		};
+	};
+};
+
+&pixel_interleaver {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@1 {
+		reg = <1>;
+		status = "okay";
+	};
+};

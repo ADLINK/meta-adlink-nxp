@@ -51,6 +51,10 @@ do_copy_source () {
           bbnote "copy kernel dtsi: ${extrafile}"
           cp -f ${WORKDIR}/${MACHINE}/${extrafile} ${S}/arch/arm64/boot/dts/adlink/
           ;;
+        *.h)
+          bbnote "copy  header file: ${extrafile}"
+          cp -f ${WORKDIR}/${MACHINE}/${extrafile} ${S}/arch/arm64/boot/dts/adlink/
+          ;;	  
         *.dtso)
           for dtb in ${dtbes}; do if [ "$dtb" = *"${extraname}"* ]; then dtbname=$(basename ${dtb}) else dtbname=""; fi; done
           if [ -n ${dtbname} ]; then

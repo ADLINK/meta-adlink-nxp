@@ -25,7 +25,11 @@ do_copy_source () {
       cp -f ${WORKDIR}/${MACHINE}/${dtsname} ${S}/arch/arm/dts/
       if ! grep -q ${dtbname} ${S}/arch/arm/dts/Makefile; then
         bbnote "modify ${S}/arch/arm/dts/Makefile: add ${dtbname}"
-        sed -e 's,dtb-$(CONFIG_ARCH_IMX8M) += \\,dtb-$(CONFIG_ARCH_IMX8M) += \\\n\t'${dtbname}' \\,g' -i ${S}/arch/arm/dts/Makefile
+        if [ "${MACHINE}" = "lec-imx95" ]; then
+        sed -e 's,dtb-$(CONFIG_ARCH_IMX9) += \\,dtb-$(CONFIG_ARCH_IMX9) += \\\n\t'${dtbname}' \\,g' -i ${S}/arch/arm/dts/Makefile
+        else
+         sed -e 's,dtb-$(CONFIG_ARCH_IMX8M) += \\,dtb-$(CONFIG_ARCH_IMX8M) += \\\n\t'${dtbname}' \\,g' -i ${S}/arch/arm/dts/Makefile
+         fi
       fi
     fi
   done

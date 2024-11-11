@@ -1,0 +1,115 @@
+
+
+
+&{/} {
+	hdmi-connector {
+		compatible = "hdmi-connector";
+		label = "hdmi";
+		type = "a";
+
+		port {
+			hdmi_connector_in: endpoint {
+				remote-endpoint = <&lt9611_out>;
+			};
+		};
+	};
+
+	sound-hdmi {
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "sound-hdmi";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,frame-master = <&hdmicpu>;
+		simple-audio-card,bitclock-master = <&hdmicpu>;
+
+		hdmicpu:simple-audio-card,cpu {
+			sound-dai = <&sai1>;
+			system-clock-direction-out;
+		};
+
+		simple-audio-card,codec {
+			sound-dai = <&lt9611_codec 0>;
+		};
+	};
+
+};
+
+&display_pixel_link {
+	status = "okay";
+};
+
+&dpu {
+	assigned-clocks = <&scmi_clk IMX95_CLK_DISP1PIX>,
+			  <&scmi_clk IMX95_CLK_VIDEOPLL1_VCO>,
+			  <&scmi_clk IMX95_CLK_VIDEOPLL1>;
+	assigned-clock-parents = <&scmi_clk IMX95_CLK_VIDEOPLL1>;
+	assigned-clock-rates = <0>, <2673000000>, <297000000>;
+	status = "okay";
+};
+
+&lpi2c3 {
+	clock-frequency = <400000>;
+	status = "okay";
+
+
+	/* U1500 LT9611_LONTIUM */
+	lt9611_codec: hdmi-bridge@3b {
+		#sound-dai-cells = <1>;
+		compatible = "adlink,lt9611";
+		reg = <0x3b>;
+		interrupts-extended = <&i2c2_gpio_expander_71 5 IRQ_TYPE_EDGE_FALLING>;
+		//reset-gpios = <&i2c2_gpio_expander_71 4 GPIO_ACTIVE_LOW>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_mipi_dsi_csi>;
+
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+
+				lt9611_to_dsi: endpoint {
+					remote-endpoint = <&dsi_to_lt9611>;
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+
+				lt9611_out: endpoint {
+					remote-endpoint = <&hdmi_connector_in>;
+				};
+			};
+		};
+	};
+};
+
+&mipi_dsi {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+
+			dsi_to_lt9611: endpoint {
+				remote-endpoint = <&lt9611_to_dsi>;
+			};
+		};
+	};
+};
+
+&pixel_interleaver {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		status = "okay";
+	};
+};

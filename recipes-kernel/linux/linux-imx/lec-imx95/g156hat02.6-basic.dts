@@ -1,0 +1,101 @@
+
+
+&{/} {
+	lvds0_panel {
+		compatible = "auo,g156hat026";
+		backlight = <&lcd0_backlight>;
+		enable-gpios = <&i2c3_adl1000 8 GPIO_ACTIVE_HIGH>; //LCD0_VDD_EN_1V8
+		
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				dual-lvds-odd-pixels;
+				panel_in_odd: endpoint {
+					remote-endpoint = <&lvds0_out>;
+				};
+			};
+
+
+			port@1 {
+				reg = <1>;
+				dual-lvds-even-pixels;
+				panel_in_even: endpoint {
+					remote-endpoint = <&lvds1_out>;
+				};
+			};
+		};
+	};
+
+	lcd0_backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&tpm6 2 6666667 PWM_POLARITY_INVERTED>;
+		brightness-levels = <0 45 63 88 119 158 203 255>;
+		default-brightness-level = <6>;
+		enable-gpios = <&i2c3_adl1000 9 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&display_pixel_link {
+	status = "okay";
+};
+
+&ldb {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	assigned-clocks = <&scmi_clk IMX95_CLK_LDBPLL_VCO>,
+			  <&scmi_clk IMX95_CLK_LDBPLL>;
+	assigned-clock-rates = <3291120000>, <1097040000>;
+	status = "okay";
+
+	channel@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		status = "okay";
+
+		port@1 {
+			reg = <1>;
+
+			lvds0_out: endpoint {
+				remote-endpoint = <&panel_in_odd>;
+			};
+		};
+	};
+
+	channel@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		status = "okay";
+
+		port@1 {
+			reg = <1>;
+
+			lvds1_out: endpoint {
+				remote-endpoint = <&panel_in_even>;
+			};
+		};
+	};
+};
+
+&ldb0_phy {
+	status = "okay";
+};
+
+&ldb1_phy {
+	status = "okay";
+};
+
+&pixel_interleaver {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		status = "okay";
+	};
+};
