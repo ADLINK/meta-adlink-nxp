@@ -26,3 +26,5 @@ IMAGE_INSTALL:append = "${@bb.utils.contains_any('IMAGE_BASENAME', 'imx-image-fu
 			tpm2-tss tpm2-abrmd docker-moby-contrib docker-moby tpm2-tools', '', d)}"
 
 BBMASK ="meta-freescale/recipes-multimedia/gstreamer/"
+BBMASK +="meta-adlink-demo/recipes-browser/chromium/"
+
