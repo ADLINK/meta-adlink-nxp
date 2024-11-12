@@ -1,0 +1,81 @@
+From b2be1e2f15da01797ef9844f38b704fc6bb11374 Mon Sep 17 00:00:00 2001
+From: Dinesh kumar <dinesh.v@adlinktech.com>
+Date: Mon, 11 Nov 2024 22:54:51 +0530
+Subject: [PATCH 3/5] Add mclk support and modify realtek phy reg
+
+---
+ drivers/net/phy/realtek.c      |  2 ++
+ sound/soc/codecs/tlv320aic3x.c | 20 ++++++++++++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/drivers/net/phy/realtek.c b/drivers/net/phy/realtek.c
+index 354b367cdf64..10b1cd1d2c5e 100644
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -436,6 +436,8 @@ static int rtl8211f_config_init(struct phy_device *phydev)
+ 		return ret;
+ 	}
+ 
++	phy_modify_paged_changed(phydev, 0xd04, 0x10, 0x4f20,0x205b);
++
+ 	return genphy_soft_reset(phydev);
+ }
+ 
+diff --git a/sound/soc/codecs/tlv320aic3x.c b/sound/soc/codecs/tlv320aic3x.c
+index 56e795a00e22..db4f61810670 100644
+--- a/sound/soc/codecs/tlv320aic3x.c
++++ b/sound/soc/codecs/tlv320aic3x.c
+@@ -45,6 +45,7 @@
+ #include <sound/soc.h>
+ #include <sound/initval.h>
+ #include <sound/tlv.h>
++#include <linux/clk.h>
+ 
+ #include "tlv320aic3x.h"
+ 
+@@ -88,6 +89,7 @@ struct aic3x_priv {
+ 	enum aic3x_micbias_voltage micbias_vg;
+ 	/* Output Common-Mode Voltage */
+ 	u8 ocmv;
++	struct clk *mclk;
+ };
+ 
+ static const struct reg_default aic3x_reg[] = {
+@@ -1832,9 +1834,25 @@ int aic3x_probe(struct device *dev, struct regmap *regmap, kernel_ulong_t driver
+ 			dev_err(dev, "Failed to init class D: %d\n", ret);
+ 	}
+ 
++	aic3x->mclk = devm_clk_get(dev, "mclk");
++	if (IS_ERR(aic3x->mclk)) {
++            aic3x->mclk = NULL;
++            dev_err(dev, "mclk missing or invalid\n");
++    }
++	else
++	{
++		ret = clk_prepare_enable(aic3x->mclk);
++		if (ret < 0) {
++			dev_err(dev, "Failed to enable mclk\n");
++		}
++	}
+ 	ret = devm_snd_soc_register_component(dev, &soc_component_dev_aic3x, &aic3x_dai, 1);
+ 	if (ret)
++	{
++		if(aic3x->mclk)
++			clk_disable_unprepare(aic3x->mclk);
+ 		return ret;
++	}
+ 
+ 	return 0;
+ }
+@@ -1844,6 +1862,8 @@ void aic3x_remove(struct device *dev)
+ {
+ 	struct aic3x_priv *aic3x = dev_get_drvdata(dev);
+ 
++	if(aic3x->mclk)
++		clk_disable_unprepare(aic3x->mclk);
+ 	/* Leave the codec in reset state */
+ 	if (aic3x->gpio_reset && !aic3x->shared_reset)
+ 		gpiod_set_value(aic3x->gpio_reset, 1);
+-- 
+2.25.1
+
