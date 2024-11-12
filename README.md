@@ -10,6 +10,7 @@ You can follow the same steps to build your own customized BSP based on your int
 | LEC-IMX8MP | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-IMX8MP?lang=en) |
 | LEC-IMX8MM | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-IMX8MM?lang=en) |
 | OSM-IMX93  | [Click_here](https://www.adlinktech.com/Products/Computer_on_Modules/OSM/OSM-IMX93)            |
+| LEC-IMX95  | [click_here](https://www.adlinktech.com/Products/Computer_on_Modules/SMARC/LEC-IMX95)          |
 
 # 2. Available Branches
 
