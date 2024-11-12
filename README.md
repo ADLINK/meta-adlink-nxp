@@ -30,6 +30,7 @@
 - LEC-IMX8MP
 - LEC-IMX8MM
 - SP2-IMX8MP
+- LEC-IMX95
 
 ## 3. Supported Features & Interfaces
 
