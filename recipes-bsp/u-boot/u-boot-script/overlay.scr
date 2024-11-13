@@ -1,7 +1,7 @@
 #
 # set device tree overlays according to eeprom settings
 #
-setenv set_overlays 'echo "EEPROM env variable: E_disp:${E_disp} E_eth:${E_eth} E_wl:${E_wl} E_snd:${E_snd} E_cma:${E_cma}...";
+setenv set_overlays 'echo "EEPROM env variable: E_disp:${E_disp} E_eth:${E_eth} E_wl:${E_wl} E_snd:${E_snd} E_cma:${E_cma} E_ts:${E_ts}...";
 if test -n ${E_disp}; then
   if test ${E_disp} = 7; then
     setenv overlays ${overlays} 7inch-overlay.dtbo;
@@ -42,6 +42,11 @@ if test -n ${E_cma}; then
     setenv overlays ${overlays} cma750mb-overlay.dtbo;
   elif test ${E_cma} = 400; then
     setenv overlays ${overlays} cma400mb-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_ts}; then
+  if test ${E_ts} = ili; then
+    setenv overlays ${overlays} ts-ili2132-overlay.dtbo;
   fi;
 fi;'
 
