@@ -59,6 +59,11 @@ if test -n ${E_csi}; then
   if test ${E_csi} = 678; then
     setenv overlays ${overlays} csi678-overlay.dtbo;
   fi;
+fi;
+if test -n ${E_ts}; then
+  if test ${E_ts} = ili; then
+    setenv overlays ${overlays} ts-ili2132-overlay.dtbo;
+  fi;
 fi;'
 #
 # set load_overlays commands to load dtbo
