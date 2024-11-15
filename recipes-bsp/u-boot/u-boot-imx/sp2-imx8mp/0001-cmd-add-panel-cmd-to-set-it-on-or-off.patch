@@ -1,28 +1,15 @@
-From a747d1c23f9967f972ba76c5f47ea43bb1f64cf1 Mon Sep 17 00:00:00 2001
+From 69d2ae3d1aa5e7009b87e9366660fbb94e8f6160 Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Wed, 30 Oct 2024 17:19:38 +0800
 Subject: [PATCH] cmd: add panel cmd to set it on or off
 
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
 ---
- board/adlink/sp2imx8mp/sp2imx8mp.c |  1 +
- cmd/Makefile                       |  5 ++--
- cmd/panel.c                        | 39 ++++++++++++++++++++++++++++++
- 3 files changed, 42 insertions(+), 3 deletions(-)
+ cmd/Makefile |  5 ++---
+ cmd/panel.c  | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 3 deletions(-)
  create mode 100644 cmd/panel.c
 
-diff --git a/board/adlink/sp2imx8mp/sp2imx8mp.c b/board/adlink/sp2imx8mp/sp2imx8mp.c
-index ee238094defd..8c496ff9dd99 100644
---- a/board/adlink/sp2imx8mp/sp2imx8mp.c
-+++ b/board/adlink/sp2imx8mp/sp2imx8mp.c
-@@ -689,6 +689,7 @@ char* board_boot_device(enum boot_device boot_dev)
- 
- int board_late_init(void)
- {
-+	env_set("preboot", "panel off;");
- #ifdef CONFIG_ENV_IS_IN_MMC
- 	board_late_mmc_env_init();
- #endif
 diff --git a/cmd/Makefile b/cmd/Makefile
 index 55c794fe9daa..8ea7af32ae73 100644
 --- a/cmd/Makefile
@@ -41,7 +28,7 @@ index 55c794fe9daa..8ea7af32ae73 100644
  obj-$(CONFIG_CMD_PMIC) += pmic.o
 diff --git a/cmd/panel.c b/cmd/panel.c
 new file mode 100644
-index 000000000000..8aed4fe92239
+index 000000000000..b4e7fd6b69b4
 --- /dev/null
 +++ b/cmd/panel.c
 @@ -0,0 +1,39 @@
@@ -76,7 +63,7 @@ index 000000000000..8aed4fe92239
 +		} else if (strcmp(argv[1], "off") == 0) {
 +			panel_set_backlight(dev, BACKLIGHT_OFF);
 +			panel_enable_backlight(dev);
-+			return CMD_RET_SUCCESS;			
++			return CMD_RET_SUCCESS;
 +		}
 +	}
 +	return CMD_RET_FAILURE;
