@@ -23,12 +23,6 @@ if [ -f ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append ]
 	cat ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append >> ./conf/local.conf
 fi
 
-if [ -d ../sources/meta-adlink-demo ]; then
-        if  grep -q meta-adlink-demo ./conf/bblayers.conf; then
-                echo "BBLAYERS += \"\${BSPDIR}/sources/meta-adlink-demo\"" >> ./conf/bblayers.conf
-        fi
-fi
-
 if [ -d ../sources/meta-nxp-desktop ]; then
 	if ! grep -q meta-nxp-desktop ./conf/bblayers.conf; then
 		echo "BBLAYERS += \"\${BSPDIR}/sources/meta-nxp-desktop\"" >> ./conf/bblayers.conf
