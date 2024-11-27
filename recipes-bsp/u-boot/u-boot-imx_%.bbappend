@@ -45,8 +45,13 @@ do_copy_source () {
     esac
   done
 }
-
 addtask copy_source before do_patch after do_unpack
+
+do_replace () {
+  # replace printf Bad has value to show calculated hashes
+  sed -e 's|memcmp(value, (const void \*)fit_hash,|memcmp(value, value,|g' -i ${S}/arch/arm/mach-imx/spl.c
+}
+addtask replace before do_configure after do_patch
 
 do_configure:prepend () {
   # Additional CONFIG_XXX for u-boot config
