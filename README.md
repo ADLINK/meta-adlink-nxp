@@ -31,6 +31,7 @@
 - LEC-IMX8MM
 - SP2-IMX8MP
 - LEC-IMX95
+- OSM-IMX93
 
 ## 3. Supported Features & Interfaces
 
