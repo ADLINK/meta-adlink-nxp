@@ -1,0 +1,6 @@
+
+# ADLINK Yocto Project Release layers
+BBLAYERS += "${BSPDIR}/sources/meta-adlink-nxp"
+
+
+

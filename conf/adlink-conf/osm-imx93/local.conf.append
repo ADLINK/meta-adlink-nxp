@@ -1,0 +1,19 @@
+
+CONNECTIVITY_CHECK_URIS = "https://www.google.com"
+
+IMAGE_INSTALL:append = " packagegroup-imx-ml"
+
+# Switch to Debian packaging and include package-management in the image
+PACKAGE_CLASSES = "package_deb"
+EXTRA_IMAGE_FEATURES += "package-management"
+
+BBMASK += "packagegroup-adlink.bbappend nnshark_2023.11.imx.bbappend"
+
+INHERIT += "image-buildinfo"
+IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
+
+
+RELEASE_VERSION ?= "OSM-IMX93-${@'PREBUILD-%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s' % d.getVar('BUILDTAG')}"
+
+DISTRO_FEATURES:append = " opengl"
+IMAGE_INSTALL:append = " glmark2 stress-ng cpufrequtils"
