@@ -60,7 +60,8 @@ done;'
 #
 # set boot arguments from emmc boot
 #
-setenv emmcargs 'setenv bootargs ${jh_clk} ${mcore_clk} console=${console} pcie_cz_enabled=${pcie_compliance} pcie_phy_tuned=adlink net.ifnames=0 root=${mmcroot};'
+setenv extraargs '#EXTRA_BOOT_ARGS#'
+setenv emmcargs 'setenv bootargs ${jh_clk} ${mcore_clk} console=${console} ${extraargs} root=${mmcroot};'
 
 #
 # modified mmcboot
