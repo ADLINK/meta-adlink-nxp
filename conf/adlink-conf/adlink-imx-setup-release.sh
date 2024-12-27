@@ -23,6 +23,10 @@ if [ -f ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append ]
 	cat ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append >> ./conf/local.conf
 fi
 
+if [ ! "$DISTRO" = "adlink" ]; then
+	echo "IMAGE_FEATURES[validitems] += \"kiosk-mode hab remote logo resize locale\"" >> ./conf/local.conf
+fi
+
 if [ -d ../sources/meta-nxp-desktop ]; then
 	if ! grep -q meta-nxp-desktop ./conf/bblayers.conf; then
 		echo "BBLAYERS += \"\${BSPDIR}/sources/meta-nxp-desktop\"" >> ./conf/bblayers.conf
