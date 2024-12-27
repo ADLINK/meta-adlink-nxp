@@ -23,6 +23,10 @@ if [ -f ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append ]
 	cat ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append >> ./conf/local.conf
 fi
 
+if [ ! "$DISTRO" = "adlink" ]; then
+	echo "IMAGE_FEATURES[validitems] += \"kiosk-mode hab remote logo resize\"" >> ./conf/local.conf
+fi
+
 if [ ! "${DISTRO_NAME}" = "adlink-rtedge-desktop" ]; then
 	echo "BBMASK += \"rteval_%.bbappend\"" >> ./conf/local.conf
 fi
