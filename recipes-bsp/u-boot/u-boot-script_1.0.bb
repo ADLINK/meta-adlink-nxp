@@ -14,7 +14,7 @@ COMPATIBLE_MACHINE = "(mx6|mx7|mx8)"
 
 UBOOT_BOOT_SCRIPT ?= "boot.scr"
 EXTRA_BOOT_ARGS = "pcie_cz_enabled=${pcie_compliance} pcie_phy_tuned=adlink net.ifnames=0"
-EXTRA_BOOT_ARGS:append = " ${@bb.utils.contains('IMAGE_FEATURES', 'logo', 'fbcon=logo-count:1 fbcon=logo-pos:center', '', d)}"
+EXTRA_BOOT_ARGS:append = " ${@bb.utils.contains('IMAGE_FEATURES', 'logo', 'fbcon=logo-count:1 fbcon=logo-pos:center vt.global_cursor_default=0', '', d)}"
 
 SRC_URI = "file://README \
 file://boot.scr \
