@@ -1,0 +1,89 @@
+From 5424b9bb99b20406ab25cca9321a8816a062e215 Mon Sep 17 00:00:00 2001
+From: Che Cheng <che.cheng@adlinktech.com>
+Date: Fri, 10 Jan 2025 13:38:39 +0800
+Subject: [PATCH 3/3] Support clock source from host
+
+---
+ vvcam/v4l2/sensor/imx678/imx678_mipi.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_mipi.c b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+index 2428f69..4510771 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_mipi.c
++++ b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+@@ -196,6 +196,8 @@ struct imx678 {
+ 	unsigned int csi_id;
+ 	unsigned int powered_on;
+ 	unsigned int inck;
++	unsigned int mclk;
++	struct clk *sensor_clk;
+ 
+ 	struct v4l2_subdev sd;
+ 	struct media_pad pads[IMX678_SENS_PADS_NUM];
+@@ -485,6 +487,8 @@ static int imx678_write_reg_arry(struct imx678 *sensor,
+ 
+ static int imx678_power_on(struct imx678 *sensor)
+ {
++	int ret;
++
+ 	pr_info("enter %s\n", __func__);
+ 
+ 	if (!gpio_is_valid(sensor->rst_gpio)) {
+@@ -493,6 +497,11 @@ static int imx678_power_on(struct imx678 *sensor)
+ 	}
+ 
+ 	gpio_set_value_cansleep(sensor->rst_gpio, 1);
++
++	ret = clk_prepare_enable(sensor->sensor_clk);
++	if (ret < 0)
++		pr_err("%s: enable sensor clk fail\n", __func__);
++
+ 	sensor->powered_on = 1;
+ 	msleep(35);
+ 
+@@ -515,6 +524,8 @@ static int imx678_power_off(struct imx678 *sensor)
+ 	}
+ 
+ 	gpio_set_value_cansleep(sensor->rst_gpio, 0);
++	clk_disable_unprepare(sensor->sensor_clk);
++
+ 	sensor->powered_on = 0;
+ 	msleep(128);
+ 
+@@ -777,6 +788,10 @@ static int imx678_set_data_rate(struct imx678 *sensor, u32 data_rate)
+ 		return ret;
+ 	}
+ 
++	ret = clk_set_rate(sensor->sensor_clk, sensor->mclk);
++        if (ret < 0)
++                pr_debug("set rate filed, rate=%d\n", sensor->mclk);
++
+ 	return ret;
+ 
+ fail:
+@@ -1505,13 +1520,20 @@ static int imx678_probe(struct i2c_client *client,
+ 		return retval;
+ 	}
+ 
+-	retval = of_property_read_u32(dev->of_node, "mclk", &(sensor->inck));
++	sensor->sensor_clk = devm_clk_get(dev, "csi_mclk");
++	if (IS_ERR(sensor->sensor_clk)) {
++		sensor->sensor_clk = NULL;
++		dev_err(dev, "clock-frequency missing or invalid\n");
++		return PTR_ERR(sensor->sensor_clk);
++	}
++
++	retval = of_property_read_u32(dev->of_node, "mclk", &(sensor->mclk));
+ 	if (retval) {
+ 		dev_err(dev, "mclk missing or invalid\n");
+ 		return retval;
+ 	}
+ 
+-	sensor->inck = mclk_to_inck(sensor->inck);
++	sensor->inck = mclk_to_inck(sensor->mclk);
+ 	if (sensor->inck < 0) {
+ 		dev_err(dev, "invalid mclk\n");
+ 		return sensor->inck;
+-- 
+2.25.1
+

@@ -1,0 +1,107 @@
+From cff9353a23a09040df81f68e896193ae080e577d Mon Sep 17 00:00:00 2001
+From: Che Cheng <che.cheng@adlinktech.com>
+Date: Thu, 9 Jan 2025 22:59:05 +0800
+Subject: [PATCH 2/3] Fix imx678 driver bug
+
+Set INCK_SEL register to correct value and fix enum sync_mode value.
+---
+ vvcam/v4l2/sensor/imx678/imx678_mipi.c | 45 +++++++++++++++++++++++++-
+ vvcam/v4l2/sensor/imx678/imx678_regs.h |  6 ++--
+ 2 files changed, 47 insertions(+), 4 deletions(-)
+
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_mipi.c b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+index 6b6abb4..2428f69 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_mipi.c
++++ b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+@@ -195,6 +195,7 @@ struct imx678 {
+ 	unsigned int rst_gpio;
+ 	unsigned int csi_id;
+ 	unsigned int powered_on;
++	unsigned int inck;
+ 
+ 	struct v4l2_subdev sd;
+ 	struct media_pad pads[IMX678_SENS_PADS_NUM];
+@@ -311,6 +312,30 @@ static struct vvcam_mode_info_s pimx678_mode_info[] = {
+ 	},
+ };
+ 
++static int mclk_to_inck(unsigned int mclk)
++{
++	switch (mclk) {
++		case 74250000:
++			return 0;
++		case 37125000:
++			return 1;
++		case 72000000:
++			return 2;
++		case 27000000:
++			return 3;
++		case 24000000:
++			return 4;
++		case 36000000:
++			return 5;
++		case 18000000:
++			return 6;
++		case 13500000:
++			return 7;
++		default:
++			return -1;
++	}
++}
++
+ static int imx678_write_reg(struct imx678 *sensor, u16 reg, u8 val)
+ {
+ 	struct device *dev = &sensor->i2c_client->dev;
+@@ -746,7 +771,13 @@ static int imx678_set_data_rate(struct imx678 *sensor, u32 data_rate)
+         return ret;
+     }
+ 
+-    return ret;
++	ret = imx678_write_reg(sensor, INCK_SEL, sensor->inck);
++	if (ret < 0) {
++		pr_err("%s: unable to set inck\n", __func__);
++		return ret;
++	}
++
++	return ret;
+ 
+ fail:
+     pr_info("%s: unable to set data rate\n", __func__);
+@@ -1474,6 +1505,18 @@ static int imx678_probe(struct i2c_client *client,
+ 		return retval;
+ 	}
+ 
++	retval = of_property_read_u32(dev->of_node, "mclk", &(sensor->inck));
++	if (retval) {
++		dev_err(dev, "mclk missing or invalid\n");
++		return retval;
++	}
++
++	sensor->inck = mclk_to_inck(sensor->inck);
++	if (sensor->inck < 0) {
++		dev_err(dev, "invalid mclk\n");
++		return sensor->inck;
++	}
++
+ 	retval = imx678_power_on(sensor);
+ 	if (retval < 0) {
+ 		dev_err(dev, "%s: sensor power on fail\n", __func__);
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_regs.h b/vvcam/v4l2/sensor/imx678/imx678_regs.h
+index 1b5cb6d..a6f77e2 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_regs.h
++++ b/vvcam/v4l2/sensor/imx678/imx678_regs.h
+@@ -538,7 +538,7 @@ typedef enum {
+ } data_rate_mode;
+ 
+ typedef enum {
+-    NO_SYNC,
+-    INTERNAL_SYNC,
++    INTERNAL_SYNC = 0,
+     EXTERNAL_SYNC,
+-} sync_mode;
+\ No newline at end of file
++    NO_SYNC,
++} sync_mode;
+-- 
+2.25.1
+
