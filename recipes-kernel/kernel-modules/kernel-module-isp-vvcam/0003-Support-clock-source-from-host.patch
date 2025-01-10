@@ -1,0 +1,59 @@
+From 4e2bbd5729609d3844c3bf3eb5ee52a07de05b18 Mon Sep 17 00:00:00 2001
+From: Che Cheng <che.cheng@adlinktech.com>
+Date: Fri, 10 Jan 2025 13:38:39 +0800
+Subject: [PATCH 3/3] Support clock source from host
+
+---
+ vvcam/v4l2/sensor/imx678/imx678_mipi.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_mipi.c b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+index 7c46ff7..7479557 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_mipi.c
++++ b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+@@ -196,6 +196,8 @@ struct imx678 {
+ 	unsigned int csi_id;
+ 	unsigned int powered_on;
+ 	unsigned int inck;
++	unsigned int mclk;
++	struct clk *sensor_clk;
+ 
+ 	struct v4l2_subdev sd;
+ 	struct media_pad pads[IMX678_SENS_PADS_NUM];
+@@ -786,6 +788,10 @@ static int imx678_set_data_rate(struct imx678 *sensor, u32 data_rate)
+ 		return ret;
+ 	}
+ 
++	ret = clk_set_rate(sensor->sensor_clk, sensor->mclk);
++        if (ret < 0)
++                pr_debug("set rate filed, rate=%d\n", sensor->mclk);
++
+ 	return ret;
+ 
+ fail:
+@@ -1518,13 +1524,20 @@ static int imx678_probe(struct i2c_client *client,
+ 		return retval;
+ 	}
+ 
+-	retval = of_property_read_u32(dev->of_node, "mclk", &(sensor->inck));
++	sensor->sensor_clk = devm_clk_get(dev, "csi_mclk");
++	if (IS_ERR(sensor->sensor_clk)) {
++		sensor->sensor_clk = NULL;
++		dev_err(dev, "clock-frequency missing or invalid\n");
++		return PTR_ERR(sensor->sensor_clk);
++	}
++
++	retval = of_property_read_u32(dev->of_node, "mclk", &(sensor->mclk));
+ 	if (retval) {
+ 		dev_err(dev, "mclk missing or invalid\n");
+ 		return retval;
+ 	}
+ 
+-	sensor->inck = mclk_to_inck(sensor->inck);
++	sensor->inck = mclk_to_inck(sensor->mclk);
+ 	if (sensor->inck < 0) {
+ 		dev_err(dev, "invalid mclk\n");
+ 		return sensor->inck;
+-- 
+2.25.1
+

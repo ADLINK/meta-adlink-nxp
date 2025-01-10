@@ -1,0 +1,189 @@
+From 2fd313170c8c20f9fdba7ca20e510176c80f3b96 Mon Sep 17 00:00:00 2001
+From: Che Cheng <che.cheng@adlinktech.com>
+Date: Thu, 9 Jan 2025 22:59:05 +0800
+Subject: [PATCH 2/3] Fix imx678 driver bug
+
+Set INCK_SEL register to correct value and fix enum sync_mode value.
+---
+ vvcam/v4l2/sensor/imx678/imx678_mipi.c | 71 +++++++++++++++++++++++---
+ vvcam/v4l2/sensor/imx678/imx678_regs.h |  6 +--
+ 2 files changed, 68 insertions(+), 9 deletions(-)
+
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_mipi.c b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+index 6b6abb4..7c46ff7 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_mipi.c
++++ b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+@@ -195,6 +195,7 @@ struct imx678 {
+ 	unsigned int rst_gpio;
+ 	unsigned int csi_id;
+ 	unsigned int powered_on;
++	unsigned int inck;
+ 
+ 	struct v4l2_subdev sd;
+ 	struct media_pad pads[IMX678_SENS_PADS_NUM];
+@@ -311,6 +312,30 @@ static struct vvcam_mode_info_s pimx678_mode_info[] = {
+ 	},
+ };
+ 
++static int mclk_to_inck(unsigned int mclk)
++{
++	switch (mclk) {
++		case 74250000:
++			return 0;
++		case 37125000:
++			return 1;
++		case 72000000:
++			return 2;
++		case 27000000:
++			return 3;
++		case 24000000:
++			return 4;
++		case 36000000:
++			return 5;
++		case 18000000:
++			return 6;
++		case 13500000:
++			return 7;
++		default:
++			return -1;
++	}
++}
++
+ static int imx678_write_reg(struct imx678 *sensor, u16 reg, u8 val)
+ {
+ 	struct device *dev = &sensor->i2c_client->dev;
+@@ -460,6 +485,8 @@ static int imx678_write_reg_arry(struct imx678 *sensor,
+ 
+ static int imx678_power_on(struct imx678 *sensor)
+ {
++	int ret;
++
+ 	pr_info("enter %s\n", __func__);
+ 
+ 	if (!gpio_is_valid(sensor->rst_gpio)) {
+@@ -468,6 +495,11 @@ static int imx678_power_on(struct imx678 *sensor)
+ 	}
+ 
+ 	gpio_set_value_cansleep(sensor->rst_gpio, 1);
++
++	ret = clk_prepare_enable(sensor->sensor_clk);
++	if (ret < 0)
++		pr_err("%s: enable sensor clk fail\n", __func__);
++
+ 	sensor->powered_on = 1;
+ 	msleep(35);
+ 
+@@ -490,6 +522,8 @@ static int imx678_power_off(struct imx678 *sensor)
+ 	}
+ 
+ 	gpio_set_value_cansleep(sensor->rst_gpio, 0);
++	clk_disable_unprepare(sensor->sensor_clk);
++
+ 	sensor->powered_on = 0;
+ 	msleep(128);
+ 
+@@ -746,7 +780,13 @@ static int imx678_set_data_rate(struct imx678 *sensor, u32 data_rate)
+         return ret;
+     }
+ 
+-    return ret;
++	ret = imx678_write_reg(sensor, INCK_SEL, sensor->inck);
++	if (ret < 0) {
++		pr_err("%s: unable to set inck\n", __func__);
++		return ret;
++	}
++
++	return ret;
+ 
+ fail:
+     pr_info("%s: unable to set data rate\n", __func__);
+@@ -1436,8 +1476,12 @@ static const struct media_entity_operations imx678_sd_media_ops = {
+ 	.link_setup = imx678_link_setup,
+ };
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
++static int imx678_probe(struct i2c_client *client)
++#else
+ static int imx678_probe(struct i2c_client *client,
+                         const struct i2c_device_id *id)
++#endif
+ {
+ 	int retval;
+ 	struct device *dev = &client->dev;
+@@ -1474,12 +1518,24 @@ static int imx678_probe(struct i2c_client *client,
+ 		return retval;
+ 	}
+ 
++	retval = of_property_read_u32(dev->of_node, "mclk", &(sensor->inck));
++	if (retval) {
++		dev_err(dev, "mclk missing or invalid\n");
++		return retval;
++	}
++
++	sensor->inck = mclk_to_inck(sensor->inck);
++	if (sensor->inck < 0) {
++		dev_err(dev, "invalid mclk\n");
++		return sensor->inck;
++	}
++
+ 	retval = imx678_power_on(sensor);
+ 	if (retval < 0) {
+ 		dev_err(dev, "%s: sensor power on fail\n", __func__);
+ 		goto probe_err_power_off;
+ 	}
+-	
++
+ 	sd = &sensor->sd;
+ 	v4l2_i2c_subdev_init(sd, client, &imx678_subdev_ops);
+ 	sd->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
+@@ -1557,7 +1613,12 @@ probe_err_power_off:
+ 	return retval;
+ }
+ 
+-static int imx678_remove(struct i2c_client *client)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
++static void imx678_remove(struct i2c_client *client)
++#else
++static void imx678_remove(struct i2c_client *client,
++                        const struct i2c_device_id *id)
++#endif
+ {
+ 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+ 	struct imx678 *sensor = client_to_imx678(client);
+@@ -1568,8 +1629,6 @@ static int imx678_remove(struct i2c_client *client)
+ 	media_entity_cleanup(&sd->entity);
+ 	imx678_power_off(sensor);
+ 	mutex_destroy(&sensor->lock);
+-
+-	return 0;
+ }
+ 
+ static int __maybe_unused imx678_suspend(struct device *dev)
+@@ -1608,7 +1667,7 @@ static const struct i2c_device_id imx678_id[] = {
+ MODULE_DEVICE_TABLE(i2c, imx678_id);
+ 
+ static const struct of_device_id imx678_of_match[] = {
+-	{ .compatible = "sony,imx678" },
++	{ .compatible = "framos,imx678" },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, imx678_of_match);
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_regs.h b/vvcam/v4l2/sensor/imx678/imx678_regs.h
+index 1b5cb6d..a6f77e2 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_regs.h
++++ b/vvcam/v4l2/sensor/imx678/imx678_regs.h
+@@ -538,7 +538,7 @@ typedef enum {
+ } data_rate_mode;
+ 
+ typedef enum {
+-    NO_SYNC,
+-    INTERNAL_SYNC,
++    INTERNAL_SYNC = 0,
+     EXTERNAL_SYNC,
+-} sync_mode;
+\ No newline at end of file
++    NO_SYNC,
++} sync_mode;
+-- 
+2.25.1
+
