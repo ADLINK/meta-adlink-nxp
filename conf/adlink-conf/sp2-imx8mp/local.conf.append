@@ -13,20 +13,24 @@ IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE I
 BUILDTAG ??= "v2.01.03"
 RELEASE_VERSION ?= "${@'v%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s.r%s' % (d.getVar('BUILDTAG', True), d.getVar('BUILD_NUMBER', True))}"
 
-USER_EXTRA_GROUPS = ",docker"
+USER_EXTRA_GROUPS = "${@bb.utils.contains_any('DEPENDS', 'docker-datapart image-datapart', ',docker', '', d)}"
 # Set user account and password (for imx-nxp-desktop)
 #APTGET_ADD_USERS = "<user>:<password>:<shell>"
-# <password> generated with `echo "P4sSw0rD" \| openssl passwd -stdin`.
+#APTGET_ADD_USERS = "<user>:<password>:${USER_SHELL_BASH}:${USER_EXTRA_GROUPS}" only if nativeaptinstall.bbclass is modified
+# <password> generated with `echo adlink | openssl passwd -stdin`.
 # <shell> is the default shell (if empty, default is /bin/sh).
-APTGET_ADD_USERS = "adlink:faW.Th7HPXwiI:${USER_SHELL_BASH}:{$USER_EXTRA_GROUPS}"
+APTGET_ADD_USERS = "adlink:rbBJY7ksv1BvY:/bin/bash"
+APTGET_ADD_USERS:append = "${@bb.utils.contains_any('DEPENDS', 'docker-datapart image-datapart', ':${USER_EXTRA_GROUPS}', '', d)}"
 
 # Set user account and password (for yocto images, e.g. core-image-xxx)
 # clear password deprecated, gen password with 'openssl passwd P4SsW0rD'
 INHERIT += "extrausers"
+# usermod -p '$(openssl passwd root)' root;
+# usermod -a -G sudo,users,plugdev,docker adlink;
 EXTRA_USERS_PARAMS = " \
-useradd -p '$(openssl passwd adlink)' adlink; \
-usermod -a -G sudo,users,plugdev,docker adlink; \
-"
+useradd -m -s /bin/bash -p 'rbBJY7ksv1BvY' adlink; \
+usermod -a -G sudo,root,users,plugdev adlink;"
+EXTRA_USER_PARAMS:append = "${@bb.utils.contains_any('DEPENDS', 'docker-datapart image-datapart', ' usermod -a -G docker adlink;', '', d)}"
 
 KERNEL_MODULE_AUTOLOAD:append = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', ' mlan moal', '', d)}"
 
