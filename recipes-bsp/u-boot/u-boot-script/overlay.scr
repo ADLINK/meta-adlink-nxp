@@ -54,8 +54,12 @@ if test -n ${E_cma}; then
   elif test ${E_cma} = 400; then
     setenv overlays ${overlays} cma400mb-overlay.dtbo;
   fi;
+fi;
+if test -n ${E_csi}; then
+  if test ${E_csi} = 678; then
+    setenv overlays ${overlays} csi678-overlay.dtbo;
+  fi;
 fi;'
-
 #
 # set load_overlays commands to load dtbo
 #
