@@ -1,0 +1,154 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2023 ADLINK Technology Corp.
+ *
+ * Author: Po Cheng <po.cheng@adlinktech.com>
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			reg_csi1_cam_pwdn: regulatorex-csi1_cam_pwdn {
+				compatible = "regulator-fixed";
+				regulator-name = "csi1_cam_pwdn";
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+				gpio = <&gpio2 11 0>; /* GPIO_ACTIVE_HIGH = 0 */
+				enable-active-high;
+			};
+
+			reg_csi1_clk_en: regulatorex-csi1_clk_en {
+				compatible = "regulator-fixed";
+				regulator-name = "csi1_clk_en";
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+				regulator-boot-on;
+				vin-supply = <&reg_csi1_cam_pwdn>;
+				startup-delay-us = <200000>;
+				gpio = <&gpio2 20 0>; /* GPIO_ACTIVE_HIGH = 0 */
+				enable-active-high;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&i2c2>;
+		__overlay__ {
+			imx678_0: imx678_mipi@1a {
+				compatible = "framos,imx678";
+				reg = <0x1a>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&pinctrl_csi0_pwn>, <&pinctrl_csi0_rst>, <&pinctrl_csi_mclk>;
+				clocks = <&clk 165>; /* IMX8MP_CLK_IPP_DO_CLKO2 = 165 */
+				clock-names = "csi_mclk";
+				csi_id = <0>;
+				rst-gpios = <&gpio1 6 1>; /* GPIO_ACTIVE_LOW = 1 */
+				mipi_csi;
+				status = "okay";
+				mclk = <24000000>;
+				mclk_source = <0>;
+
+				port {
+					imx678_mipi_0_ep: endpoint {
+						remote-endpoint = <&mipi_csi0_ep>;
+						data-lanes = <1 2 3 4>;
+						clock-lanes = <0>;
+						max-pixel-frequency = /bits/ 64 <500000000>;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@2 {
+		target = <&cameradev>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@3 {
+		target = <&isi_0>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@4 {
+		target = <&isi_1>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@5 {
+		target = <&isp_0>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@6 {
+		target = <&dewarp>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@7 {
+		target = <&mipi_csi_0>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			port@0 {
+				reg = <0>;
+				mipi_csi0_ep: endpoint {
+					remote-endpoint = <&imx678_mipi_0_ep>;
+					data-lanes = <4>;
+					csis-hs-settle = <13>;
+					csis-clk-settle = <2>;
+					csis-wclk;
+				};
+			};
+		};
+	};
+
+	fragment@8 {
+		target = <&mipi_csi_1>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@9 {
+		target = <&iomuxc>;
+		__overlay__ {
+			pinctrl_csi0_pwn: csi0_pwn_grp {
+				fsl,pins = <
+					0x0B8 0x318 0x000 0x5 0x0	0x10
+				>; /* MX8MP_IOMUXC_SD1_STROBE__GPIO2_IO11 */
+			};
+
+			pinctrl_csi0_rst: csi0_rst_grp {
+				fsl,pins = <
+					0x02C 0x28C 0x000 0x0 0x0	0x10
+				>; /* MX8MP_IOMUXC_GPIO1_IO06__GPIO1_IO06 */
+			};
+
+			pinctrl_csi_mclk: csi_mclk_grp {
+				fsl,pins = <
+					0x050 0x2B0 0x000 0x6 0x0	0x50
+				>; /* MX8MP_IOMUXC_GPIO1_IO15__CCM_CLKO2 */
+			};
+		};
+	};
+};
+
