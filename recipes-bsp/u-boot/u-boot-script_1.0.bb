@@ -10,7 +10,7 @@ DEPENDS = "u-boot-mkimage-native"
 
 PR = "r0"
 
-COMPATIBLE_MACHINE = "(mx6|mx7|mx8)"
+COMPATIBLE_MACHINE = "(mx6|mx7|mx8|mx9)"
 
 UBOOT_BOOT_SCRIPT ?= "boot.scr"
 EXTRA_BOOT_ARGS = "pcie_cz_enabled=${pcie_compliance} pcie_phy_tuned=adlink net.ifnames=0"
