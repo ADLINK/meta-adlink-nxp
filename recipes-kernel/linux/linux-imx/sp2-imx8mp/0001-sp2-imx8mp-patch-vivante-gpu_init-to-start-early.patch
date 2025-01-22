@@ -1,0 +1,47 @@
+From cd8b73d60a43d85feb3749eef7a2c9d190deb71e Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Tue, 21 Jan 2025 09:54:41 +0800
+Subject: [PATCH] sp2-imx8mp: patch: vivante gpu_init to start early
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/Makefile         | 5 ++++-
+ drivers/tty/serial/imx.c | 2 +-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 2d561f1c3ef80..ddd53ba7891e3 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -62,6 +62,9 @@ obj-y				+= iommu/
+ # gpu/ comes after char for AGP vs DRM startup and after iommu
+ obj-y				+= gpu/
+ 
++# GUI: rearrange modules order so mxc/gpu-viv/ is loaded earlier
++obj-y		 		+= mxc/
++
+ obj-$(CONFIG_CONNECTOR)		+= connector/
+ 
+ # i810fb and intelfb depend on char/agp/
+@@ -187,4 +190,4 @@ obj-$(CONFIG_GNSS)		+= gnss/
+ obj-$(CONFIG_INTERCONNECT)	+= interconnect/
+ obj-$(CONFIG_COUNTER)		+= counter/
+ obj-$(CONFIG_MOST)		+= most/
+-obj-y		 		+= mxc/
++
+diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
+index 7d24dea7f8903..2807948c66c6a 100644
+--- a/drivers/tty/serial/imx.c
++++ b/drivers/tty/serial/imx.c
+@@ -2642,7 +2642,7 @@ static void __exit imx_uart_exit(void)
+ 	uart_unregister_driver(&imx_uart_uart_driver);
+ }
+ 
+-module_init(imx_uart_init);
++late_initcall(imx_uart_init);
+ module_exit(imx_uart_exit);
+ 
+ MODULE_AUTHOR("Sascha Hauer");
+-- 
+2.25.1
+
