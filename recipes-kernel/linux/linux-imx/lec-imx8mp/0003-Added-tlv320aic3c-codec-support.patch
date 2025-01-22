@@ -1,30 +1,18 @@
-From 415655e9f27f5139c370e6906034780aeb11562b Mon Sep 17 00:00:00 2001
+From af858e1eaca6d56aa295353bb2b83b148052a440 Mon Sep 17 00:00:00 2001
 From: Dinesh V <dinesh.v@adlinktech.com>
 Date: Tue, 6 Jun 2023 22:50:55 +0530
-Subject: [PATCH 3/3] Added tlv320aic3c codec support
+Subject: [PATCH 3/8] Added tlv320aic3c codec support
 
 ---
- arch/arm64/boot/dts/adlink/Makefile |   3 +-
- sound/soc/codecs/tlv320aic3x.c      |  56 +++----
- sound/soc/fsl/Kconfig               |  14 ++
- sound/soc/fsl/Makefile              |   2 +
- sound/soc/fsl/imx-tlv320aic3x.c     | 249 ++++++++++++++++++++++++++++
- 5 files changed, 295 insertions(+), 29 deletions(-)
+ sound/soc/codecs/tlv320aic3x.c  |  56 +++----
+ sound/soc/fsl/Kconfig           |  14 ++
+ sound/soc/fsl/Makefile          |   2 +
+ sound/soc/fsl/imx-tlv320aic3x.c | 249 ++++++++++++++++++++++++++++++++
+ 4 files changed, 293 insertions(+), 28 deletions(-)
  create mode 100644 sound/soc/fsl/imx-tlv320aic3x.c
 
-diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
-index cd77dc65ac79..e369c0c32c56 100644
---- a/arch/arm64/boot/dts/adlink/Makefile
-+++ b/arch/arm64/boot/dts/adlink/Makefile
-@@ -3,4 +3,5 @@
- dtb-$(CONFIG_ARCH_MXC) += lec-imx8mp.dtb \
- 			lec-imx8mp-hydis-hv150ux2.dtb \
- 			lec-imx8mp-auoB101UAN01-mipi-panel.dtb \
--			lec-imx8mp-wifi.dtb
-+			lec-imx8mp-wifi.dtb \
-+			lec-imx8mp-tlv320aic3x.dtb 
 diff --git a/sound/soc/codecs/tlv320aic3x.c b/sound/soc/codecs/tlv320aic3x.c
-index 7731593a5509..f8064971e127 100644
+index 7731593a55097..f8064971e1274 100644
 --- a/sound/soc/codecs/tlv320aic3x.c
 +++ b/sound/soc/codecs/tlv320aic3x.c
 @@ -90,34 +90,34 @@ struct aic3x_priv {
@@ -91,7 +79,7 @@ index 7731593a5509..f8064971e127 100644
  
  static bool aic3x_volatile_reg(struct device *dev, unsigned int reg)
 diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
-index c70e9c4eed08..cef9fce21510 100644
+index c70e9c4eed080..cef9fce215108 100644
 --- a/sound/soc/fsl/Kconfig
 +++ b/sound/soc/fsl/Kconfig
 @@ -314,6 +314,20 @@ config SND_SOC_IMX_SPDIF
@@ -116,7 +104,7 @@ index c70e9c4eed08..cef9fce21510 100644
  	tristate "Generic ASoC Sound Card with ASRC support"
  	depends on OF && I2C
 diff --git a/sound/soc/fsl/Makefile b/sound/soc/fsl/Makefile
-index 63e6912675ea..b368a6af9d16 100644
+index 63e6912675ea4..b368a6af9d167 100644
 --- a/sound/soc/fsl/Makefile
 +++ b/sound/soc/fsl/Makefile
 @@ -20,6 +20,7 @@ snd-soc-fsl-ssi-y := fsl_ssi.o
@@ -137,7 +125,7 @@ index 63e6912675ea..b368a6af9d16 100644
  snd-soc-fsl-hdmi-objs := fsl_hdmi.o
 diff --git a/sound/soc/fsl/imx-tlv320aic3x.c b/sound/soc/fsl/imx-tlv320aic3x.c
 new file mode 100644
-index 000000000000..6509377a6077
+index 0000000000000..6509377a60776
 --- /dev/null
 +++ b/sound/soc/fsl/imx-tlv320aic3x.c
 @@ -0,0 +1,249 @@
