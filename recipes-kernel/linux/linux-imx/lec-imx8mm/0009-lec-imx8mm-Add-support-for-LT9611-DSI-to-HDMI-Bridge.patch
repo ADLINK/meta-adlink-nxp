@@ -4,7 +4,6 @@ Date: Tue, 26 Sep 2023 23:56:12 +0530
 Subject: [PATCH 9/9] lec-imx8mm: Add support for LT9611 DSI-to-HDMI Bridge
 
 ---
- arch/arm64/boot/dts/adlink/Makefile  |   1 +
  drivers/gpu/drm/bridge/Kconfig       |   8 +
  drivers/gpu/drm/bridge/Makefile      |   1 +
  drivers/gpu/drm/bridge/lt9611-i2c.c  | 975 +++++++++++++++++++++++++++
@@ -12,18 +11,6 @@ Subject: [PATCH 9/9] lec-imx8mm: Add support for LT9611 DSI-to-HDMI Bridge
  5 files changed, 1017 insertions(+)
  create mode 100644 drivers/gpu/drm/bridge/lt9611-i2c.c
 
-diff --git a/arch/arm64/boot/dts/adlink/Makefile b/arch/arm64/boot/dts/adlink/Makefile
-index 4e0f31836971..5b5ed0b6bd8d 100755
---- a/arch/arm64/boot/dts/adlink/Makefile
-+++ b/arch/arm64/boot/dts/adlink/Makefile
-@@ -3,6 +3,7 @@
- dtb-$(CONFIG_ARCH_MXC) += \
-     lec-imx8mm-hydis-hv150ux2-lvds-panel.dtb \
-     lec-imx8mm-auoB101UAN01-mipi-panel.dtb \
-+    lec-imx8mm-lt9611.dtb \
-     lec-imx8mm-ov5647.dtb \
-     lec-imx8mm-imx219.dtb \
-     lec-imx8mm-ov13855.dtb \
 diff --git a/drivers/gpu/drm/bridge/Kconfig b/drivers/gpu/drm/bridge/Kconfig
 index 3d81471f89d3..bd51320f74d7 100644
 --- a/drivers/gpu/drm/bridge/Kconfig
