@@ -1,0 +1,33 @@
+From 9eec525bf31289bbdbd6754853133950cdb9d3e5 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Tue, 21 Jan 2025 09:54:41 +0800
+Subject: [PATCH] sp2-imx8mp: patch: vivante gpu_init to start early
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/Makefile | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 2d561f1c3ef80..ddd53ba7891e3 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -62,6 +62,9 @@ obj-y				+= iommu/
+ # gpu/ comes after char for AGP vs DRM startup and after iommu
+ obj-y				+= gpu/
+ 
++# GUI: rearrange modules order so mxc/gpu-viv/ is loaded earlier
++obj-y		 		+= mxc/
++
+ obj-$(CONFIG_CONNECTOR)		+= connector/
+ 
+ # i810fb and intelfb depend on char/agp/
+@@ -187,4 +190,4 @@ obj-$(CONFIG_GNSS)		+= gnss/
+ obj-$(CONFIG_INTERCONNECT)	+= interconnect/
+ obj-$(CONFIG_COUNTER)		+= counter/
+ obj-$(CONFIG_MOST)		+= most/
+-obj-y		 		+= mxc/
++
+-- 
+2.25.1
+
