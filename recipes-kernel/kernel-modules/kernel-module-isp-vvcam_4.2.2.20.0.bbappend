@@ -7,6 +7,7 @@ SRC_URI += " \
 file://0001-isp-vvcam-imx678.patch \
 file://0002-Fix-imx678-driver-bug.patch \
 file://0003-Support-clock-source-from-host.patch \
+file://0004-Add-IMX678-mono-mode.patch \
 "
 
 do_patch[prefuncs] += "reset_source_path"

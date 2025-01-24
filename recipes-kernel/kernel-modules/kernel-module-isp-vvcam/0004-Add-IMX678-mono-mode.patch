@@ -1,0 +1,44 @@
+From b7c98ae0ae91590b68f28da64e8bc8c4c0203564 Mon Sep 17 00:00:00 2001
+From: Che Cheng <che.cheng@adlinktech.com>
+Date: Fri, 24 Jan 2025 14:41:26 +0800
+Subject: [PATCH] Add IMX678 mono mode
+
+---
+ vvcam/v4l2/sensor/imx678/imx678_mipi.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_mipi.c b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+index 4510771..1ebf4e2 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_mipi.c
++++ b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+@@ -197,6 +197,7 @@ struct imx678 {
+ 	unsigned int powered_on;
+ 	unsigned int inck;
+ 	unsigned int mclk;
++	unsigned int mono;
+ 	struct clk *sensor_clk;
+ 
+ 	struct v4l2_subdev sd;
+@@ -502,6 +503,9 @@ static int imx678_power_on(struct imx678 *sensor)
+ 	if (ret < 0)
+ 		pr_err("%s: enable sensor clk fail\n", __func__);
+ 
++	if (sensor->mono)
++		imx678_write_reg(sensor, 0x3019, 1);
++
+ 	sensor->powered_on = 1;
+ 	msleep(35);
+ 
+@@ -1533,6 +1537,9 @@ static int imx678_probe(struct i2c_client *client,
+ 		return retval;
+ 	}
+ 
++	if(of_property_read_bool(dev->of_node, "mono_mode"))
++		sensor->mono = 1;
++
+ 	sensor->inck = mclk_to_inck(sensor->mclk);
+ 	if (sensor->inck < 0) {
+ 		dev_err(dev, "invalid mclk\n");
+-- 
+2.25.1
+
