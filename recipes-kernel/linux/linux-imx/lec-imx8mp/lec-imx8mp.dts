@@ -635,6 +635,7 @@
 		interrupt-parent = <&gpio3>;
 		interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpio = <&gpio6 11 GPIO_ACTIVE_LOW>;
+		default-guard-time;
 		status = "okay";
 	};
 
