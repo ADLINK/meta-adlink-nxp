@@ -65,6 +65,18 @@ do_configure:prepend () {
             upper=$(echo ${extra#NO_} | tr '[:lower:]' '[:upper:]')
             echo "CONFIG_${upper##CONFIG_}=n" | tee -a ${S}/configs/${config}
             ;;
+          *=*)
+            upper=$(echo ${extra%=*} | tr '[:lower:]' '[:upper:]')
+            value=$(echo ${extra#*=})
+            case "${value}" in
+            0x*)
+              echo "CONFIG_${upper}=${value}" | tee -a ${S}/configs/${config}
+              ;;
+            *)
+              echo "CONFIG_${upper}=\"${value}\"" | tee -a ${S}/configs/${config}
+              ;;
+            esac
+            ;;
           *)
             upper=$(echo ${extra} | tr '[:lower:]' '[:upper:]')
             echo "CONFIG_${upper##CONFIG_}=y" | tee -a ${S}/configs/${config}
