@@ -53,6 +53,7 @@
 				status = "okay";
 				mclk = <24000000>;
 				mclk_source = <0>;
+				mono_mode;
 
 				port {
 					imx678_mipi_0_ep: endpoint {
