@@ -4,4 +4,5 @@ BBLAYERS += "${BSPDIR}/sources/meta-adlink-nxp"
 BBLAYERS += "${BSPDIR}/sources/meta-adlink-demo"
 
 # Additional from open-embedded for adlink-demo xfce recipes
+BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-webserver"
 BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-xfce"
