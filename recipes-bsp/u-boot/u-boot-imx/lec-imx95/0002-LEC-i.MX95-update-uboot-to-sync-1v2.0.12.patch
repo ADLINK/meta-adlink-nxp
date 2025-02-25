@@ -1,0 +1,29 @@
+From b917dbc6a5ed7a79ecdbd36d5c6a1848bf7a85e4 Mon Sep 17 00:00:00 2001
+From: Jimmy Yu <jimmy.yu@adlinktech.com>
+Date: Tue, 25 Feb 2025 15:49:18 +0800
+Subject: [PATCH] LEC-i.MX95: update uboot to sync 1v2.0.12
+
+---
+ include/configs/lec_imx95.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/include/configs/lec_imx95.h b/include/configs/lec_imx95.h
+index 4dfc1db5133..7cdb2aa6aa2 100755
+--- a/include/configs/lec_imx95.h
++++ b/include/configs/lec_imx95.h
+@@ -183,7 +183,11 @@
+ 				   "if run loadimage; then " \
+ 					   "run mmcboot; " \
+ 					"else " \
+-						"setenv mmcdev 0; mmc dev ${mmcdev}; " \
++						"if test ${mmcdev} = 1; then " \
++							"setenv mmcdev 0 ;setenv mmcroot /dev/mmcblk0p2 rootwait rw ; saveenv; mmc dev ${mmcdev}; " \
++						"else " \
++							"setenv mmcdev 1 ;setenv mmcroot /dev/mmcblk1p2 rootwait rw ; saveenv; mmc dev ${mmcdev}; " \
++						"fi; " \
+ 						"if run loadimage; then " \
+ 							"run mmcboot; " \
+ 						"else run netboot; " \
+-- 
+2.34.1
+
