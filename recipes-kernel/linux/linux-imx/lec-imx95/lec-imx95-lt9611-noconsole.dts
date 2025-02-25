@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2023 NXP
+ */
+
+
+#include "lec-imx95.dts"
+#include "lt9611-basic.dts"
+
+&ch {
+    /delete-property/ stdout-path;
+};

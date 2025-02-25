@@ -28,8 +28,8 @@
 		ethernet1 = &enetc_port1;
 	};
 
-	ch: chosen {
-		stdout-path = &lpuart1;
+	chosen {
+		//stdout-path = &lpuart1;
 		#address-cells = <2>;
 		#size-cells = <2>;
 		/* will be updated by U-boot when booting Xen */
@@ -194,18 +194,6 @@
 		*/
 	};
 
-	reg_tpm_rst: regulator-tmp {
-		compatible = "regulator-fixed";
-		regulator-name = "TPM_RST";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-
-		gpio =  <&i2c2_gpio_expander_71 8 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		regulator-always-on;
-		startup-delay-us = <5000>;
-	};
-
 	reg_serdes_en: regulator-mac-en {
 		compatible = "regulator-fixed";
 		regulator-name = "mac-en";
@@ -310,7 +298,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <80000000>;
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 	};
@@ -373,8 +361,7 @@
 		pinctrl-0 = <&pinctrl_i2c2_tpm>;
 		interrupt-parent = <&gpio2>;
 		interrupts = <27 IRQ_TYPE_LEVEL_LOW>;
-
-		tpm-supply = <&reg_tpm_rst>;
+		reset-gpio = <&i2c2_gpio_expander_71 8 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 };
@@ -441,7 +428,6 @@
 		#clock-cells = <0>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
-		wakeup-source;
 	};
 };
 
@@ -516,6 +502,12 @@
 	/* console */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart1>;
+	status = "okay";
+};
+
+&lpuart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2>;
 	status = "okay";
 };
 
@@ -800,7 +792,6 @@
 };
 //4c1f0040
 &usb3_phy {
-	fsl,phy-tx-vref-tune-percent = <0x73>;
 	status = "okay";
 };
 //4c100000 USB1 controller
@@ -877,6 +868,13 @@
 		fsl,pins = <
 			IMX95_PAD_UART1_RXD__AONMIX_TOP_LPUART1_RX      0x31e
 			IMX95_PAD_UART1_TXD__AONMIX_TOP_LPUART1_TX      0x31e
+		>;
+	};
+
+	pinctrl_uart2: uart2grp {
+		fsl,pins = <
+			IMX95_PAD_UART2_RXD__AONMIX_TOP_LPUART2_RX      0x31e
+			IMX95_PAD_UART2_TXD__AONMIX_TOP_LPUART2_TX      0x31e
 		>;
 	};
 
