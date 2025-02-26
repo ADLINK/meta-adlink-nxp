@@ -1,0 +1,29 @@
+From 71ba72792b5b1f0deb36c0ef59e805f36e5f701e Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Wed, 26 Feb 2025 12:05:47 +0800
+Subject: [PATCH] sp2-imx8mp: set E_ram env variable for DTO the GPU_Reserved
+ memory range on 2GB
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ board/adlink/sp2imx8mp/sp2imx8mp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/board/adlink/sp2imx8mp/sp2imx8mp.c b/board/adlink/sp2imx8mp/sp2imx8mp.c
+index 92ca0b8a3508..967466274b98 100644
+--- a/board/adlink/sp2imx8mp/sp2imx8mp.c
++++ b/board/adlink/sp2imx8mp/sp2imx8mp.c
+@@ -550,9 +550,9 @@ int board_late_init(void)
+ 	env_set("boot_device", board_boot_device(get_boot_device()));
+ #ifndef CONFIG_SPL_BUILD
+ 	env_set("fn_key", gpio_get_value(FNKEY_1) ? "no" : "yes");
++	env_set_ulong("E_ram", gd->spl_handoff->arch.sku);
+ #endif
+ #endif
+-
+ 	return 0;
+ }
+ 
+-- 
+2.25.1
+

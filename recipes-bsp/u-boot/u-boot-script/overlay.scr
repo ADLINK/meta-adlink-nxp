@@ -1,7 +1,12 @@
 #
 # set device tree overlays according to eeprom settings
 #
-setenv set_overlays 'echo "EEPROM env variable: E_disp:${E_disp} E_eth:${E_eth} E_wl:${E_wl} E_snd:${E_snd} E_cma:${E_cma}...";
+setenv set_overlays 'echo "EEPROM env variable: E_ram:${E_ram} E_disp:${E_disp} E_eth:${E_eth} E_wl:${E_wl} E_snd:${E_snd} E_cma:${E_cma}...";
+if test -n ${E_ram}; then
+  if test ${E_ram} = 2; then
+    setenv overlays ${overlays} gpu128mb-overlay.dtbo;
+  fi;
+fi;
 if test -n ${E_disp}; then
   if test ${E_disp} = 7; then
     setenv overlays ${overlays} 7inch-overlay.dtbo;
