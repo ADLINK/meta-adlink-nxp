@@ -1,0 +1,39 @@
+From 80f54c248d5b6e6854ac9b663752684c9b1834ee Mon Sep 17 00:00:00 2001
+From: Jimmy Yu <jimmy.yu@adlinktech.com>
+Date: Wed, 26 Feb 2025 17:25:55 +0800
+Subject: [PATCH] LEC-i.MX95: update imx-mkimage to sync 1v2.0.12
+
+---
+ iMX95/soc.mak       | 2 +-
+ scripts/fspi_header | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/iMX95/soc.mak b/iMX95/soc.mak
+index 6fd549d..695b86b 100644
+--- a/iMX95/soc.mak
++++ b/iMX95/soc.mak
+@@ -301,7 +301,7 @@ flash_lpboot_flexspi_xip: $(MKIMG) $(AHAB_IMG) $(MCU_IMG) $(OEI_IMG_M33)
+ 	./$(QSPI_PACKER) $(QSPI_HEADER)
+ 
+ flash_a55: $(MKIMG) $(AHAB_IMG) $(MCU_IMG) u-boot-atf-container.img $(SPL_A55_IMG) $(OEI_IMG_M33) $(OEI_M33_DDR_IMG)
+-	./$(MKIMG) -soc IMX9 -append $(AHAB_IMG) -c $(OEI_OPT_M33) -msel $(MSEL) \
++	./$(MKIMG) -soc IMX9 -append $(AHAB_IMG) -c $(OEI_OPT_M33_DATA) $(OEI_OPT_M33) -msel $(MSEL) \
+ 		   -m33 $(MCU_IMG) 0 $(MCU_TCM_ADDR) \
+ 		   -ap $(SPL_A55_IMG) a55 $(SPL_LOAD_ADDR_M33_VIEW) $(V2X_DUMMY) -out flash.bin
+ 	$(call append_container,u-boot-atf-container.img,1)
+diff --git a/scripts/fspi_header b/scripts/fspi_header
+index 07513b5..3b45f43 100644
+--- a/scripts/fspi_header
++++ b/scripts/fspi_header
+@@ -15,7 +15,7 @@
+ 00000000
+ 00000000
+ 00000000
+-01010200 /* Serial Nor, Single/Dual/Quad/Octal, SerialClkFreq 1 - 20MHz, 2- 50MHz... */
++01010100 /* Serial Nor, Single/Dual/Quad/Octal, SerialClkFreq 1 - 20MHz, 2- 50MHz... */
+ 00000000
+ 00000000
+ 00000010 /* SFlashA1Size */
+-- 
+2.34.1
+
