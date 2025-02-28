@@ -1,5 +1,5 @@
 RDEPENDS:packagegroup-adlink-wifi:append:lec-imx8mp = " \
-    linux-firmware-nxp89xx \
+    firmware-nxp-wifi \
     linux-firmware-nxp8997-sdio \
     linux-firmware-nxp8997-common \	
     nxp-wlan-sdk \
