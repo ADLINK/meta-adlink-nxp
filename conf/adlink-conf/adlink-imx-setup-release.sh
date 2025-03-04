@@ -24,7 +24,7 @@ if [ -f ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/local.conf.append ]
 fi
 
 if [ ! "$DISTRO" = "adlink" ]; then
-	echo "IMAGE_FEATURES[validitems] += \"kiosk-mode hab remote logo resize locale\"" >> ./conf/local.conf
+	echo "IMAGE_FEATURES[validitems] += \"kiosk-mode hab remote logo resize locale lamp\"" >> ./conf/local.conf
 fi
 
 if [ -d ../sources/meta-nxp-desktop ]; then
