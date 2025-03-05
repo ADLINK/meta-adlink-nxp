@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright 2023 NXP
+ */
+
+
+#include "lec-imx95.dts"
+#include "lt9611-basic.dts"
+
+&ch {
+    /delete-property/ stdout-path;
+};
+
+&scmi_iomuxc {
+    pinctrl_uart2: uart2grp {
+		fsl,pins = <
+			IMX95_PAD_UART2_RXD__AONMIX_TOP_LPUART2_RX      0x31e
+			IMX95_PAD_UART2_TXD__AONMIX_TOP_LPUART2_TX      0x31e
+		>;
+	};
+};
+
+&lpuart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2>;
+	status = "okay";
+};
