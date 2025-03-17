@@ -1,0 +1,30 @@
+From fbaec8328a8734f5858bed38321f2cb48eb91b1e Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Fri, 29 Dec 2023 09:58:59 +0800
+Subject: [PATCH 5/8] sp2-imx8mp: patch: pwm_backlight: work around to fix lvds
+ display: enable pwm again at the end of set brightness
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/video/pwm_backlight.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/video/pwm_backlight.c b/drivers/video/pwm_backlight.c
+index 1c747d98d7ac..44c7a756cf80 100644
+--- a/drivers/video/pwm_backlight.c
++++ b/drivers/video/pwm_backlight.c
+@@ -186,6 +186,11 @@ static int pwm_backlight_set_brightness(struct udevice *dev, int percent)
+ 			return log_ret(ret);
+ 
+ 		priv->enabled = false;
++	} else {
++		ret = pwm_set_enable(priv->pwm, priv->channel, true);
++		if (ret)
++			return log_ret(ret);
++		priv->enabled = true;
+ 	}
+ 
+ 	return 0;
+-- 
+2.25.1
+

@@ -1,0 +1,124 @@
+From 4be045cc45244046f7bcdbab85d5abbb52be71f3 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Wed, 27 Dec 2023 14:29:00 +0800
+Subject: [PATCH 2/8] sp2-imx8mp: patch: lvds: fix build warnings after patch
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/video/nxp/imx/imx8mp_lvds.c | 16 +++++++++-------
+ drivers/video/nxp/imx/imx_lcdifv3.c |  3 +--
+ drivers/video/video_link.c          |  2 +-
+ 3 files changed, 11 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/video/nxp/imx/imx8mp_lvds.c b/drivers/video/nxp/imx/imx8mp_lvds.c
+index 2078569281fd..4177efca6d06 100644
+--- a/drivers/video/nxp/imx/imx8mp_lvds.c
++++ b/drivers/video/nxp/imx/imx8mp_lvds.c
+@@ -10,6 +10,7 @@
+ #include <video.h>
+ #include <video_bridge.h>
+ #include <video_link.h>
++#include <panel.h>
+ #include <asm/io.h>
+ #include <dm/device-internal.h>
+ #include <linux/iopoll.h>
+@@ -129,6 +130,8 @@ int imx8mp_ldb_read_timing(struct udevice *dev, struct display_timing *timing)
+ {
+ 	struct imx8mp_ldb_priv *priv = dev_get_priv(dev);
+ 
++	debug("%s() dev: %s\n", __func__, dev->name);
++
+ 	if (dev->plat_ == NULL)
+ 		return -EINVAL;
+ 
+@@ -145,7 +148,7 @@ static int imx8mp_ldb_probe(struct udevice *dev)
+ 	struct imx8mp_ldb_priv *priv = dev_get_priv(dev);
+ 	int ret;
+ 
+-	debug("%s\n", __func__);
++	debug("%s() dev: %s\n", __func__, dev->name);
+ 
+ 	if (dev->plat_ == NULL) {
+ 		priv->regmap = syscon_regmap_lookup_by_phandle(dev, "gpr");
+@@ -157,7 +160,7 @@ static int imx8mp_ldb_probe(struct udevice *dev)
+ 		/* Require to add alias in DTB */
+ 		priv->ldb_id = dev_seq(dev);
+ 
+-		debug("ldb_id %u\n", priv->ldb_id);
++		debug("%s() ldb_id %u\n", __func__, priv->ldb_id);
+ 	}else{
+ 		
+ 		priv->conn_dev = video_link_get_next_device(dev);
+@@ -201,9 +204,7 @@ static int imx8mp_ldb_probe(struct udevice *dev)
+ 			}
+ 		}
+ 	}
+-
+ 	return 0;
+-
+ }
+ 
+ static int imx8mp_ldb_bind(struct udevice *dev)
+@@ -212,7 +213,7 @@ static int imx8mp_ldb_bind(struct udevice *dev)
+ 	ofnode lvds_ch_node;
+ 	int ret = 0;
+ 
+-	debug("%s\n", __func__);
++	debug("%s() dev: %s\n", __func__, dev->name);
+ 	lvds_ch_node = ofnode_find_subnode(dev_ofnode(dev), "lvds-channel@0");
+ 	if (ofnode_valid(lvds_ch_node)) {
+ 		ret = device_bind(dev, dev->driver, "lvds-channel@0", (void *)1,
+@@ -231,7 +232,8 @@ int imx8mp_ldb_enable(struct udevice *dev, int panel_bpp,
+ {
+ 	struct imx8mp_ldb_priv *priv = dev_get_priv(dev);
+ 	int ret;
+-	debug("%s\n", __func__);
++
++	debug("%s() dev: %s\n", __func__, dev->name);
+ 
+ 	if (dev->plat_ == NULL) {
+ 
+@@ -273,4 +275,4 @@ U_BOOT_DRIVER(imx8mp_ldb) = {
+ 	.probe				= imx8mp_ldb_probe,
+ 	.ops				= &imx8mp_ldb_ops,
+ 	.priv_auto		= sizeof(struct imx8mp_ldb_priv),
+-};
+\ No newline at end of file
++};
+diff --git a/drivers/video/nxp/imx/imx_lcdifv3.c b/drivers/video/nxp/imx/imx_lcdifv3.c
+index 8932908d921e..0f682ca22690 100644
+--- a/drivers/video/nxp/imx/imx_lcdifv3.c
++++ b/drivers/video/nxp/imx/imx_lcdifv3.c
+@@ -17,7 +17,6 @@
+ #include <asm/io.h>
+ #include <display.h>
+ 
+-
+ #include "../../videomodes.h"
+ #include <linux/string.h>
+ #include <linux/list.h>
+@@ -351,7 +350,7 @@ static int lcdifv3_video_probe(struct udevice *dev)
+ 
+ 	lcdifv3_of_parse_thres(dev);
+ 
+-	ret = display_enable(priv->disp_dev, NULL, NULL);
++	ret = display_enable(priv->disp_dev, 0, NULL);
+ 	if (ret) {
+ 		debug("%s: Display enable error %d\n", __func__, ret);
+ 		return ret;
+diff --git a/drivers/video/video_link.c b/drivers/video/video_link.c
+index f0257dca7ae7..8187ff7102bb 100644
+--- a/drivers/video/video_link.c
++++ b/drivers/video/video_link.c
+@@ -488,7 +488,7 @@ static void list_videolink(bool current_only)
+ 		else if (current_only)
+ 			continue;
+ 
+-		printf("[%c]-Video Link %lu", (match)? '*':' ', index);
++		printf("[%c]-Video Link %lu\n", (match)? '*':' ', index);
+ 
+ 		if (match) {
+ 			struct udevice *video_dev = video_link_get_video_device();
+-- 
+2.25.1
+
