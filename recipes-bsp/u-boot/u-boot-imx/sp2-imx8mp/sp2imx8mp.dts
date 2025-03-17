@@ -88,7 +88,65 @@
 
 	dsi_host: dsi-host {
 		compatible = "samsung,sec-mipi-dsi";
+		status = "disabled";
+	};
+
+	backlight: lvds-backlight {
+		compatible = "pwm-backlight";
+		power-supply = <&reg_bl_pwr>;
+		pwms = <&pwm2 0 100000 0>;
+		enable-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>; /* vin */
+		brightness-levels = < 0  1  2  3  4  5  6  7  8  9
+					10 11 12 13 14 15 16 17 18 19
+					20 21 22 23 24 25 26 27 28 29
+					30 31 32 33 34 35 36 37 38 39
+					40 41 42 43 44 45 46 47 48 49
+					50 51 52 53 54 55 56 57 58 59
+					60 61 62 63 64 65 66 67 68 69
+					70 71 72 73 74 75 76 77 78 79
+					80 81 82 83 84 85 86 87 88 89
+					90 91 92 93 94 95 96 97 98 99
+					100>;
+		default-brightness-level = <80>;
 		status = "okay";
+	};
+
+	reg_bl_pwr: reg-bl-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		gpio = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		status = "okay";
+	};
+
+	lvds_panel_10: 10inch_panel@0 {
+		compatible = "lvds-panel";
+		backlight = <&backlight>;
+		enable-gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>; /* +VDD_PANEL */
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing10>;
+			timing10: timing10 {
+				clock-frequency = <76600000>;
+				hactive = <1280>;
+				vactive = <800>;
+				hfront-porch = <95>;
+				hback-porch = <95>;
+				hsync-len = <40>;
+				vback-porch = <17>;
+				vfront-porch = <17>;
+				vsync-len = <2>;
+			};
+		};
+
+		port {
+			lvds_in: endpoint {
+				remote-endpoint = <&lvds_out>;
+			};
+		};
 	};
 
 	rm67199_panel {
@@ -103,7 +161,7 @@
 					 */
 		panel-width-mm = <68>;
 		panel-height-mm = <121>;
-		status = "okay";
+		status = "disabled";
 
 		port {
 			rm67191_from_dsim: endpoint {
@@ -157,6 +215,12 @@
 
 &A53_3 {
 	cpu-supply = <&buck2>;
+};
+
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_bl_pwm2>;
+	status = "okay";
 };
 
 &eqos {
@@ -409,7 +473,7 @@
 		compatible = "ite,it6263";
 		reg = <0x4c>;
 		reset-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
-		status = "okay";
+		status = "disabled";
 
 		port {
 			it6263_in: endpoint {
@@ -559,7 +623,7 @@
 			reg = <1>;
 
 			lvds_out: endpoint {
-				remote-endpoint = <&it6263_in>;
+				remote-endpoint = <&lvds_in>;
 			};
 		};
 	};
@@ -702,6 +766,24 @@
 };
 
 &iomuxc {
+	pinctrl_backlight: backlightgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO00__GPIO1_IO00	0x16
+		>;
+	};
+
+	pinctrl_bl_pwm2: blpwm2grp {
+		fsl,pins = <
+			MX8MP_IOMUXC_GPIO1_IO11__PWM2_OUT	0x116
+		>;
+	};
+
+	pinctrl_reg_lvds_vdd: reglvdsvddgrp {
+		fsl,pins = <
+			MX8MP_IOMUXC_SAI2_MCLK__GPIO4_IO27	0x16
+		>;
+	};
+
 	pinctrl_eqos: eqosgrp {
 		fsl,pins = <
 			MX8MP_IOMUXC_ENET_MDC__ENET_QOS_MDC				0x2
