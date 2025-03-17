@@ -1,4 +1,5 @@
 
+BBLAYERS += "${BSPDIR}/sources/meta-browser/meta-chromium"
 # ADLINK Yocto Project Release layers
 BBLAYERS += "${BSPDIR}/sources/meta-adlink-nxp"
 BBLAYERS += "${BSPDIR}/sources/meta-adlink-sema"
