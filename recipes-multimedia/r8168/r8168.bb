@@ -15,7 +15,7 @@ SRC_URI = "git://github.com/AdlinkCCoE/r8168.git;branch=${SRCBRANCH};protocol=ht
 
 SRC_URI:append ="file://Makefile \
 		 file://0001-r8168_n-downgrade-kernel-apis.patch \
-		 file://blacklist.conf "
+		 file://blacklist-eth.conf "
 
 S = "${WORKDIR}/git"
 
@@ -25,7 +25,7 @@ do_compile:prepend() {
 	cp ${WORKDIR}/Makefile ${WORKDIR}/git/Makefile
 }
 
-MODPROBE_CONFFILE = "blacklist.conf"
+MODPROBE_CONFFILE = "blacklist-eth.conf"
 
 do_install:append () {
   install -d ${D}${sysconfdir}/modprobe.d
