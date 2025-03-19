@@ -5,11 +5,11 @@ SRC_URI:append = " \
   file://moal.conf \
 "
 SRC_URI:append:lec-imx8mm = " \
-  file://blacklist.conf \
+  file://blacklist-wifi-bt.conf \
 "
 
 MOD_CONF_FILES = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', 'moal.conf', '', d)}"
-MOD_CONF_FILES:append:lec-imx8mm = " blacklist.conf"
+MOD_CONF_FILES:append:lec-imx8mm = " blacklist-wifi-bt.conf"
 
 do_install:append () {
   install -d ${D}${sysconfdir}/modprobe.d

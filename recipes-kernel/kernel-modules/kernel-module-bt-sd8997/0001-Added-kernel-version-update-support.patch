@@ -1,15 +1,16 @@
-From 4f5477029ae86bf8f50bd5892d751208fda7ce23 Mon Sep 17 00:00:00 2001
-From: "deepak.s" <deepak.s@adlinktech.com>
-Date: Mon, 29 Jul 2024 13:41:39 +0530
+From 3fc906c9d4951d2e814d2ea2d2bd240fbc4082d7 Mon Sep 17 00:00:00 2001
+From: "arun.tamilselvan" <arun.tamilselvan@adlinktech.com>
+Date: Mon, 17 Mar 2025 10:41:41 +0530
 Subject: [PATCH] Added-kernel-version-update-support
 
 ---
  bt/bt_init.c    | 32 ++++++++++----------------------
- bt/bt_main.c    |  2 +-
+ bt/bt_main.c    |  4 ++--
  bt/bt_sdiommc.c | 16 ++++++----------
  bt/mbt_char.c   | 42 ++++++++++++++++++++++++++++++++----------
- 4 files changed, 49 insertions(+), 43 deletions(-)
+ 4 files changed, 50 insertions(+), 44 deletions(-)
  mode change 100755 => 100644 bt/bt_init.c
+ mode change 100755 => 100644 bt/bt_main.c
  mode change 100755 => 100644 bt/bt_sdiommc.c
  mode change 100755 => 100644 bt/mbt_char.c
 
@@ -80,9 +81,20 @@ index cf9bfc4..3a1c667
  			PRINTM(FATAL,
  			       "BT: bt_cal_config_ext() failed, error code = %#x cal_file=%s\n",
 diff --git a/bt/bt_main.c b/bt/bt_main.c
-index 1778ea1..7ad0a69 100755
+old mode 100755
+new mode 100644
+index 1778ea1..d1a422b
 --- a/bt/bt_main.c
 +++ b/bt/bt_main.c
+@@ -3344,7 +3344,7 @@ sbi_register_conf_dpc(bt_private *priv)
+ 		 mbt_driver_version, fw_version);
+ 
+ 	if (hdev) {
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 6, 32)
+ 		hdev->dev_type = priv->bt_dev.devType;
+ #endif
+ 		ret = hci_register_dev(hdev);
 @@ -3587,7 +3587,7 @@ bt_init_module(void)
  	bt_root_proc_init();
  
@@ -232,5 +244,5 @@ index 2f64382..0ba5930
  
  #if LINUX_VERSION_CODE < KERNEL_VERSION(4,7,0)
 -- 
-2.43.2
+2.25.1
 
