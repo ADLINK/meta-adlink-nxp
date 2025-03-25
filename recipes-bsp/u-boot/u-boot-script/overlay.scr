@@ -10,12 +10,18 @@ fi;
 if test -n ${E_disp}; then
   if test ${E_disp} = 7; then
     setenv overlays ${overlays} 7inch-overlay.dtbo;
+  elif test ${E_disp} = 2070001; then
+    setenv overlays ${overlays} 7inch-overlay.dtbo;
   elif test ${E_disp} = 7d; then
     setenv overlays ${overlays} 7dsi-overlay.dtbo;
   elif test ${E_disp} = 7r; then
     setenv overlays ${overlays} 7rlcd-overlay.dtbo;
   elif test ${E_disp} = 10; then
     setenv overlays ${overlays} 10inch-overlay.dtbo;
+  elif test ${E_disp} = 2100002; then
+    setenv overlays ${overlays} 10inch-overlay.dtbo;
+  elif test ${E_disp} = 100301; then
+    setenv overlays ${overlays} 10auo-overlay.dtbo;
   elif test ${E_disp} = 23; then
     setenv overlays ${overlays} 23inch-overlay.dtbo;
   fi;
