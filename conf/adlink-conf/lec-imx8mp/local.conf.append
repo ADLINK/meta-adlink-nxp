@@ -24,4 +24,5 @@ BBMASK:append = " \
 ubuntu-base_%.bbappend imx-image-desktop.bbappend \
 rteval_%.bbappend linux-intel_%.bbappend \
 "
-
+BBMASK:append = "kernel-module-isp-vvcam_4.2.2.20.0.bbappend"
+BBMASK:append = "isp-imx_4.2.2.20.%.bbappend"
