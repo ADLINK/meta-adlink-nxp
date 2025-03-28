@@ -29,3 +29,6 @@ IMAGE_FSTYPES += " wic.bmap wic.gz"
 BBMASK += "linux-intel_%.bbappend"
 
 PACKAGECONFIG:append:pn-python3 = " tk"
+
+EXTRA_USERS_PARAMS:append = " usermod -a -G video,render,wayland,input,root,sudo,dialout,dialout,tty,disk -p '$(openssl passwd weston)' weston;"
+
