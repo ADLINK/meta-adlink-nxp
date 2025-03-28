@@ -38,3 +38,5 @@ IMAGE_FEATURES += "empty-root-password"
 IMAGE_FSTYPES += " wic.bmap wic.gz"
 
 BBMASK += "linux-intel_%.bbappend"
+
+EXTRA_USERS_PARAMS:append = " usermod -a -G video,render,wayland,input,root,sudo,dialout,dialout,tty,disk -p '$(openssl passwd weston)' weston;"
