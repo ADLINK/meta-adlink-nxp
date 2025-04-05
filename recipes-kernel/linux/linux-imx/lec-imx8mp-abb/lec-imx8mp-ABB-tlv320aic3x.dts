@@ -1,0 +1,68 @@
+/*
+ * Copyright 2020 NXP
+ */
+
+#include "lec-imx8mp-ABB.dts"
+#include <dt-bindings/sound/tlv320aic31xx-micbias.h>
+
+/ {
+    /delete-node/ sound-wm8960;
+    fixed-regulators {
+            compatible = "simple-bus";
+            device_type = "fixed-regulators";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            codec_1v8: regulator-codec-1v8 {
+                    compatible = "regulator-fixed";
+                    regulator-name = "codec-1v8";
+                    regulator-min-microvolt = <1800000>;
+                    regulator-max-microvolt = <1800000>;
+                    regulator-boot-on;
+                    regulator-always-on;
+                    enable-active-high;
+            };
+
+            codec_3v3: regulator-codec-3v3 {
+                    compatible = "regulator-fixed";
+                    regulator-name = "codec-3v3";
+                    regulator-min-microvolt = <3300000>;
+                    regulator-max-microvolt = <3300000>;
+                    regulator-boot-on;
+                    regulator-always-on;
+                    enable-active-high;
+            };
+    };
+
+    sound-tlv320aic3x {
+	    compatible = "fsl,imx-audio-tlv320aic3x";
+  	    model = "tlv320aic3x";
+  	    cpu-dai = <&sai3>;
+        audio-codec = < &audiocodec >;
+        audio-routing =
+            "MIC3L", "Mic Jack",
+            "Mic Jack", "Mic Bias",
+            "Headphone Jack", "HPLOUT",
+            "Headphone Jack", "HPROUT";
+		mux-int-port = <1>;
+        mux-ext-port = <3>;
+    };
+};
+
+&i2c1 {
+    /delete-node/ wm8960@1a;
+    audiocodec: tlv320aic3x@18 {
+        #sound-dai-cells = <0>;
+        compatible = "ti,tlv320aic3x";
+        reg = <0x18>;
+        clocks = <&audio_blk_ctrl IMX8MP_CLK_AUDIO_BLK_CTRL_SAI3_MCLK1>;
+        clock-names = "mclk";
+        AVDD-supply = <&codec_3v3>;
+        IOVDD-supply = <&codec_1v8>;
+        DRVDD-supply = <&codec_3v3>;
+        DVDD-supply = <&codec_1v8>;
+        ai3x-micbias-vg = <MICBIAS_2_0V>;
+        ai3x-ocmv = <3>;
+        status = "okay";
+    };
+};

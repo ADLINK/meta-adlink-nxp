@@ -1,0 +1,494 @@
+From c08b944493d8b81513026671abb3365f08049ebd Mon Sep 17 00:00:00 2001
+From: "arun.tamilselvan" <arun.tamilselvan@adlinktech.com>
+Date: Fri, 28 Mar 2025 15:25:51 +0530
+Subject: [PATCH] Added MIPI-DSI panel driver support
+
+---
+ drivers/gpu/drm/bridge/synopsys/dw-hdmi.c |   4 +-
+ drivers/gpu/drm/panel/Kconfig             |   9 +
+ drivers/gpu/drm/panel/Makefile            |   1 +
+ drivers/gpu/drm/panel/panel-b101uan01.c   | 345 ++++++++++++++++++++++
+ drivers/gpu/drm/panel/panel-simple.c      |  64 ++++
+ 5 files changed, 422 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/gpu/drm/panel/panel-b101uan01.c
+
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+index 2085a04293b8..5fa23715f6f8 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi.c
+@@ -2481,7 +2481,9 @@ static struct edid *dw_hdmi_get_edid(struct dw_hdmi *hdmi,
+ 
+ 	if (!hdmi->ddc)
+ 		return NULL;
+-
++		
++	pr_info("delay 150ms before get edid to waiting for display edid ready!\n");
++	msleep(150);
+ 	edid = drm_get_edid(connector, hdmi->ddc);
+ 	if (!edid) {
+ 		dev_dbg(hdmi->dev, "failed to get edid\n");
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+index 5663037fff13..2e594daa3c9c 100644
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -350,6 +350,15 @@ config DRM_PANEL_RAYDIUM_RM67191
+ 	  Say Y here if you want to enable support for Raydium RM67191 FHD
+ 	  (1080x1920) DSI panel.
+ 
++config DRM_PANEL_AUO_B101UAN1V7
++	tristate "AUO B101UAN1v7 WUXGA 16:10 TFT-LCD 1920x1200 DSI video mode panel"
++	depends on OF
++	depends on DRM_MIPI_DSI
++	depends on BACKLIGHT_CLASS_DEVICE
++	help
++	  Say Y here if you want to enable support for AUO B101UAN1v7 WUXGA (1920x1200)
++	  DSI panel.
++
+ config DRM_PANEL_RAYDIUM_RM68200
+ 	tristate "Raydium RM68200 720x1280 DSI video mode panel"
+ 	depends on OF
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+index 5315883da4b5..8c9e49c9524b 100644
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -66,3 +66,4 @@ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+ obj-$(CONFIG_DRM_PANEL_WIDECHIPS_WS2401) += panel-widechips-ws2401.o
+ obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
+ obj-$(CONFIG_DRM_PANEL_WKS_101WX001) += panel-wks-101wx001.o
++obj-$(CONFIG_DRM_PANEL_AUO_B101UAN1V7) += panel-b101uan01.o
+diff --git a/drivers/gpu/drm/panel/panel-b101uan01.c b/drivers/gpu/drm/panel/panel-b101uan01.c
+new file mode 100644
+index 000000000000..b14bfe0874c6
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-b101uan01.c
+@@ -0,0 +1,345 @@
++/*
++ * i.MX drm driver - B101UAN01 MIPI-DSI panel driver
++ *
++ * Copyright (C) 2017 NXP
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <drm/drm_vblank.h>
++#include <drm/drm_print.h>
++#include <drm/drm_crtc.h>
++
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_panel.h>
++#include <drm/drm_device.h>
++
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/regulator/consumer.h>
++
++#include <video/mipi_display.h>
++#include <video/of_videomode.h>
++#include <video/videomode.h>
++
++#include <video/display_timing.h>
++#include <video/of_display_timing.h>
++
++#include <linux/backlight.h>
++
++static const u32 b101uan01_bus_formats[] = {
++	MEDIA_BUS_FMT_RGB888_1X24,
++	MEDIA_BUS_FMT_RGB666_1X18,
++	MEDIA_BUS_FMT_RGB565_1X16,
++};
++
++struct b101uan01_panel {
++	struct drm_panel base;
++	struct mipi_dsi_device *dsi;
++
++	bool prepared;
++	bool enabled;
++	struct backlight_device *backlight;
++
++	struct videomode vm;
++	u32 width_mm;
++	u32 height_mm;
++	struct gpio_desc *enable_gpio;
++};
++
++static inline struct b101uan01_panel *to_b101uan01_panel(struct drm_panel *panel)
++{
++	return container_of(panel, struct b101uan01_panel, base);
++}
++
++static int b101uan01_panel_prepare(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++
++	if (b101uan01->prepared) {
++		return 0;
++	}
++	gpiod_set_value_cansleep(b101uan01->enable_gpio, 1);
++	b101uan01->prepared = true;
++
++	return 0;
++}
++
++static int b101uan01_panel_unprepare(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++
++	if (!b101uan01->prepared) {
++		return 0;
++	}
++
++	if (b101uan01->enabled) {
++		return -EPERM;
++	}
++
++	gpiod_set_value_cansleep(b101uan01->enable_gpio, 0);
++	b101uan01->prepared = false;
++
++	return 0;
++}
++
++static int b101uan01_panel_enable(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++    struct mipi_dsi_device *dsi = b101uan01->dsi;
++
++	if (b101uan01->enabled) {
++		return 0;
++	}
++
++	if (!b101uan01->prepared) {
++		return -EPERM;
++	}
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	if (b101uan01->backlight) {
++		b101uan01->backlight->props.state &= ~BL_CORE_FBBLANK;
++		b101uan01->backlight->props.power = FB_BLANK_UNBLANK;
++		backlight_update_status(b101uan01->backlight);
++	}
++
++	b101uan01->enabled = true;
++
++	return 0;
++}
++
++static int b101uan01_panel_disable(struct drm_panel *panel)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++    struct mipi_dsi_device *dsi = b101uan01->dsi;
++
++	if (!b101uan01->enabled) {
++		return 0;
++	};
++
++	if (b101uan01->backlight) {
++		b101uan01->backlight->props.power = FB_BLANK_POWERDOWN;
++		b101uan01->backlight->props.state |= BL_CORE_FBBLANK;
++		backlight_update_status(b101uan01->backlight);
++	}
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++
++	b101uan01->enabled = false;
++	return 0;
++}
++
++static int b101uan01_panel_get_modes(struct drm_panel *panel, struct drm_connector *connector)
++{
++	struct b101uan01_panel *b101uan01 = to_b101uan01_panel(panel);
++	struct device *dev = &b101uan01->dsi->dev;
++	struct drm_display_mode *mode;
++	u32 *bus_flags = &connector->display_info.bus_flags;
++	int ret;
++
++	mode = drm_mode_create(connector->dev);
++	if (!mode) {
++		DRM_DEV_ERROR(dev, "Failed to create display mode!\n");
++		return 0;
++	}
++
++	drm_display_mode_from_videomode(&b101uan01->vm, mode);
++	mode->width_mm = b101uan01->width_mm;
++	mode->height_mm = b101uan01->height_mm;
++	connector->display_info.width_mm = b101uan01->width_mm;
++	connector->display_info.height_mm = b101uan01->height_mm;
++	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
++
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_DE_HIGH)
++		*bus_flags |= DRM_BUS_FLAG_DE_HIGH;
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_DE_LOW)
++		*bus_flags |= DRM_BUS_FLAG_DE_LOW;
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_PIXDATA_NEGEDGE)
++		*bus_flags |= DRM_BUS_FLAG_PIXDATA_SAMPLE_POSEDGE;
++	if (b101uan01->vm.flags & DISPLAY_FLAGS_PIXDATA_POSEDGE)
++		*bus_flags |= DRM_BUS_FLAG_PIXDATA_SAMPLE_NEGEDGE;
++
++	ret = drm_display_info_set_bus_formats(&connector->display_info,
++			b101uan01_bus_formats, ARRAY_SIZE(b101uan01_bus_formats));
++	if (ret)
++		return ret;
++
++	drm_mode_probed_add(connector, mode);
++
++	return 1;
++}
++
++static const struct drm_panel_funcs b101uan01_panel_funcs = {
++	.prepare = b101uan01_panel_prepare,
++	.unprepare = b101uan01_panel_unprepare,
++	.enable = b101uan01_panel_enable,
++	.disable = b101uan01_panel_disable,
++	.get_modes = b101uan01_panel_get_modes,
++};
++
++static int b101uan01_panel_probe(struct mipi_dsi_device *dsi)
++{
++	struct device *dev = &dsi->dev;
++	struct device_node *np = dev->of_node;
++	struct device_node *timings;
++	struct b101uan01_panel *panel;
++	struct device_node *backlight;
++	int ret;
++	u32 video_mode;
++
++	panel = devm_kzalloc(&dsi->dev, sizeof(*panel), GFP_KERNEL);
++	if (!panel)
++		return -ENOMEM;
++
++	mipi_dsi_set_drvdata(dsi, panel);
++
++	panel->dsi = dsi;
++
++	dsi->format = MIPI_DSI_FMT_RGB888;
++
++    dsi->mode_flags = MIPI_DSI_MODE_VIDEO_HSE
++		            | MIPI_DSI_MODE_VIDEO
++		            | MIPI_DSI_MODE_VIDEO_SYNC_PULSE
++		            | MIPI_DSI_MODE_NO_EOT_PACKET
++		            | MIPI_DSI_MODE_LPM;
++
++/*	dsi->mode_flags =  MIPI_DSI_MODE_VIDEO_HSE | MIPI_DSI_MODE_VIDEO |
++			   MIPI_DSI_CLOCK_NON_CONTINUOUS;*/
++
++	ret = of_property_read_u32(np, "video-mode", &video_mode);
++	if (!ret) {
++		switch (video_mode) {
++		case 0:
++			/* burst mode */
++			dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_BURST;
++			break;
++		case 1:
++			/* non-burst mode with sync event */
++			break;
++		case 2:
++			/* non-burst mode with sync pulse */
++			dsi->mode_flags |= MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
++			break;
++		default:
++			dev_warn(dev, "invalid video mode %d\n", video_mode);
++			break;
++
++		}
++	}
++
++	ret = of_property_read_u32(np, "dsi-lanes", &dsi->lanes);
++	if (ret < 0) {
++		dev_err(dev, "Failed to get dsi-lanes property (%d)\n", ret);
++
++		return ret;
++	}
++
++	/*
++	 * 'display-timings' is optional, so verify if the node is present
++	 * before calling of_get_videomode so we won't get console error
++	 * messages
++	 */
++	timings = of_get_child_by_name(np, "display-timings");
++	if (timings) {
++		of_node_put(timings);
++		ret = of_get_videomode(np, &panel->vm, 0);
++	}
++
++	if (ret < 0)
++		return ret;
++
++
++	of_property_read_u32(np, "panel-width-mm", &panel->width_mm);
++	of_property_read_u32(np, "panel-height-mm", &panel->height_mm);
++
++	panel->enable_gpio = devm_gpiod_get_optional(dev, "enable",
++						     GPIOD_OUT_LOW);
++	if (IS_ERR(panel->enable_gpio)) {
++		ret = PTR_ERR(panel->enable_gpio);
++		if (ret != -EPROBE_DEFER)
++			dev_err(dev, "failed to request GPIO: %d\n", ret);
++		return ret;
++	}
++
++	backlight = of_parse_phandle(dev->of_node, "backlight", 0);
++	if (backlight) {
++		panel->backlight = of_find_backlight_by_node(backlight);
++		of_node_put(backlight);
++
++		if (!panel->backlight)
++			return -EPROBE_DEFER;
++	}
++
++
++	drm_panel_init(&panel->base, dev, &b101uan01_panel_funcs, DRM_MODE_CONNECTOR_DSI);
++	panel->base.funcs = &b101uan01_panel_funcs;
++	panel->base.dev = dev;
++
++	drm_panel_add(&panel->base);
++
++	ret = mipi_dsi_attach(dsi);
++	if (ret < 0) {
++		drm_panel_remove(&panel->base);
++	}
++
++	return ret;
++}
++
++static int b101uan01_panel_remove(struct mipi_dsi_device *dsi)
++{
++	struct b101uan01_panel *b101uan01 = mipi_dsi_get_drvdata(dsi);
++	struct device *dev = &dsi->dev;
++	int ret;
++
++	ret = mipi_dsi_detach(dsi);
++	if (ret < 0)
++		DRM_DEV_ERROR(dev, "Failed to detach from host (%d)\n",
++			ret);
++
++
++	if (b101uan01->backlight)
++		put_device(&b101uan01->backlight->dev);
++
++	if (b101uan01->base.dev)
++		drm_panel_remove(&b101uan01->base);
++
++	return 0;
++}
++
++static void b101uan01_panel_shutdown(struct mipi_dsi_device *dsi)
++{
++	struct b101uan01_panel *b101uan01 = mipi_dsi_get_drvdata(dsi);
++
++	b101uan01_panel_disable(&b101uan01->base);
++	b101uan01_panel_unprepare(&b101uan01->base);
++}
++
++static const struct of_device_id dsi_of_match[] = {
++	{ .compatible = "auo,b101uan01v7", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, dsi_of_match);
++
++static struct mipi_dsi_driver b101uan01_panel_driver = {
++	.driver = {
++		.name = "panel-b101uan01",
++		.of_match_table = dsi_of_match,
++	},
++	.probe = b101uan01_panel_probe,
++	.remove = b101uan01_panel_remove,
++	.shutdown = b101uan01_panel_shutdown,
++};
++module_mipi_dsi_driver(b101uan01_panel_driver);
++
++MODULE_AUTHOR("NXP Semiconductor");
++MODULE_DESCRIPTION("B101UAN01");
++MODULE_LICENSE("GPL v2");
+diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
+index 334066b6f75c..24fd0367d68e 100644
+--- a/drivers/gpu/drm/panel/panel-simple.c
++++ b/drivers/gpu/drm/panel/panel-simple.c
+@@ -2477,6 +2477,64 @@ static const struct panel_desc hitachi_tx23d38vm0caa = {
+ 		.disable = 160,
+ 	},
+ };
++static const struct display_timing auo_g156han04_0_timings = {
++	.pixelclock = { 141000000, 141000000, 141000000 },
++	.hactive = { 1920, 1920, 1920 },
++	.hfront_porch = { 60, 60, 60 },
++	.hback_porch = { 60, 60, 60 },
++	.hsync_len = { 64, 64, 64 },
++	.vactive = { 1080, 1080, 1080 },
++	.vfront_porch = { 12, 12, 12 },
++	.vback_porch = { 12, 12, 12 },
++	.vsync_len = { 12, 12, 12 },
++};
++static const struct panel_desc auo_g156han04_0 = {
++    .timings = &auo_g156han04_0_timings,
++    .num_timings = 1,
++    .bpc = 8, 
++    .size = {
++        .width = 344, 
++        .height = 194, 
++    },
++    .delay = {
++        .prepare = 10,
++        .enable = 50,
++        .disable = 50,
++        .unprepare = 200,
++    },
++    .bus_format = MEDIA_BUS_FMT_RGB888_1X24,
++};
++
++static const struct display_timing hydis_hv150ux2_100_timings = {
++	.pixelclock = { 162000000, 162000000, 162000000 },
++	.hactive = { 1600, 1600, 1600 },
++	.hfront_porch = { 180, 180, 180 },
++	.hback_porch = { 180, 180, 180 },
++	.hsync_len = { 200, 200, 200 },
++	.vactive = { 1200, 1200, 1200 },
++	.vfront_porch = { 15, 15, 15 },
++	.vback_porch = { 15, 15, 15 },
++	.vsync_len = { 20, 20, 20 },
++};
++
++
++static const struct panel_desc hydis_hv150ux2_100 = {
++	.timings = &hydis_hv150ux2_100_timings,
++	.num_timings = 1,
++	.bpc = 8,
++	.size = {
++		.width = 304,
++		.height = 228,
++	},
++	.delay = {
++		.prepare = 10,
++		.enable = 50,
++		.disable = 50,
++		.unprepare = 200,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
+ 
+ static const struct drm_display_mode innolux_at043tn24_mode = {
+ 	.clock = 9000,
+@@ -4728,6 +4786,12 @@ static const struct of_device_id platform_of_match[] = {
+ 		.compatible = "hit,tx23d38vm0caa",
+ 		.data = &hitachi_tx23d38vm0caa
+ 	}, {
++		.compatible = "auo,g156han04_0",
++		.data = &auo_g156han04_0,
++	},  {
++		.compatible = "hydis,hv150ux2-100",
++		.data = &hydis_hv150ux2_100,
++	},  {
+ 		.compatible = "innolux,at043tn24",
+ 		.data = &innolux_at043tn24,
+ 	}, {
+-- 
+2.25.1
+
