@@ -18,6 +18,13 @@ SRC_URI:append:lec-imx8mp = " \
 	file://hwbom_id.sh \
 "
 
+SRC_URI:append:lec-imx8mp-abb = " \
+	file://restUartCfg.sh \
+	file://rfkill-unblock-wifibt.sh \
+	file://tlv320init.sh \
+	file://alsa.cfg \
+"
+
 S = "${WORKDIR}"
 
 do_compile_lec-imx8mp() {
@@ -40,6 +47,18 @@ do_install() {
 do_install:append:lec-imx8mp() {
 	install -m 0755 ${WORKDIR}/hwbom_id.sh ${D}/usr${base_bindir}/
 	install -m 0755 ${WORKDIR}/set_mac_address ${D}/usr${base_bindir}/
+}
+
+do_install:append:lec-imx8mp-abb () {
+        install -d ${D}${sysconfdir}/
+        install -d ${D}${sysconfdir}/init.d
+	install -m 0755 ${WORKDIR}/restUartCfg.sh ${D}${sysconfdir}/init.d 
+	install -m 0755 ${WORKDIR}/rfkill-unblock-wifibt.sh ${D}${sysconfdir}/init.d
+	install -m 0755 ${WORKDIR}/tlv320init.sh ${D}${sysconfdir}/init.d
+	install -m 0644 ${WORKDIR}/alsa.cfg ${D}${sysconfdir}/
+	ln -sf ${D}/lib/bzip2/ptest/bzip2-tests/lbzip2 ${D}${bindir}/lbzip2
+	ln -sf ${D}/usr/bin/lbzip2 ${D}${bindir}/lbunzip2 
+	ln -sf ${D}/usr/bin/lbzip2 ${D}${bindir}/lbzcat
 }
 
 do_package_qa[noexec] = "1"

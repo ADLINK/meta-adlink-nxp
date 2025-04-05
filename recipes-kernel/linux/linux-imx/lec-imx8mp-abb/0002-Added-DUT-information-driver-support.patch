@@ -1,0 +1,156 @@
+From 84eade391c1cb840167adf9eb518e349bf985d81 Mon Sep 17 00:00:00 2001
+From: "arun.tamilselvan" <arun.tamilselvan@adlinktech.com>
+Date: Fri, 28 Mar 2025 15:39:15 +0530
+Subject: [PATCH] Added DUT information driver support
+
+---
+ drivers/misc/devinfo/Kconfig   |  10 +++
+ drivers/misc/devinfo/Makefile  |   3 +
+ drivers/misc/devinfo/dutInfo.c | 108 +++++++++++++++++++++++++++++++++
+ 3 files changed, 121 insertions(+)
+ create mode 100755 drivers/misc/devinfo/Kconfig
+ create mode 100755 drivers/misc/devinfo/Makefile
+ create mode 100755 drivers/misc/devinfo/dutInfo.c
+
+diff --git a/drivers/misc/devinfo/Kconfig b/drivers/misc/devinfo/Kconfig
+new file mode 100755
+index 000000000000..caf9b2cd04e0
+--- /dev/null
++++ b/drivers/misc/devinfo/Kconfig
+@@ -0,0 +1,10 @@
++#
++# ADLINK's DUT information interface
++#
++menu "ADLINK DUT Information"
++config ADLINK_DUTINFO
++	bool "ADLINK DUT information driver"
++	default y
++	help
++	  This is a standard general information interface for ADLINK's ARM device system use.
++endmenu
+diff --git a/drivers/misc/devinfo/Makefile b/drivers/misc/devinfo/Makefile
+new file mode 100755
+index 000000000000..a8a24a003d1b
+--- /dev/null
++++ b/drivers/misc/devinfo/Makefile
+@@ -0,0 +1,3 @@
++
++obj-$(CONFIG_ADLINK_DUTINFO)     += dutInfo.o
++
+diff --git a/drivers/misc/devinfo/dutInfo.c b/drivers/misc/devinfo/dutInfo.c
+new file mode 100755
+index 000000000000..27ee25a934f1
+--- /dev/null
++++ b/drivers/misc/devinfo/dutInfo.c
+@@ -0,0 +1,108 @@
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/kobject.h>
++#include <linux/sysfs.h>
++#include <linux/string.h>
++#include <linux/io.h>
++#include<linux/slab.h>
++
++static char *durManufacturer = "ADLINK Technology Inc.";
++static char *dutBrand = "ADLINK";
++/* dutModel must be uppercase */
++static char *dutModel = "LEC-iMX8MP";
++static char dutUid[65] = {0};
++static char *cpu_serial_node = "/sys/bus/soc/devices/soc0/serial_number";
++
++void readCPUID(void);
++
++static ssize_t manufacturer_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    sprintf(buf,"%s\n",durManufacturer);
++    return strlen(buf);
++}
++
++static ssize_t brand_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    sprintf(buf,"%s\n",dutBrand);
++    return strlen(buf);
++}
++
++static ssize_t model_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    sprintf(buf,"%s\n",dutModel);
++    return strlen(buf);
++}
++
++static ssize_t uuid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++    /* DUT's UUID need every BSP implement this feature */
++	readCPUID();
++    sprintf(buf,"%s\n",dutUid);
++    return strlen(buf);
++}
++
++static struct kobj_attribute iDutInfo_manufacturer_attribute = __ATTR(manufacturer, 0444, manufacturer_show, NULL);
++static struct kobj_attribute iDutInfo_brandName_attribute = __ATTR(brandName, 0444, brand_show, NULL);
++static struct kobj_attribute iDutInfo_modelName_attribute = __ATTR(modelName, 0444, model_show, NULL);
++static struct kobj_attribute iDutInfo_uuid_attribute = __ATTR(uuid, 0444, uuid_show, NULL);
++
++static struct kobject *iDutInfo_kobj;
++
++static struct attribute *attrs[] =
++{
++    &iDutInfo_manufacturer_attribute.attr,
++	&iDutInfo_brandName_attribute.attr,
++	&iDutInfo_modelName_attribute.attr,
++	&iDutInfo_uuid_attribute.attr,
++    NULL, /* need to NULL terminate the list of attributes */
++};
++
++static struct attribute_group attr_group =
++{
++    .attrs = attrs,
++};
++
++void readCPUID(void)
++{
++    struct file *fp;
++    loff_t pos=0;
++    fp = filp_open(cpu_serial_node,O_RDONLY,0664);
++    if (fp!=NULL){
++        kernel_read(fp,(void *)dutUid,16,&pos);
++        filp_close(fp,NULL);
++    }
++}
++
++static int __init iDutInfo_init(void)
++
++{
++
++    int retval;
++
++    iDutInfo_kobj = kobject_create_and_add("DUTINFO", firmware_kobj);
++    if (!iDutInfo_kobj)
++         return -ENOMEM;
++
++    retval = sysfs_create_group(iDutInfo_kobj,&attr_group);
++    if (retval){
++        kobject_put(iDutInfo_kobj);
++    }
++    return retval;
++}
++
++static void __exit iDutInfo_exit(void)
++
++{
++    sysfs_remove_group(iDutInfo_kobj,&attr_group);
++    kobject_put(iDutInfo_kobj);
++    return;
++}
++
++module_init(iDutInfo_init);
++
++module_exit(iDutInfo_exit);
++
++MODULE_LICENSE("GPL");
++
++MODULE_AUTHOR("Craig Chen <craig.chen@adlinktech.com>");
++
+-- 
+2.25.1
+

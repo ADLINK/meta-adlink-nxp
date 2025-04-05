@@ -1,0 +1,30 @@
+From 227dee6ad3a9f5c17efbec1f4a67ac7f9afd682d Mon Sep 17 00:00:00 2001
+From: "arun.tamilselvan" <arun.tamilselvan@adlinktech.com>
+Date: Fri, 28 Mar 2025 15:40:52 +0530
+Subject: [PATCH] Disabled hantrodec_845s runtime 
+
+---
+ drivers/mxc/hantro_845/hantrodec_845s.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mxc/hantro_845/hantrodec_845s.c b/drivers/mxc/hantro_845/hantrodec_845s.c
+index 9d2ee0fe2633..0f2c94c3f704 100755
+--- a/drivers/mxc/hantro_845/hantrodec_845s.c
++++ b/drivers/mxc/hantro_845/hantrodec_845s.c
+@@ -1544,11 +1544,11 @@ static int hantrodec_release(struct inode *inode, struct file *filp)
+ 
+ 	if (ctx->core_id == HANTRO_CORE_ID_INVALID) {
+ 		for (n = 0; n < cores; n++) {
+-			pm_runtime_put_sync(hantrodec_data[n].dev);
++			//pm_runtime_put_sync(hantrodec_data[n].dev);
+ 			hantro_clk_disable(&hantrodec_data[n].clk);
+ 		}
+ 	} else if (ctx->core_id < HXDEC_MAX_CORES) {
+-		pm_runtime_put_sync(hantrodec_data[ctx->core_id].dev);
++		//pm_runtime_put_sync(hantrodec_data[ctx->core_id].dev);
+ 		hantro_clk_disable(&hantrodec_data[ctx->core_id].clk);
+ 	}
+ 
+-- 
+2.25.1
+
