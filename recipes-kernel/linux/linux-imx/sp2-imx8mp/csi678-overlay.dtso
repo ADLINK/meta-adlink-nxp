@@ -97,7 +97,7 @@
 	fragment@5 {
 		target = <&isp_0>;
 		__overlay__ {
-			status = "okay";
+			status = "disabled";
 		};
 	};
 
