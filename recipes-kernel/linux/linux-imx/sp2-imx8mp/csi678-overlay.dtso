@@ -40,6 +40,9 @@
 	fragment@1 {
 		target = <&i2c2>;
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			imx678_0: imx678_mipi@1a {
 				compatible = "framos,imx678";
 				reg = <0x1a>;
@@ -76,7 +79,11 @@
 	fragment@3 {
 		target = <&isi_0>;
 		__overlay__ {
-			status = "disabled";
+			status = "okay";
+			dma-coherent;
+			cap_device {
+				status = "okay";
+			};
 		};
 	};
 
