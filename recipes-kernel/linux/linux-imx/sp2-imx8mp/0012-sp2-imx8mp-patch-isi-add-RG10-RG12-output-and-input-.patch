@@ -1,0 +1,86 @@
+From 10f47ee81c23049ab0cd21462ae4a224fe76905f Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Tue, 6 May 2025 15:36:29 +0800
+Subject: [PATCH] sp2-imx8mp: patch: isi: add RG10/RG12 output and input format
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/staging/media/imx/imx8-isi-cap.c | 25 ++++++++++++++++++++++++
+ drivers/staging/media/imx/imx8-isi-fmt.c | 18 +++++++++++++++++
+ 2 files changed, 43 insertions(+)
+
+diff --git a/drivers/staging/media/imx/imx8-isi-cap.c b/drivers/staging/media/imx/imx8-isi-cap.c
+index c3d6bbeed6a2..0ea69c605b44 100644
+--- a/drivers/staging/media/imx/imx8-isi-cap.c
++++ b/drivers/staging/media/imx/imx8-isi-cap.c
+@@ -54,6 +54,20 @@ struct mxc_isi_fmt mxc_isi_src_formats[] = {
+ 		.memplanes	= 1,
+ 		.colplanes	= 1,
+ 		.align		= 2,
++	}, {
++		.name		= "RG10 (SRGGB10)",
++		.fourcc		= V4L2_PIX_FMT_SRGGB10,
++		.depth		= { 16 },
++		.memplanes	= 1,
++		.colplanes	= 1,
++		.align		= 2,
++	}, {
++		.name		= "RG12 (SRGGB12)",
++		.fourcc		= V4L2_PIX_FMT_SRGGB12,
++		.depth		= { 16 },
++		.memplanes	= 1,
++		.colplanes	= 1,
++		.align		= 2,
+ 	}
+ };
+ 
+@@ -100,6 +114,17 @@ struct mxc_isi_fmt *mxc_isi_get_src_fmt(struct v4l2_subdev_format *sd_fmt)
+ 	    sd_fmt->format.code == MEDIA_BUS_FMT_UYVY8_1X16||
+ 	    sd_fmt->format.code == MEDIA_BUS_FMT_YUYV8_2X8)
+ 		index = 1;
++	/* additional fmt for Bayer RAW10 and RAW12 */
++	else if (sd_fmt->format.code == MEDIA_BUS_FMT_SBGGR10_1X10 ||
++	         sd_fmt->format.code == MEDIA_BUS_FMT_SGBRG10_1X10 ||
++	         sd_fmt->format.code == MEDIA_BUS_FMT_SGRBG10_1X10 ||
++	         sd_fmt->format.code == MEDIA_BUS_FMT_SRGGB10_1X10)
++	    index = 2;
++	else if (sd_fmt->format.code == MEDIA_BUS_FMT_SBGGR12_1X12 ||
++	         sd_fmt->format.code == MEDIA_BUS_FMT_SGBRG12_1X12 ||
++	         sd_fmt->format.code == MEDIA_BUS_FMT_SGBRG12_1X12 ||
++	         sd_fmt->format.code == MEDIA_BUS_FMT_SRGGB12_1X12)
++	    index = 3;
+ 	else
+ 		index = 0;
+ 	return &mxc_isi_src_formats[index];
+diff --git a/drivers/staging/media/imx/imx8-isi-fmt.c b/drivers/staging/media/imx/imx8-isi-fmt.c
+index db11c809a3d3..606f6589fe39 100644
+--- a/drivers/staging/media/imx/imx8-isi-fmt.c
++++ b/drivers/staging/media/imx/imx8-isi-fmt.c
+@@ -97,6 +97,24 @@ struct mxc_isi_fmt mxc_isi_out_formats[] = {
+ 		.colplanes	= 1,
+ 		.align		= 2,
+ 		.mbus_code	= MEDIA_BUS_FMT_RGB888_1X24,
++	}, {
++		.name		= "RG10 (SRGGB10)",
++		.fourcc		= V4L2_PIX_FMT_SRGGB10,
++		.depth		= { 16 },
++		.color		= MXC_ISI_OUT_FMT_RAW16,
++		.memplanes	= 1,
++		.colplanes	= 1,
++		.align		= 2,
++		.mbus_code	= MEDIA_BUS_FMT_SRGGB10_1X10,
++	}, {
++		.name		= "RG12 (SRGGB12)",
++		.fourcc		= V4L2_PIX_FMT_SRGGB12,
++		.depth		= { 16 },
++		.color		= MXC_ISI_OUT_FMT_RAW16,
++		.memplanes	= 1,
++		.colplanes	= 1,
++		.align		= 2,
++		.mbus_code	= MEDIA_BUS_FMT_SRGGB12_1X12,
+ 	}
+ };
+ 
+-- 
+2.25.1
+
