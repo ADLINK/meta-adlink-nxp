@@ -337,7 +337,7 @@
 
 			interrupt-parent = <&gpio4>;
 			interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-			reset-gpio = <&gpio4 4 GPIO_ACTIVE_LOW>;
+			reset-gpio = <&gpio4 2 GPIO_ACTIVE_LOW>;
 
 			ti,rx-internal-delay = <DP83867_RGMIIDCTL_1_75_NS>;
 			ti,tx-internal-delay = <DP83867_RGMIIDCTL_1_75_NS>;
