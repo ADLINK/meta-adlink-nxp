@@ -136,6 +136,16 @@
 	};
 
 	fragment@9 {
+		target = <&pinctrl_tpm>;
+		__overlay__ {
+			fsl,pins = <
+				0x118 0x378 0x000 0x5 0x0				0xd6
+				0x0E4 0x344 0x000 0x5 0x0				0x156
+			>;  /* MX8MP_IOMUXC_NAND_DQS__GPIO3_IO14 - TPM IRQ */
+		};      /* MX8MP_IOMUXC_NAND_CE0_B__GPIO3_IO01 - TPM reset -> NAND_CE0_B */
+	};
+
+	fragment@10 {
 		target = <&iomuxc>;
 		__overlay__ {
 			pinctrl_csi0_pwn: csi0_pwn_grp {
