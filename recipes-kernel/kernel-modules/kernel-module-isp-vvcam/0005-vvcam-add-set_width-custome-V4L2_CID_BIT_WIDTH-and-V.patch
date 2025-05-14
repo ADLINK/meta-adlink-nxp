@@ -1,0 +1,143 @@
+From 4f61a7e1daebf90b5fa3901acaeba5dc979dc580 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Mon, 12 May 2025 16:38:53 +0800
+Subject: [PATCH 2/2] vvcam: add set_width custome V4L2_CID_BIT_WIDTH and
+ VVSENSORIOC_S_BIT_WIDTH
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ vvcam/common/vvsensor.h                |  1 +
+ vvcam/v4l2/sensor/imx678/imx678_mipi.c | 49 +++++++++++++++++++++++++-
+ 2 files changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/vvcam/common/vvsensor.h b/vvcam/common/vvsensor.h
+index e7ebb66..bbd7652 100644
+--- a/vvcam/common/vvsensor.h
++++ b/vvcam/common/vvsensor.h
+@@ -99,6 +99,7 @@ enum {
+ 	VVSENSORIOC_G_LENS,
+ 	VVSENSORIOC_S_DATA_RATE,
+ 	VVSENSORIOC_S_SYNC_MODE,
++	VVSENSORIOC_S_BIT_WIDTH,
+ 	VVSENSORIOC_MAX,
+ };
+ 
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_mipi.c b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+index cdc03ed..604f80b 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_mipi.c
++++ b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+@@ -73,6 +73,7 @@
+ #define V4L2_CID_DATA_RATE		(V4L2_CID_USER_IMX_BASE + 1)
+ #define V4L2_CID_SYNC_MODE		(V4L2_CID_USER_IMX_BASE + 2)
+ #define V4L2_CID_FRAME_RATE		(V4L2_CID_USER_IMX_BASE + 3)
++#define V4L2_CID_BIT_WIDTH		(V4L2_CID_USER_IMX_BASE + 4)
+ 
+ const char * const data_rate_menu[] = {
+     [IMX678_2376_MBPS] = "2376 Mbps/lane",
+@@ -177,6 +178,18 @@ static struct v4l2_ctrl_config imx678_ctrl_framerate[] = {
+ 		.step = 1,
+ 	},
+ };
++static struct v4l2_ctrl_config imx678_ctrl_bit_width[] = {
++	{
++		.ops = &imx678_ctrl_ops,
++		.id = V4L2_CID_BIT_WIDTH,
++		.name = "Bit width",
++		.type = V4L2_CTRL_TYPE_INTEGER,
++		.min = 10,
++		.max = 12,
++		.def = 10,
++		.step = 2,
++	},
++};
+ struct imx678_ctrls {
+ 	struct v4l2_ctrl_handler handler;
+ 	struct v4l2_ctrl *exposure;
+@@ -186,6 +199,7 @@ struct imx678_ctrls {
+ 	struct v4l2_ctrl *black_level;
+ 	struct v4l2_ctrl *data_rate;
+ 	struct v4l2_ctrl *sync_mode;
++	struct v4l2_ctrl *bit_width;
+ };
+ 
+ struct imx678 {
+@@ -889,6 +903,26 @@ static int imx678_set_sync_mode(struct imx678 *sensor, u32 val)
+ 	return err;
+ }
+ 
++/**
++ * bit_width for imx678 camera sensor capture
++ */
++/* declaration before use */
++static int imx678_set_bit_width(struct imx678 *sensor, u32 val)
++{
++	int err = 0;
++	struct device *dev = &sensor->i2c_client->dev;
++
++	dev_info(dev, "%s: set bit_width %u\n", __func__, val);
++
++	if (val == 10 || val == 12) {
++		sensor->cur_mode.bit_width = val;
++		pimx678_mode_info[sensor->cur_mode.index].bit_width = val;
++	} else {
++		err = -EINVAL;
++	}
++	return err;
++}
++
+ static int imx678_set_exp(struct imx678 *sensor, u32 exp, unsigned int which_control)
+ {
+ 	int ret = 0;
+@@ -1148,6 +1182,11 @@ static int imx678_s_ctrl(struct v4l2_ctrl *ctrl)
+ 	 */
+ 	if (sensor->powered_on == 0) {
+ 		dev_info(dev, "%s: No setting during sensor->power off\n", __func__);
++		if (ctrl->id == V4L2_CID_BIT_WIDTH) {
++			ret = imx678_set_bit_width(sensor, ctrl->val);
++			dev_info(dev, "%s: set bit_width: %u during power off! ret:%d\n", __func__, ctrl->val, ret);
++			return ret;
++		}
+ 		return 0;
+ 	}
+ 
+@@ -1173,6 +1212,10 @@ static int imx678_s_ctrl(struct v4l2_ctrl *ctrl)
+ 	case V4L2_CID_SYNC_MODE:
+ 		ret = imx678_set_sync_mode(sensor, ctrl->val);
+ 		break;
++	case V4L2_CID_BIT_WIDTH:
++		ret = imx678_set_bit_width(sensor, ctrl->val);
++		dev_info(dev, "%s: set bit_width: %u during power on! ret:%d\n", __func__, ctrl->val, ret);
++		break;
+ 	default:
+ 		ret = -EINVAL;
+ 		break;
+@@ -1478,6 +1521,9 @@ static long imx678_priv_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *ar
+ 	case VVSENSORIOC_S_SYNC_MODE:
+ 		ret= imx678_set_sync_mode(sensor, *(u32 *)arg);
+ 		break;
++	case VVSENSORIOC_S_BIT_WIDTH:
++		ret= imx678_set_bit_width(sensor, *(u32 *)arg);
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -1599,7 +1645,7 @@ static int imx678_probe(struct i2c_client *client, const struct i2c_device_id *i
+ 	memcpy(&sensor->cur_mode, &pimx678_mode_info[0], sizeof(struct vvcam_mode_info_s));
+ 
+ 	/* initialize controls */
+-	retval = v4l2_ctrl_handler_init(&sensor->ctrls.handler, 7);
++	retval = v4l2_ctrl_handler_init(&sensor->ctrls.handler, 8);
+ 	if (retval < 0) {
+ 		dev_err(&client->dev, "%s : ctrl handler init Failed\n", __func__);
+ 		goto probe_err_power_off;
+@@ -1614,6 +1660,7 @@ static int imx678_probe(struct i2c_client *client, const struct i2c_device_id *i
+ 	sensor->ctrls.data_rate = v4l2_ctrl_new_custom(&sensor->ctrls.handler, imx678_ctrl_data_rate, NULL);
+ 	sensor->ctrls.sync_mode = v4l2_ctrl_new_custom(&sensor->ctrls.handler, imx678_ctrl_sync_mode, NULL);
+ 	sensor->ctrls.framerate = v4l2_ctrl_new_custom(&sensor->ctrls.handler, imx678_ctrl_framerate, NULL);
++	sensor->ctrls.bit_width = v4l2_ctrl_new_custom(&sensor->ctrls.handler, imx678_ctrl_bit_width, NULL);
+ 	sensor->ctrls.test_pattern = v4l2_ctrl_new_std_menu_items(&sensor->ctrls.handler, &imx678_ctrl_ops, V4L2_CID_TEST_PATTERN, ARRAY_SIZE(test_pattern_menu) - 1, 0, 0, test_pattern_menu);
+ 
+ 	sensor->sd.ctrl_handler = &sensor->ctrls.handler;
+-- 
+2.25.1
+
