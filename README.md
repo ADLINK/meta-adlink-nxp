@@ -33,6 +33,8 @@ You can follow the same steps to build your own customized BSP based on your int
 - Patches for the NXP-based products for the Adlink dev kit will be found [here](https://github.com/ADLINK/meta-adlink-nxp/tree/kirkstone/recipes-kernel/linux/linux-imx).
 - The patches that we created and have are based on the NXP GitHub Kernel.
 - This patch is based on kernel 5.15.x version.
+> [!Note]
+> Kernel version 5.15 onwards, Wi-Fi/BT interfaces are SDIO/UART.
 
 # 4. Software Documentation
 
