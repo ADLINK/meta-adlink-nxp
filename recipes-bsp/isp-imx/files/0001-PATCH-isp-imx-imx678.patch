@@ -1,4 +1,4 @@
-From e905e6530e8e6aee137ce99b405685f46846088d Mon Sep 17 00:00:00 2001
+From b619b34b3981b8f231e85aa73e6b3b510ce9a1b0 Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Thu, 17 Apr 2025 13:12:55 +0800
 Subject: [PATCH] PATCH: isp-imx: imx678
@@ -8,6 +8,8 @@ Signed-off-by: po.cheng <po.cheng@adlinktech.com>
  build-all-isp.sh                              |    2 +
  .../sensor_dwe_IMX678_Basic_1920x1080.json    |   54 +
  .../sensor_dwe_IMX678_Basic_3840x2160.json    |   54 +
+ imx/run.sh                                    |   33 +-
+ imx/start_isp.sh                              |   16 +-
  units/isi/CMakeLists.txt                      |    1 +
  units/isi/drv/imx678/CMakeLists.txt           |  115 ++
  units/isi/drv/imx678/Sensor0_Entry.cfg        |   10 +
@@ -16,7 +18,7 @@ Signed-off-by: po.cheng <po.cheng@adlinktech.com>
  .../calib/IMX678/IMX678_Basic_1920x1080.xml   | 1103 ++++++++++++++
  .../calib/IMX678/IMX678_Basic_3840x2160.xml   | 1103 ++++++++++++++
  units/isi/drv/imx678/source/IMX678.c          | 1268 +++++++++++++++++
- 11 files changed, 3764 insertions(+)
+ 13 files changed, 3808 insertions(+), 5 deletions(-)
  create mode 100644 dewarp/dewarp_config/sensor_dwe_IMX678_Basic_1920x1080.json
  create mode 100644 dewarp/dewarp_config/sensor_dwe_IMX678_Basic_3840x2160.json
  create mode 100644 units/isi/drv/imx678/CMakeLists.txt
@@ -160,6 +162,120 @@ index 0000000..00fcf60
 +        }
 +    ]
 +}
+diff --git a/imx/run.sh b/imx/run.sh
+index a9506d0..0d3e85f 100755
+--- a/imx/run.sh
++++ b/imx/run.sh
+@@ -3,6 +3,7 @@
+ # Start the isp_media_server in the configuration from user
+ # (c) NXP 2020-2022
+ # (c) Basler 2020
++# (c) Framos 2024
+ #
+ 
+ RUN_SCRIPT=`realpath -s $0`
+@@ -15,7 +16,7 @@ LOCAL_RUN="0" # search modules in /lib/modules and libraries in /usr/lib
+ RUN_OPTION=""
+ LOCAL_RUN="0"
+ # an array with the modules to load, insertion order
+-declare -a MODULES=("imx8-media-dev" "vvcam-dwe" "vvcam-isp" "vvcam-video")
++declare -a MODULES=("imx8-media-dev" "vvcam-isp" "vvcam-dwe" "vvcam-video")
+ 
+ USAGE="Usage:\n"
+ USAGE+="run.sh -c <isp_config> &\n"
+@@ -87,6 +88,15 @@ write_default_mode_files () {
+ 	echo "[mode.3]" >> DAA3840_MODES.txt
+ 	echo "xml = \"DAA3840_30MC_1080P-hdr.xml\"" >> DAA3840_MODES.txt
+ 	echo "dwe = \"dewarp_config/daA3840_30mc_1080P.json\"" >> DAA3840_MODES.txt
++
++	# IMX678 modes file
++	echo -n "" > IMX678_MODES.txt
++	echo "[mode.0]" >> IMX678_MODES.txt
++	echo "xml = \"IMX678_Basic_3840x2160.xml\"" >> IMX678_MODES.txt
++	echo "dwe = \"dewarp_config/sensor_dwe_IMX678_Basic_3840x2160.json\"" >> IMX678_MODES.txt
++	echo "[mode.1]" >> IMX678_MODES.txt
++	echo "xml = \"IMX678_Basic_1920x1080.xml\"" >> IMX678_MODES.txt
++	echo "dwe = \"dewarp_config/sensor_dwe_IMX678_Basic_1920x1080.json\"" >> IMX678_MODES.txt
+ }
+ 
+ # write the sensonr config file
+@@ -194,8 +204,17 @@ load_modules () {
+ write_default_mode_files
+ 
+ echo "Trying configuration \"$ISP_CONFIG\"..."
+-MODULES_TO_REMOVE=("basler-camera-driver-vvcam" "os08a20" "ov2775" "${MODULES[@]}")
++MODULES_TO_REMOVE=("basler-camera-driver-vvcam" "os08a20" "ov2775" "imx678" "${MODULES[@]}")
+ case "$ISP_CONFIG" in
++		imx678_4k )
++			MODULES=("imx678" "${MODULES[@]}")
++			RUN_OPTION="CAMERA0"
++			CAM_NAME="imx678"
++			DRV_FILE="imx678.drv"
++			MODE_FILE="IMX678_MODES.txt"
++			MODE="0"
++			write_sensor_cfg_file "Sensor0_Entry.cfg" $CAM_NAME $DRV_FILE $MODE_FILE $MODE
++			;;
+ 		basler_4k )
+ 			MODULES=("basler-camera-driver-vvcam" "${MODULES[@]}")
+ 			RUN_OPTION="CAMERA0"
+@@ -214,6 +233,16 @@ case "$ISP_CONFIG" in
+ 			MODE="1"
+ 			write_sensor_cfg_file "Sensor0_Entry.cfg" $CAM_NAME $DRV_FILE $MODE_FILE $MODE
+ 			;;
++		dual_imx678_4k )
++			MODULES=("imx678" "${MODULES[@]}")
++			RUN_OPTION="DUAL_CAMERA"
++			CAM_NAME="imx678"
++			DRV_FILE="imx678.drv"
++			MODE_FILE="IMX678_MODES.txt"
++			MODE="1"
++			write_sensor_cfg_file "Sensor0_Entry.cfg" $CAM_NAME $DRV_FILE $MODE_FILE $MODE
++			write_sensor_cfg_file "Sensor1_Entry.cfg" $CAM_NAME $DRV_FILE $MODE_FILE $MODE
++			;;
+ 		dual_basler_1080p60 )
+ 			MODULES=("basler-camera-driver-vvcam" "${MODULES[@]}")
+ 			RUN_OPTION="DUAL_CAMERA"
+diff --git a/imx/start_isp.sh b/imx/start_isp.sh
+index d544b4c..76f004b 100755
+--- a/imx/start_isp.sh
++++ b/imx/start_isp.sh
+@@ -4,16 +4,26 @@
+ #
+ # (c) Basler 2020
+ # (c) NXP 2020-2022
++# (c) Framos 2024
+ #
+ 
+ RUNTIME_DIR="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+ NR_DEVICE_TREE_BASLER=$(grep basler-camera-vvcam `find /sys/firmware/devicetree/base/soc@0/ -name compatible | grep i2c` -l | wc -l 2> /dev/null)
+ NR_DEVICE_TREE_OV5640=$(grep ov5640 `find /sys/firmware/devicetree/base/soc@0/ -name compatible | grep i2c` -l | wc -l 2> /dev/null)
+ NR_DEVICE_TREE_OS08A20=$(grep os08a20 `find /sys/firmware/devicetree/base/soc@0/ -name compatible | grep i2c` -l | wc -l 2> /dev/null)
++NR_DEVICE_TREE_IMX678=$(grep imx678 `find /sys/firmware/devicetree/base/soc@0/ -name compatible | grep i2c` -l | wc -l 2> /dev/null)
+ 
+-
++# check check for imx678 devices
++if [ $NR_DEVICE_TREE_IMX678 -eq 1 ]; then
++	echo "Starting isp_media_server for IMX678"
++	cd $RUNTIME_DIR
++	exec ./run.sh -c imx678_4k -lm
++elif [ $NR_DEVICE_TREE_IMX678 -eq 2 ]; then
++	echo "Starting isp_media_server for Dual IMX678"
++	cd $RUNTIME_DIR
++	exec ./run.sh -c dual_imx678_4k -lm
+ # check if the basler device has been enabled in the device tree
+-if [ $NR_DEVICE_TREE_BASLER -eq 1 ]; then
++elif [ $NR_DEVICE_TREE_BASLER -eq 1 ]; then
+ 
+ 	echo "Starting isp_media_server for Single Basler daA3840-30mc"
+ 
+@@ -71,6 +81,6 @@ elif [ $NR_DEVICE_TREE_OS08A20 -eq 2 ]; then
+ 
+ else
+ 	# no device tree found exit with code no device or address
+-	echo "No device tree found for Basler camera or os08a20, check dtb file!" >&2
++	echo "No device tree found for Basler camera or os08a20 or IMX678, check dtb file!" >&2
+ 	exit 6
+ fi
 diff --git a/units/isi/CMakeLists.txt b/units/isi/CMakeLists.txt
 index 8cd95b5..735f0e5 100755
 --- a/units/isi/CMakeLists.txt
