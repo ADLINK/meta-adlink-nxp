@@ -1,0 +1,26 @@
+From 744fe1b7778243a3b57fc8d3ed9ad971bd33001a Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Fri, 16 May 2025 09:22:31 +0800
+Subject: [PATCH] vvcam: set AllPixel mode to 12bits bit width
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ vvcam/v4l2/sensor/imx678/imx678_mipi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/vvcam/v4l2/sensor/imx678/imx678_mipi.c b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+index 1e159f3..6fb4bad 100644
+--- a/vvcam/v4l2/sensor/imx678/imx678_mipi.c
++++ b/vvcam/v4l2/sensor/imx678/imx678_mipi.c
+@@ -240,7 +240,7 @@ static struct vvcam_mode_info_s pimx678_mode_info[] = {
+ 			.height        = 2160,
+ 		},
+ 		.hdr_mode       = SENSOR_MODE_LINEAR,
+-		.bit_width      = 10,
++		.bit_width      = 12,
+ 		.data_compress  = {
+ 			.enable = 0,
+ 		},
+-- 
+2.25.1
+
