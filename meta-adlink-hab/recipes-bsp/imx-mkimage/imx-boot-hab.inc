@@ -40,13 +40,14 @@ CST_SRK ?= "${CST_SRK_PATH}/${TABLE_BIN}"
 
 CST_EXPIRY_PERIOD ?= "5"
 CST_SRK_NUMBERS ?= "4"
+CST_KEY_DIGEST ?= "sha256"
 CST_KEY_LENGTH ?= "2048"
-CST_KEY_NAME ?= "SRK1_sha256_2048_65537_v3_ca_key.pem"
-CST_KEY ?= "${CST_KEYS_PATH}/${CST_KEY_NAME}"
-CST_CSF_CERT_NAME ?= "CSF1_1_sha256_2048_65537_v3_usr_crt.pem"
-CST_CSF_CERT ?= "${CST_SRK_PATH}/${CST_CSF_CERT_NAME}"
-CST_IMG_CERT_NAME ?= "IMG1_1_sha256_2048_65537_v3_usr_crt.pem"
-CST_IMG_CERT ?= "${CST_SRK_PATH}/${CST_IMG_CERT_NAME}"
+CST_KEY_NAME = "SRK1_${CST_KEY_DIGEST}_${CST_KEY_LENGTH}_65537_v3_ca_key.pem"
+CST_KEY = "${CST_KEYS_PATH}/${CST_KEY_NAME}"
+CST_CSF_CERT_NAME = "CSF1_1_${CST_KEY_DIGEST}_${CST_KEY_LENGTH}_65537_v3_usr_crt.pem"
+CST_CSF_CERT = "${CST_SRK_PATH}/${CST_CSF_CERT_NAME}"
+CST_IMG_CERT_NAME = "IMG1_1_${CST_KEY_DIGEST}_${CST_KEY_LENGTH}_65537_v3_usr_crt.pem"
+CST_IMG_CERT = "${CST_SRK_PATH}/${CST_IMG_CERT_NAME}"
 
 # Override in local.conf with customer serial & password
 CST_KEYPASS ?= ""
@@ -101,11 +102,15 @@ do_generate_srk_table_fuse () {
     # SRK4_sha256_2048_65537_v3_ca_crt.pem
     bbnote "Generate SRK table and fuse table"
     cd ${WORKDIR}/${CACERT_DEST}/crts
-    srktool -h 4 -d sha256 -t table.bin -e fuse.bin -c \
-    SRK1_sha256_2048_65537_v3_ca_crt.pem,\
-    SRK2_sha256_2048_65537_v3_ca_crt.pem,\
-    SRK3_sha256_2048_65537_v3_ca_crt.pem,\
-    SRK4_sha256_2048_65537_v3_ca_crt.pem | tee ${WORKDIR}/srktool.log
+    if [ -f table.bin -a -f fuse.bin ]; then
+        bbnote "Existing table.bin and fuse.bin found."
+    else
+        srktool -h 4 -d sha256 -t table.bin -e fuse.bin -c \
+        SRK1_${CST_KEY_DIGEST}_${CST_KEY_LENGTH}_65537_v3_ca_crt.pem,\
+        SRK2_${CST_KEY_DIGEST}_${CST_KEY_LENGTH}_65537_v3_ca_crt.pem,\
+        SRK3_${CST_KEY_DIGEST}_${CST_KEY_LENGTH}_65537_v3_ca_crt.pem,\
+        SRK4_${CST_KEY_DIGEST}_${CST_KEY_LENGTH}_65537_v3_ca_crt.pem | tee ${WORKDIR}/srktool.log
+    fi
 }
 addtask generate_srk_table_fuse before do_configure after do_generate_srk_table_fuse
 
