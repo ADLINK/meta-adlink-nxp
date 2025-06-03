@@ -200,7 +200,21 @@ sign_flash_habv4 () {
     dd if=${WORKDIR}/${TARGET}-csf-fit.bin of=${IMG_SIGNED} seek=$(printf "%d" ${offset_fit}) bs=1 conv=notrunc
 }
 
+compile_mx8m:append () {
+    # hacks to record make SOC=XXX flash_evk and SOC=XXX flash_evk_stmm_capsule output logs
+    # rename mkimage-flash_evk.log for make SOC=XXX flash_evk
+    if [ -f ${WORKDIR}/mkimage-flash_evk.log ]; then
+        mv ${WORKDIR}/mkimage-flash_evk.log ${WORKDIR}/mkimage-flash_evk.log.flash_evk
+    fi
+}
+
 do_compile:append () {
+    # hacks to record make SOC=XXX flash_evk and SOC=XXX flash_evk_stmm_capsule output logs
+    # rename back the proper mkimage log filename which is used for signing
+    if [ -f ${WORKDIR}/mkimage-flash_evk${DTB_SUFFIX}.log.flash_evk -a -f ${WORKDIR}/mkimage-flash_evk${DTB_SUFFIX}.log ]; then
+        mv ${WORKDIR}/mkimage-flash_evk${DTB_SUFFIX}.log ${WORKDIR}/mkimage-flash_evk_stmm_capsule${DTB_SUFFIX}.log
+        mv ${WORKDIR}/mkimage-flash_evk${DTB_SUFFIX}.log.flash_evk ${WORKDIR}/mkimage-flash_evk${DTB_SUFFIX}.log
+    fi
     for target in ${IMXBOOT_TARGETS}; do
         for uboot_dtb in ${UBOOT_DTBS}; do
             # If UBOOT_DTBS has more then one dtb, include in imx-boot filename
@@ -210,31 +224,28 @@ do_compile:append () {
             else
                 DTB_SUFFIX=""
             fi
+            # Prepare log file name
+            MKIMAGE_LOG="mkimage-${target}${DTB_SUFFIX}"
 
-            if [ "$target" = "flash_evk" ]; then
-                # Prepare log file name
-                MKIMAGE_LOG="mkimage-${target}${DTB_SUFFIX}"
-
-                # mx8qm-nxp-bsp|mx8x: Sign u-boot-atf-container.img, so flash.bin will use the signed version
-                if [ "${SOC_FAMILY}" = "mx8" ] || [ "${SOC_FAMILY}" = "mx8x" ]; then
-                    sign_uboot_atf_container_ahab u-boot-atf-container.img ${BOOT_STAGING}/u-boot-atf-container.img
-                fi
-
-                # mx8m: run print_fit_hab
-                if [ "${SOC_FAMILY}" = "mx8m" ]; then
-                    # Create print_fit_hab log for create_csf.sh
-                    cp ${DEPLOY_DIR_IMAGE}/${BOOT_TOOLS}/*.dtb   ${BOOT_STAGING}
-                    make SOC=${IMX_BOOT_SOC_TARGET} ${REV_OPTION} ${UBOOT_DTBS_TARGET}=${uboot_dtb} print_fit_hab > ${WORKDIR}/${MKIMAGE_LOG}.hab 2>&1
-                fi
-
-                if [ -e "${BOOT_STAGING}/flash.bin" ]; then
-                    cp ${BOOT_STAGING}/flash.bin ${S}/${BOOT_CONFIG_MACHINE}-${target}${DTB_SUFFIX}
-                    cp ${BOOT_STAGING}/flash.bin ${S}/${BOOT_CONFIG_MACHINE}-${target}-unsigned
-                fi
-
-                bbnote "Sign_flash_${HAB_VER}: Sign flash.bin for secure boot"
-                sign_flash_${HAB_VER} ${target}${DTB_SUFFIX} ${WORKDIR}/${MKIMAGE_LOG}
+            # mx8qm-nxp-bsp|mx8x: Sign u-boot-atf-container.img, so flash.bin will use the signed version
+            if [ "${SOC_FAMILY}" = "mx8" ] || [ "${SOC_FAMILY}" = "mx8x" ]; then
+                sign_uboot_atf_container_ahab u-boot-atf-container.img ${BOOT_STAGING}/u-boot-atf-container.img
             fi
+
+            # mx8m: run print_fit_hab
+            if [ "${SOC_FAMILY}" = "mx8m" ]; then
+                # Create print_fit_hab log for create_csf.sh
+                cp ${DEPLOY_DIR_IMAGE}/${BOOT_TOOLS}/*.dtb   ${BOOT_STAGING}
+                make SOC=${IMX_BOOT_SOC_TARGET} ${REV_OPTION} ${UBOOT_DTBS_TARGET}=${uboot_dtb} print_fit_hab > ${WORKDIR}/${MKIMAGE_LOG}.hab 2>&1
+            fi
+
+            if [ -e "${BOOT_STAGING}/flash.bin" ]; then
+                cp ${BOOT_STAGING}/flash.bin ${S}/${BOOT_CONFIG_MACHINE}-${target}${DTB_SUFFIX}
+                cp ${BOOT_STAGING}/flash.bin ${S}/${BOOT_CONFIG_MACHINE}-${target}-unsigned
+            fi
+
+            bbnote "Sign_flash_${HAB_VER}: Sign flash.bin for secure boot"
+            sign_flash_${HAB_VER} ${target}${DTB_SUFFIX} ${WORKDIR}/${MKIMAGE_LOG}
         done
     done
 
