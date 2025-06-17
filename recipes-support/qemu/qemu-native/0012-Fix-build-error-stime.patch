@@ -1,0 +1,14 @@
+diff --git a/linux-user/syscall.c b/linux-user/syscall.c
+index 6030402..44598bd 100644
+--- a/linux-user/syscall.c
++++ b/linux-user/syscall.c
+@@ -7654,7 +7654,8 @@ static abi_long do_syscall1(void *cpu_env, int num, abi_long arg1,
+             time_t host_time;
+             if (get_user_sal(host_time, arg1))
+                 return -TARGET_EFAULT;
+-            return get_errno(stime(&host_time));
++           struct timespec ts = { .tv_sec = host_time, .tv_nsec = 0 };
++    	   return get_errno(clock_settime(CLOCK_REALTIME, &ts));
+         }
+ #endif
+ #ifdef TARGET_NR_alarm /* not on alpha */
