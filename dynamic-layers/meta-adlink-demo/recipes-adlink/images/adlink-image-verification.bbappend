@@ -18,6 +18,5 @@ CORE_IMAGE_EXTRA_INSTALL:append = " \
     linux-serial-test \
     burn-in-test \
     ffmpeg \
-    cinematicexperience-rhi \
 "
 
