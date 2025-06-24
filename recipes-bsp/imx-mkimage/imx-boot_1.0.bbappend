@@ -17,3 +17,6 @@ do_compile:prepend() {
         bberror "Error: Do not specify more than 1 uboot dtb for imx-boot."
     fi
 }
+
+include ${@bb.utils.contains('MACHINE_FEATURES', 'stmm', 'prep-capsule.inc', '', d)}
+
