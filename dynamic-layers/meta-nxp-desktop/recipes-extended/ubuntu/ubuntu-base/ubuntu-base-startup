@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# loop /root/*.deb and dpkg force install, remove deb file if success, so it stop install next time during boot
+for deb in $(ls /root/*.deb)
+do
+	/usr/bin/dpkg -i --force-all $deb && rm -f $deb || printf "failed to dpkg -i --force-all $deb\n"
+done

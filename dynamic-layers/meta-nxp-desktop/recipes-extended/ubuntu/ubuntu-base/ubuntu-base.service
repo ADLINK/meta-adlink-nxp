@@ -1,0 +1,9 @@
+[Unit]
+Description=Ubuntu startup script during bootup as pkg_postinst_ontarget not available in rpm package
+
+[Service]
+Type=simple
+ExecStart=/bin/sh -c '/usr/sbin/ubuntu-base-startup'
+
+[Install]
+WantedBy=multi-user.target
