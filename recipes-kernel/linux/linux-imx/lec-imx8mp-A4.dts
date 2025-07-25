@@ -316,7 +316,7 @@
 		 */
 		dp83867_1: ethernet-phy@0 {
 			/* RGMII-1 */
-			compatible = "ethernet-phy-id2000.a231"; 
+			compatible = "ethernet-phy-id2000.a231","ethernet-phy-ieee802.3-c22";
 			reg = <0>;
 
 			ti,rx-internal-delay = <DP83867_RGMIIDCTL_1_75_NS>;
@@ -329,6 +329,8 @@
 			interrupt-parent = <&gpio4>;
 			interrupts = <21 IRQ_TYPE_EDGE_FALLING>;
 			reset-gpio = <&gpio4 22 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <100000>;
+			reset-deassert-us = <80000>;
 		};
 	};
 
