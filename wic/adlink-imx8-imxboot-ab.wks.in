@@ -1,0 +1,12 @@
+# U-Boot bootloader
+part u-boot --source rawcopy --sourceparams="file=imx-boot" --ondisk mmcblk --no-table --align ${IMX_BOOT_SEEK}
+# First boot partition (for rootfsA)
+part /boot --source bootimg-partition --ondisk mmcblk --fstype=vfat --label boot --active --align 8192 --size 64
+# Root filesystem A
+part / --source rootfs --ondisk mmcblk --fstype=ext4 --label root --align 8192
+# Second boot partition (for rootfsB)
+part /boot --source bootimg-partition --ondisk mmcblk --fstype=vfat --label boot --active --align 8192 --size 64
+
+# Root filesystem B
+part /rootfsB --source rootfs --ondisk mmcblk --fstype=ext4 --label rootfsB --align 8192
+bootloader --ptable msdos

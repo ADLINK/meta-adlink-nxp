@@ -19,6 +19,7 @@ EXTRA_BOOT_ARGS:append = " ${@bb.utils.contains('IMAGE_FEATURES', 'logo', 'fbcon
 SRC_URI = "file://README \
 file://boot.scr \
 file://overlay.scr \
+file://abpart.scr \
 "
 
 S = "${WORKDIR}"

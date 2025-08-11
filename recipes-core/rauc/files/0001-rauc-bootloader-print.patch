@@ -1,0 +1,16 @@
+diff --git a/src/main.c b/src/main.c
+index 3e08504..0ece52b 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -1540,11 +1540,6 @@ static gchar* r_status_formatter_readable(RaucStatusPrint *status)
+ 	g_string_append_printf(text, "Variant:     %s\n", status->variant);
+ 	g_string_append_printf(text, "Booted from: %s (%s)\n\n", bootedfrom ? bootedfrom->name : NULL, status->bootslot);
+ 
+-	g_string_append(text, "=== Bootloader ===\n");
+-	if (!status->primary)
+-		g_string_append_printf(text, "Activated: none\n\n");
+-	else
+-		g_string_append_printf(text, "Activated: %s (%s)\n\n", status->primary->name, status->primary->bootname);
+ 
+ 	g_string_append(text, "=== Slot States ===\n");
+ 	slotclasses = r_slot_get_root_classes(status->slots);

@@ -1,0 +1,12 @@
+[Unit]
+Description=RAUC requirements
+After=multi-user.target graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/adlinkrauc.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+

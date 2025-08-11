@@ -1,0 +1,26 @@
+From e67e78a046cc29593a97169cd108a6c27de7d3d1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E2=80=9Dshangavelan=E2=80=9D?=
+ <”shangavelan.m@adlinktech.com”>
+Date: Thu, 7 Aug 2025 12:10:15 +0530
+Subject: [PATCH] RAUC - extCSD reg not initialised error fix
+
+---
+ drivers/mmc/core/block.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/core/block.c b/drivers/mmc/core/block.c
+index 32d49100dff5..0df627de9cee 100644
+--- a/drivers/mmc/core/block.c
++++ b/drivers/mmc/core/block.c
+@@ -413,7 +413,7 @@ static struct mmc_blk_ioc_data *mmc_blk_ioctl_copy_from_user(
+ 	struct mmc_blk_ioc_data *idata;
+ 	int err;
+ 
+-	idata = kmalloc(sizeof(*idata), GFP_KERNEL);
++	idata = kzalloc(sizeof(*idata), GFP_KERNEL);
+ 	if (!idata) {
+ 		err = -ENOMEM;
+ 		goto out;
+-- 
+2.25.1
+
