@@ -1,0 +1,71 @@
+From 589f8718796e71d3928aed6003725e992c452271 Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Tue, 8 Oct 2024 15:09:58 +0800
+Subject: [PATCH] panel-simple: modify for auo 10.1 inch lvds panel
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ drivers/gpu/drm/panel/panel-simple.c | 40 +++++++++++++++++++++++++---
+ 1 file changed, 37 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
+index a0baa0e64db3a..d6aa4367aaf4f 100644
+--- a/drivers/gpu/drm/panel/panel-simple.c
++++ b/drivers/gpu/drm/panel/panel-simple.c
+@@ -2244,6 +2244,37 @@ static const struct panel_desc hydis_hv150ux2_100 = {
+         .connector_type = DRM_MODE_CONNECTOR_LVDS,
+ };
+ 
++static const struct display_timing auo_g101eat02p6_timings = {
++        .pixelclock = { 71100000, 71100000, 71100000 },
++        .hactive = { 1280, 1280, 1280 },
++        .hfront_porch = { 50, 50, 50 },
++        .hback_porch = { 50, 50, 50 },
++        .hsync_len = { 60, 60, 60 },
++        .vactive = { 800, 800, 800 },
++        .vfront_porch = { 6, 6, 6 },
++        .vback_porch = { 7, 7, 7 },
++        .vsync_len = { 10, 10, 10 },
++        .flags = DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC,
++};
++
++static const struct panel_desc auo_g101eat02p6 = {
++        .timings = &auo_g101eat02p6_timings,
++        .num_timings = 1,
++        .bpc = 8,
++        .size = {
++                .width = 304,
++                .height = 228,
++        },
++        .delay = {
++                .prepare = 10,
++                .enable = 50,
++                .disable = 50,
++                .unprepare = 200,
++        },
++        .bus_format = MEDIA_BUS_FMT_RGB888_1X7X4_JEIDA,
++        .bus_flags = DRM_BUS_FLAG_DE_HIGH,
++        .connector_type = DRM_MODE_CONNECTOR_LVDS,
++};
+ 
+ static const struct drm_display_mode innolux_at070tn92_mode = {
+ 	.clock = 33333,
+@@ -4391,9 +4422,12 @@ static const struct of_device_id platform_of_match[] = {
+ 		.compatible = "hit,tx23d38vm0caa",
+ 		.data = &hitachi_tx23d38vm0caa
+ 	}, {
+-                .compatible = "hydis,hv150ux2-100",
+-                .data = &hydis_hv150ux2_100,
+-	}, {	
++		.compatible = "hydis,hv150ux2-100",
++		.data = &hydis_hv150ux2_100,
++	}, {
++		.compatible = "auo,g101eat02p6",
++		.data = &auo_g101eat02p6,
++	}, {
+ 		.compatible = "innolux,at043tn24",
+ 		.data = &innolux_at043tn24,
+ 	}, {
+-- 
+2.25.1
+

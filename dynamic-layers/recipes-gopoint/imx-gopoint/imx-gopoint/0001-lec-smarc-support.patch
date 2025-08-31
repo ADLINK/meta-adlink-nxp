@@ -1,0 +1,25 @@
+From 1439c1573d0a1025a1bcd0ac531aeaa89547491e Mon Sep 17 00:00:00 2001
+From: ADLINK-COM <dinesh.v@adlinktech.com>
+Date: Tue, 17 Dec 2024 14:17:55 +0530
+Subject: [PATCH] lec-imx8mp support
+
+---
+ engine/DemoPage.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/engine/DemoPage.cpp b/engine/DemoPage.cpp
+index 215c3d7..fc1d071 100644
+--- a/engine/DemoPage.cpp
++++ b/engine/DemoPage.cpp
+@@ -119,6 +119,8 @@ void DemoPage::loadJsonData()
+     QJsonObject jo, jo1, jo2;
+     QString board = QHostInfo::localHostName().toLocal8Bit();
+     // If Demo Launcher is not running on i.MX board, set it to 7ulp
++    if ((board.contains("lec")) || (board.contains("osm")))
++        board = board.split("-")[1];
+     if (!board.contains("imx"))
+         board = "imx7ulpevk";
+     if (board.contains("-"))
+-- 
+2.34.1
+

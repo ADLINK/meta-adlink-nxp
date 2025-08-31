@@ -1,0 +1,53 @@
+From 9dbbac7c5ce4d974ebc82d20e86a34dcb4de9c95 Mon Sep 17 00:00:00 2001
+From: "arun.tamilselvan" <arun.tamilselvan@adlinktech.com>
+Date: Fri, 8 Aug 2025 13:41:04 +0530
+Subject: [PATCH] Added STMMAC Driver EXPORT_SYMBOL support
+
+---
+ drivers/net/ethernet/stmicro/stmmac/hwif.c        | 1 +
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 1 +
+ drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c | 3 +++
+ 3 files changed, 5 insertions(+)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/hwif.c b/drivers/net/ethernet/stmicro/stmmac/hwif.c
+index b8ba8f2d8041..c5e37718d6ac 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/hwif.c
++++ b/drivers/net/ethernet/stmicro/stmmac/hwif.c
+@@ -353,3 +353,4 @@ int stmmac_hwif_init(struct stmmac_priv *priv)
+ 			id, needs_gmac, needs_gmac4);
+ 	return -EINVAL;
+ }
++EXPORT_SYMBOL(stmmac_hwif_init);
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+index e7dcf9b2d3a4..cf90f68eeeb4 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -525,6 +525,7 @@ bool stmmac_eee_init(struct stmmac_priv *priv)
+ 	return true;
+ }
+ 
++EXPORT_SYMBOL(stmmac_eee_init);
+ /* stmmac_get_tx_hwtstamp - get HW TX timestamps
+  * @priv: driver private structure
+  * @p : descriptor pointer
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c
+index be4d12c28dd3..18e7c4bea2ed 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_mdio.c
+@@ -676,6 +676,8 @@ int stmmac_mdio_register(struct net_device *ndev)
+ 	return err;
+ }
+ 
++EXPORT_SYMBOL(stmmac_mdio_register);
++
+ /**
+  * stmmac_mdio_unregister
+  * @ndev: net device structure
+@@ -698,3 +700,4 @@ int stmmac_mdio_unregister(struct net_device *ndev)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(stmmac_mdio_unregister);
+-- 
+2.25.1
+

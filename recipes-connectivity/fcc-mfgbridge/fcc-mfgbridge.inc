@@ -9,7 +9,7 @@ DEPENDS += "bluez5 linux-libc-headers"
 
 DEBUG_FLAGS = ""
 
-RDEPENDS_${PN} += "kernel-module-nxp89xx bluez5"
+RDEPENDS_${PN} += "kernel-module-nxp-wlan bluez5"
 
 S = "${WORKDIR}"
 

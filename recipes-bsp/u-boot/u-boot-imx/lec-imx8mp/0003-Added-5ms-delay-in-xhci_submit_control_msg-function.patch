@@ -1,0 +1,24 @@
+From 8a6a0536b9c7b5011242704fd9980be858daf7be Mon Sep 17 00:00:00 2001
+From: "deepak.s" <deepak.s@adlinktech.com>
+Date: Fri, 29 Aug 2025 11:19:30 +0530
+Subject: [PATCH] Added 5ms delay in xhci_submit_control_msg function call
+
+---
+ drivers/usb/host/xhci.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
+index d13cbff9b37..d9aa6b4a345 100644
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -1268,6 +1268,7 @@ static int xhci_submit_control_msg(struct udevice *dev, struct usb_device *udev,
+ 	struct udevice *hub;
+ 	int root_portnr = 0;
+ 
++	mdelay(5);	
+ 	debug("%s: dev='%s', udev=%p, udev->dev='%s', portnr=%d\n", __func__,
+ 	      dev->name, udev, udev->dev->name, udev->portnr);
+ 	hub = udev->dev;
+-- 
+2.25.1
+
