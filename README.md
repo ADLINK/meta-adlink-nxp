@@ -63,6 +63,6 @@
 
 ## 4. Documentation
 
-Refer to the [wiki](https://github.com/ADLINK/meta-adlink-nxp/wiki) page for instructions on building the Yocto as well as flashing the image.
+Refer to the [wiki](https://github.com/ADLINK/meta-adlink-nxp/wiki/Building-Yocto-for-Metrino-%E2%80%90LEC%E2%80%90i.MX8MP) page for instructions on building the Yocto as well as flashing the image.
 
 
