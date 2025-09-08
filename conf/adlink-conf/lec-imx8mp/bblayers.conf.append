@@ -6,3 +6,8 @@ BBLAYERS += "${BSPDIR}/sources/meta-adlink-demo"
 
 # Additional from open-embedded for meta-adlink-demo xfce recipes
 BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-xfce"
+
+# meta-rauc for OTA support
+
+
+BBLAYERS += "${BSPDIR}/sources/meta-rauc"

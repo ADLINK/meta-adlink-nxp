@@ -1,0 +1,15 @@
+[Unit]
+Description=RAUC requirements
+After=local-fs.target remote-fs.target
+Requires=local-fs.target remote-fs.target
+
+Before=network.target network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/adlinkrauc.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+
