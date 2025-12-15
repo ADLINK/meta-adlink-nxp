@@ -29,7 +29,7 @@ INHERIT += "extrausers"
 EXTRA_USERS_PARAMS = " \
 useradd -m -s /bin/bash -p 'rbBJY7ksv1BvY' adlink; \
 usermod -a -G sudo,root,users,plugdev adlink;"
-EXTRA_USER_PARAMS:append = "${@bb.utils.contains_any('DEPENDS', 'docker-datapart image-datapart', ' usermod -a -G docker adlink;', '', d)}"
+EXTRA_USERS_PARAMS:append = "${@bb.utils.contains_any('DEPENDS', 'docker-datapart image-datapart', ' usermod -a -G docker adlink;', '', d)}"
 
 KERNEL_MODULE_AUTOLOAD:append = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', ' mlan moal', '', d)}"
 
@@ -38,4 +38,4 @@ IMAGE_FSTYPES += " wic.bmap wic.gz"
 
 BBMASK += "linux-intel_%.bbappend"
 
-EXTRA_USERS_PARAMS:append = " usermod -a -G video,render,wayland,input,root,sudo,dialout,dialout,tty,disk -p '$(openssl passwd weston)' weston;"
+EXTRA_USERS_PARAMS:append = " useradd -m -s /bin/bash weston; usermod -a -G video,render,wayland,input,root,sudo,dialout,dialout,tty,disk -p '$(openssl passwd weston)' weston;"
