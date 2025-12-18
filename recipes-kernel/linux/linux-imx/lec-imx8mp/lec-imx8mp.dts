@@ -19,7 +19,7 @@
     aliases {
 		rtc0 = &pcf8563;        /* Use external I2C RTC PCF8563 as rtc0 */
 		rtc1 = &snvs_rtc;       /* And the internal one as rtc1 */
-	}
+	};
 
 	chosen {
 		stdout-path = &uart2;
