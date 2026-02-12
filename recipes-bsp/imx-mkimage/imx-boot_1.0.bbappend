@@ -1,8 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRC_URI:append:lec-imx95 = " file://0001-Added-DDR-config-binary-into-Image.patch "
-
-SRC_URI:append = " file://0001-Added-DDR-config-binary-into-Image.patch "
+EXTRA_IMXBOOT_PATCHES ?= ""
+SRC_URI:append = " ${EXTRA_IMXBOOT_PATCHES}"
 
 do_replace () {
 	bbnote "Modify soc.mak"
