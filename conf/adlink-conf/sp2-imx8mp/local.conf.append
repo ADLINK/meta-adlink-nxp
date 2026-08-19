@@ -1,0 +1,30 @@
+
+CONNECTIVITY_CHECK_URIS = "https://www.google.com"
+
+PACKAGECONFIG:append:pn-opencv_mx8 = " test"
+TOOLCHAIN_TARGET_TASK:append = " onnxruntime-dev"
+
+DISTRO_FEATURES:append = " sensors adlink"
+IMAGE_FEATURES:append = " ssh-server-openssh"
+IMAGE_INSTALL:append = " cinematicexperience-rhi"
+
+INHERIT += "image-buildinfo"
+IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
+BUILDTAG ??= "v2.02.01"
+RELEASE_VERSION ?= "${@'v%s' % (lambda dt: (dt.date.today().__str__()))(__import__('datetime')) if (d.getVar('BUILDTAG', True) is None) else '%s.r%s' % (d.getVar('BUILDTAG', True), d.getVar('BUILD_NUMBER', True))}"
+
+# Set user account and password (for yocto images, e.g. core-image-xxx)
+# clear password deprecated, gen password with 'openssl passwd P4SsW0rD'
+INHERIT += "extrausers"
+EXTRA_USERS_PARAMS = " \
+useradd -p '$(openssl passwd adlink)' adlink; \
+usermod -a -G sudo,users,plugdev,docker adlink; \
+"
+EXTRA_USERS_PARAMS:append = " usermod -a -G video,render,wayland,input,root,sudo,dialout,dialout,tty,disk -p '$(openssl passwd weston)' weston;"
+
+KERNEL_MODULE_AUTOLOAD:append = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', ' mlan moal', '', d)}"
+
+IMAGE_FSTYPES += " wic.bmap wic.gz"
+
+PACKAGECONFIG:append:pn-python3 = " tk"
+

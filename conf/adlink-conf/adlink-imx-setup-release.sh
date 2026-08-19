@@ -36,20 +36,6 @@ if [ ! "$DISTRO" = "adlink" ]; then
 	echo "IMAGE_FEATURES[validitems] += \"kiosk-mode hab remote logo resize locale lamp\"" >> ./conf/local.conf
 fi
 
-if [ -d ../sources/meta-nxp-desktop ]; then
-	if ! grep -q meta-nxp-desktop ./conf/bblayers.conf; then
-		hook_in_layer meta-nxp-desktop
-	fi
-	if [ "${DISTRO_NAME}" = "imx-desktop-xwayland" ]; then
-		cat ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/desktop.local.conf.append >> ./conf/local.conf
-		echo "RDEPENDS:qtbase:remove=\"vulkan-loader\"" >> ./conf/local.conf
-		echo "RDEPENDS:qtbase:append=\" libvulkan-imx\"" >> ./conf/local.conf
-	fi
-else
-	echo "BBMASK += \"imx-image-desktop.bbappend\"" >> ./conf/local.conf
-	echo "BBMASK += \"ubuntu-base_%.bbappend\"" >> ./conf/local.conf
-fi
-
 if [ "$MULTILIB" = "lib32" ]; then
 	cat ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/multilib.local.conf.append >> ./conf/local.conf
 fi

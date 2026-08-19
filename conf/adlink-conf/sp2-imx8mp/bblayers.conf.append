@@ -1,0 +1,6 @@
+
+# ADLINK Yocto Project Release layers
+BBLAYERS += "${BSPDIR}/sources/meta-adlink-nxp"
+
+# Additional from open-embedded
+BBLAYERS += "${BSPDIR}/sources/meta-openembedded/meta-webserver"
