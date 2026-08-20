@@ -47,6 +47,7 @@ fi
 # hook the nxp hab boot stuff
 if [ "$HAB" = "1" ]; then
 	echo "EXTRA_IMAGE_FEATURES:append = \" hab \"" >> ./conf/local.conf
+	echo "PREFERRED_VERSION_imx-cst = \"3.4.0\"" >> ./conf/local.conf
 	hook_in_layer meta-adlink-nxp/meta-adlink-hab
 	case "$MACHINE" in
 	*mx8m*)
