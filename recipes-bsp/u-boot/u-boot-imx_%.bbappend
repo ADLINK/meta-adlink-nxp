@@ -11,35 +11,33 @@ do_copy_source () {
   dtbes=$(echo "${UBOOT_DTB_NAME}" | xargs)
   srces=$(echo "${EXTRA_SRC}" | xargs)
 
-  srcdir="${WORKDIR}/sources/${MACHINE}"
-
   bbnote "u-boot dtbes: ${dtbes}, srces: ${srces}"
-  bbnote "Using source directory: ${srcdir}"
+  bbnote "Using source directory: ${UNPACKDIR}/${MACHINE}"
 
   # Copy config and dts
   for config in ${configs}; do
-    if [ -f ${srcdir}/${config} ]; then
+    if [ -f ${UNPACKDIR}/${MACHINE}/${config} ]; then
       bbnote "copy u-boot config: ${config} to ${S}/configs/"
-      cp -f ${srcdir}/${config} ${S}/configs/
+      cp -f ${UNPACKDIR}/${MACHINE}/${config} ${S}/configs/
       confarch=$(grep "CONFIG_ARCH_IMX" ${S}/configs/${config} | cut -d'=' -f1)
     else
-      bbwarn "Missing ${srcdir}/${config}"
+      bbwarn "Missing ${UNPACKDIR}/${MACHINE}/${config}"
     fi
   done
 
   for dtbname in ${dtbes}; do
     dtsname=$(echo "${dtbname%%.*}.dts")
 
-    if [ -f ${srcdir}/${dtsname} ]; then
+    if [ -f ${UNPACKDIR}/${MACHINE}/${dtsname} ]; then
       bbnote "copy u-boot dts: ${dtsname} to ${S}/arch/arm/dts/"
-      cp -f ${srcdir}/${dtsname} ${S}/arch/arm/dts/
+      cp -f ${UNPACKDIR}/${MACHINE}/${dtsname} ${S}/arch/arm/dts/
 
       if ! grep -q ${dtbname} ${S}/arch/arm/dts/Makefile; then
         bbnote "modify ${S}/arch/arm/dts/Makefile: add ${dtbname} to dtb-\$(${confarch})"
         echo "dtb-\$(${confarch}) += ${dtbname}" >> ${S}/arch/arm/dts/Makefile
       fi
     else
-      bbwarn "Missing ${srcdir}/${dtsname}"
+      bbwarn "Missing ${UNPACKDIR}/${MACHINE}/${dtsname}"
     fi
   done
 
@@ -48,11 +46,11 @@ do_copy_source () {
 
     case "${srcfile}" in
       *.dtsi)
-        if [ -f ${srcdir}/${srcfile} ]; then
+        if [ -f ${UNPACKDIR}/${MACHINE}/${srcfile} ]; then
           bbnote "copy u-boot dtsi: ${srcfile} to ${S}/arch/arm/dts/"
-          cp -f ${srcdir}/${srcfile} ${S}/arch/arm/dts/
+          cp -f ${UNPACKDIR}/${MACHINE}/${srcfile} ${S}/arch/arm/dts/
         else
-          bbwarn "Missing ${srcdir}/${srcfile}"
+          bbwarn "Missing ${UNPACKDIR}/${MACHINE}/${srcfile}"
         fi
         ;;
     esac
@@ -99,15 +97,15 @@ do_configure:prepend () {
 do_install:append () {
     install -d ${DEPLOY_DIR_IMAGE}
 
-    if [ -f ${WORKDIR}/${MACHINE}/${UBOOT_SPLASH_IMAGE} ]; then
-        install -m 0644 ${WORKDIR}/${MACHINE}/${UBOOT_SPLASH_IMAGE} \
+    if [ -f ${UNPACKDIR}/${MACHINE}/${UBOOT_SPLASH_IMAGE} ]; then
+        install -m 0644 ${UNPACKDIR}/${MACHINE}/${UBOOT_SPLASH_IMAGE} \
             ${DEPLOY_DIR_IMAGE}/${UBOOT_SPLASH_IMAGE}
     else
         bbwarn "${S}/${UBOOT_SPLASH_IMAGE} not found. No splash image for u-boot"
     fi
 
-    if [ -f ${WORKDIR}/${MACHINE}/${UBOOT_UMS_IMAGE} ]; then
-        install -m 0644 ${WORKDIR}/${MACHINE}/${UBOOT_UMS_IMAGE} \
+    if [ -f ${UNPACKDIR}/${MACHINE}/${UBOOT_UMS_IMAGE} ]; then
+        install -m 0644 ${UNPACKDIR}/${MACHINE}/${UBOOT_UMS_IMAGE} \
             ${DEPLOY_DIR_IMAGE}/${UBOOT_UMS_IMAGE}
     else
         bbwarn "${S}/${UBOOT_UMS_IMAGE} not found. No ums image for u-boot"
