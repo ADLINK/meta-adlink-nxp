@@ -8,6 +8,8 @@
 #include <dt-bindings/phy/phy-imx8-pcie.h>
 #include <dt-bindings/usb/pd.h>
 #include "imx8mp.dtsi"
+#include "../freescale/imx8mp-nxp-display.dtsi"
+#include "../freescale/imx8mp-nxp-capture.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
 
@@ -1264,15 +1266,15 @@ fsl,pins = <PIN_FUNC_ID CONFIG>,
 	status = "okay";
 };
 
-&gpu_3d {
+&gpu3d {
 	status = "okay";
 };
 
-&gpu_2d {
+&gpu2d {
 	status = "okay";
 };
 
-&ml_vipsi {
+&npu {
 	status = "okay";
 };
 
