@@ -4,7 +4,6 @@
  */
 
 #include "imx95-u-boot.dtsi"
-#include "imx95-19x19-evk-local.dtsi"
 
 / {
 	aliases {
@@ -133,26 +132,6 @@
 
 &usb3_dwc3 {
 	bootph-pre-ram;
-};
-
-&i2c3_gpio_expander_20 {
-	compatible = "ti,tca6408";
-	label = "i2c3_io";
-};
-
-&i2c4_gpio_expander_21 {
-	compatible = "ti,tca6408";
-	label = "i2c4_io";
-};
-
-&i2c5_pcal6408 {
-	compatible = "ti,tca6408";
-	label = "i2c5_io";
-};
-
-&i2c6_pcal6416 {
-	compatible = "ti,tca6416";
-	label = "i2c6_io";
 };
 
 &flexspi1 {

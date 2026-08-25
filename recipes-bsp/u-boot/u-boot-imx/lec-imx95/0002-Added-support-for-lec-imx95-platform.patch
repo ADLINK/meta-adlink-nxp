@@ -715,7 +715,7 @@ index 00000000000..67eb24e57e9
 +	netc_phy_rst("gpio@22_4", "ENET1_RST_B");
 +	netc_phy_rst("gpio@22_5", "ENET2_RST_B");
 +#else
-+	netc_phy_rst("i2c5_io@21_2", "ENET1_RST_B");
++	//netc_phy_rst("i2c5_io@21_2", "ENET1_RST_B");
 +
 +	/* Enable in SW count */
 +	netc_regulator_enable("regulator-aqr-stby", true);
@@ -820,7 +820,7 @@ index 00000000000..67eb24e57e9
 +	imx9_scmi_power_domain_enable(IMX95_PD_CAMERA, false);
 +
 +#if defined(CONFIG_USB_TCPC)
-+	setup_typec();
++	//setup_typec();
 +#endif
 +
 +#if IS_ENABLED(CONFIG_TARGET_IMX95_19X19_EVK)
@@ -831,7 +831,7 @@ index 00000000000..67eb24e57e9
 +
 +	flexspi_nor_steup();
 +
-+	power_on_m7("mx95evkrpmsg");
++	power_on_m7("mx95lec");
 +
 +	lvds_backlight_on();
 +
@@ -1090,7 +1090,7 @@ index 387db843c50..f8b3faf9793 100644
  	if (imx_phy->tca_base)
  		tca_blk_init(usb_phy);
  
-+	//tca_mux_select(TYPEC_POLARITY_CC1);
++	tca_mux_select(TYPEC_POLARITY_CC1);
  	return 0;
  }
  

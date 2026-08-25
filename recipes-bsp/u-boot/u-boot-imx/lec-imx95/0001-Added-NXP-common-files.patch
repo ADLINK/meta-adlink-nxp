@@ -8358,7 +8358,7 @@ index 00000000000..b933946a479
 +	netc_phy_rst("gpio@22_4", "ENET1_RST_B");
 +	netc_phy_rst("gpio@22_5", "ENET2_RST_B");
 +#else
-+	netc_phy_rst("i2c5_io@21_2", "ENET1_RST_B");
++	//netc_phy_rst("i2c5_io@21_2", "ENET1_RST_B");
 +
 +	/* Enable in SW count */
 +	netc_regulator_enable("regulator-aqr-stby", true);
@@ -8463,7 +8463,7 @@ index 00000000000..b933946a479
 +	imx9_scmi_power_domain_enable(IMX95_PD_CAMERA, false);
 +
 +#if defined(CONFIG_USB_TCPC)
-+	setup_typec();
++	//setup_typec();
 +#endif
 +
 +#if IS_ENABLED(CONFIG_TARGET_IMX95_19X19_EVK)
