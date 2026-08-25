@@ -655,6 +655,11 @@
                 spi-max-frequency = <5000000>;
                 reg = <0>;
         };
+        spidev@1 {
+                compatible = "rohm,dh2228fv";
+                spi-max-frequency = <5000000>;
+                reg = <1>;
+	};
 };
 
 &lpspi7 {
@@ -663,7 +668,7 @@
 	pinctrl-0 = <&pinctrl_lpspi7>;
 	pinctrl-1 = <&pinctrl_lpspi7>;
 	cs-gpios = <&gpio2 4 GPIO_ACTIVE_LOW>,<&gpio2 25 GPIO_ACTIVE_LOW>;
-	status = "disabled";
+	status = "okay";
 	spidev@0 {
                 compatible = "rohm,dh2228fv";
                 spi-max-frequency = <5000000>;
@@ -1093,7 +1098,6 @@
 		>;
 	};
 
-
 	pinctrl_lpspi6: lpspi6grp {
 		fsl,pins = <
 			IMX95_PAD_GPIO_IO00__GPIO2_IO_BIT0	0x1fe	//not pull down,not pull up ,Fast slew rate, drive X6
@@ -1103,14 +1107,13 @@
 			IMX95_PAD_GPIO_IO03__LPSPI6_SCK		0x3fe
 		>;
 	};
-
 	pinctrl_lpspi7: lpspi7grp {
 		fsl,pins = <
-			IMX95_PAD_GPIO_IO25__GPIO2_IO_BIT25              0x1fe
-			IMX95_PAD_GPIO_IO04__GPIO2_IO_BIT4		0x1fe
-			IMX95_PAD_GPIO_IO05__LPSPI7_SIN			0x39e
-			IMX95_PAD_GPIO_IO06__LPSPI7_SOUT		0x39e
-			IMX95_PAD_GPIO_IO07__LPSPI7_SCK			0x39e
+			IMX95_PAD_GPIO_IO25__GPIO2_IO_BIT25	0x1fe	//not pull down,not pull up ,Fast slew rate, drive X6
+			IMX95_PAD_GPIO_IO04__GPIO2_IO_BIT4	0x1fe	//not pull down,not pull up ,Fast slew rate, drive X6
+			IMX95_PAD_GPIO_IO05__LPSPI7_SIN		0x3fe
+			IMX95_PAD_GPIO_IO06__LPSPI7_SOUT	0x3fe
+			IMX95_PAD_GPIO_IO07__LPSPI7_SCK		0x3fe
 		>;
 	};
 
@@ -1521,3 +1524,4 @@
 	boot = <&vpu_boot>;
 	sram = <&sram1>;
 };
+
