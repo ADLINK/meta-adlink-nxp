@@ -17,6 +17,7 @@
 		simple-audio-card,format = "i2s";
 		simple-audio-card,frame-master = <&hdmicpu>;
 		simple-audio-card,bitclock-master = <&hdmicpu>;
+		simple-audio-card,mclk-fs = <256>;
 
 		hdmicpu:simple-audio-card,cpu {
 			sound-dai = <&sai1>;

@@ -1,5 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
+LOCALVERSION:lec-imx95 = ""
 EXTRA_SRC = "${@d.getVarFlag('KERNEL_SRC_PATCHES', d.getVar('MACHINE'), True)}"
 SRC_URI:append = " ${EXTRA_SRC}"
 
@@ -83,6 +84,10 @@ do_copy_source () {
       fi
     done
   fi
+}
+
+do_configure:prepend:lec-imx95() {
+    sed -i 's/local no_dirty=false/local no_dirty=true/' ${S}/scripts/setlocalversion
 }
 
 addtask copy_source before do_kernel_metadata after do_validate_branches
