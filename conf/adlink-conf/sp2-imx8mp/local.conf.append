@@ -18,15 +18,11 @@ RELEASE_VERSION ?= "${@'v%s' % (lambda dt: (dt.date.today().__str__()))(__import
 INHERIT += "extrausers"
 EXTRA_USERS_PARAMS = " \
 useradd -p '$(openssl passwd adlink)' adlink; \
-usermod -a -G sudo,users,plugdev,docker adlink; \
+usermod -a -G root,sudo,users,plugdev,input,tty,disk,docker adlink; \
 "
-
-KERNEL_MODULE_AUTOLOAD:append = "${@bb.utils.contains('MACHINE_FEATURES', 'wifi', ' mlan moal', '', d)}"
 
 IMAGE_FEATURES += "empty-root-password"
 IMAGE_FSTYPES += " wic.bmap wic.gz"
-
-BBMASK += "linux-intel_%.bbappend"
 
 PACKAGECONFIG:append:pn-python3 = " tk"
 
