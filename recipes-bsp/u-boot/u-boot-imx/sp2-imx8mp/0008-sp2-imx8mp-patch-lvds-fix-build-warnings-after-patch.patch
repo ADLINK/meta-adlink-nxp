@@ -1,0 +1,76 @@
+From 5db011075db0916c33c6463cb69ed990ac14c1ef Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Thu, 20 Mar 2025 14:04:32 +0800
+Subject: [PATCH 2/4] sp2-imx8mp: spl: read eeprom and pass to uboot via
+ handoff
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ arch/arm/include/asm/handoff.h |  1 +
+ board/adlink/sp2imx8mp/spl.c   | 27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/arch/arm/include/asm/handoff.h b/arch/arm/include/asm/handoff.h
+index 298de376a267..3d5649667fe3 100644
+--- a/arch/arm/include/asm/handoff.h
++++ b/arch/arm/include/asm/handoff.h
+@@ -17,6 +17,7 @@
+ struct arch_spl_handoff {
+ 	ulong usable_ram_top;
+ 	uint32_t sku;
++	char buffer[256];
+ };
+ 
+ #endif
+diff --git a/board/adlink/sp2imx8mp/spl.c b/board/adlink/sp2imx8mp/spl.c
+index 608ec19d54b2..e153bf58014d 100644
+--- a/board/adlink/sp2imx8mp/spl.c
++++ b/board/adlink/sp2imx8mp/spl.c
+@@ -95,11 +95,36 @@ int get_dram_sku(void)
+ 	return hwid;
+ }
+ 
++/*********************************************
++ * EEPROM
++ *********************************************/
++#define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE)
++static iomux_v3_cfg_t const i2c2_pads[] = {
++	MX8MP_PAD_I2C2_SCL__I2C2_SCL | MUX_PAD_CTRL(I2C_PAD_CTRL) | MUX_MODE_SION,
++	MX8MP_PAD_I2C2_SDA__I2C2_SDA | MUX_PAD_CTRL(I2C_PAD_CTRL) | MUX_MODE_SION,
++};
++char buffer[256] = {0};
++/* Read EEPROM raw data and set to handoff_arch_save() */
++int get_eeprom_sku(void) {
++	int ret = 0;
++	struct udevice *dev;
++
++	imx_iomux_v3_setup_multiple_pads(i2c2_pads, ARRAY_SIZE(i2c2_pads));
++
++	ret = i2c_get_chip_for_busnum(1, 0x54, 1, &dev);
++	if (!ret)
++		ret = dm_i2c_read(dev, 0, buffer, 256);
++
++	return ret;
++}
++
+ #if CONFIG_IS_ENABLED(HANDOFF)
+ int handoff_arch_save(struct spl_handoff *ho)
+ {
+ 	debug("%s() handoff: %p\n", __func__, ho);
+ 	ho->arch.sku = get_dram_sku();
++	memcpy(ho->arch.buffer, buffer, 256);
++	debug("%s() sku:%d buffer:%s\n", __func__, ho->arch.sku, ho->arch.buffer);
+ 	return 0;
+ }
+ #endif
+@@ -266,5 +291,7 @@ void board_init_f(ulong dummy)
+ 	/* DDR initialization */
+ 	spl_dram_init();
+ 
++	get_eeprom_sku();
++
+ 	board_init_r(NULL, 0);
+ }
+-- 
+2.34.1
+

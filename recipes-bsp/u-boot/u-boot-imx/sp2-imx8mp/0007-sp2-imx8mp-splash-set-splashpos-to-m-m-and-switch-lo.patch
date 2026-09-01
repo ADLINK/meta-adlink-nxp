@@ -1,0 +1,107 @@
+From 1e60d1bd7b4274fbcb66d4f6db06ad05c048a40e Mon Sep 17 00:00:00 2001
+From: "po.cheng" <po.cheng@adlinktech.com>
+Date: Wed, 31 Jan 2024 11:54:03 +0800
+Subject: [PATCH 1/4] sp2-imx8mp: splash: set splashpos to m,m and switch logo
+ location using get_boot_device()
+
+Signed-off-by: po.cheng <po.cheng@adlinktech.com>
+---
+ board/adlink/sp2imx8mp/sp2imx8mp.c | 43 +++++++++++++++++++++++++++---
+ include/configs/sp2imx8mp.h        |  1 +
+ 2 files changed, 41 insertions(+), 3 deletions(-)
+
+diff --git a/board/adlink/sp2imx8mp/sp2imx8mp.c b/board/adlink/sp2imx8mp/sp2imx8mp.c
+index 967466274b98..0b60ed654eb4 100644
+--- a/board/adlink/sp2imx8mp/sp2imx8mp.c
++++ b/board/adlink/sp2imx8mp/sp2imx8mp.c
+@@ -28,6 +28,7 @@
+ #include <dwc3-uboot.h>
+ #include <mmc.h>
+ #include <msgpack/sbuffer.h>
++#include <splash.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -106,12 +107,10 @@ int setup_configs(int i2c_bus, int chip, char* disp, char* dispsize) {
+ 		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+ 		return -EIO;
+ 	}
+-
+ 	ret = parse_eeprom(buffer, disp, dispsize);
+ 	if (ret) {
+ 		return -ENODATA;
+ 	}
+-
+ 	return 0;
+ }
+ 
+@@ -135,6 +134,44 @@ int board_early_init_f(void)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_SPLASH_SOURCE
++static struct splash_location sp2imx8mp_splash_sdcard[] = {
++	{
++		.name		= "sd_fs",
++		.storage	= SPLASH_STORAGE_MMC,
++		.flags		= SPLASH_STORAGE_FS,
++		.devpart	= "1:1",
++	},
++};
++static struct splash_location sp2imx8mp_splash_emmc[] = {
++	{
++		.name		= "mmc_fs",
++		.storage	= SPLASH_STORAGE_MMC,
++		.flags		= SPLASH_STORAGE_FS,
++		.devpart	= "2:1",
++	},
++};
++
++int splash_screen_prepare(void)
++{
++	switch (get_boot_device()) {
++	case SD1_BOOT:
++	case SD2_BOOT:
++	case SD3_BOOT:
++		return splash_source_load(sp2imx8mp_splash_sdcard,
++				  ARRAY_SIZE(sp2imx8mp_splash_sdcard));
++	case MMC1_BOOT:
++	case MMC2_BOOT:
++	case MMC3_BOOT:
++		return splash_source_load(sp2imx8mp_splash_emmc,
++				  ARRAY_SIZE(sp2imx8mp_splash_emmc));
++	default:
++	    return -EINVAL;
++	}
++	return 0;
++}
++#endif
++
+ int board_phys_sdram_size(phys_size_t *size)
+ {
+ 	phys_size_t dram_size[] = {
+@@ -547,8 +584,8 @@ int board_late_init(void)
+ #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+ 	env_set("board_name", "SP2");
+ 	env_set("board_rev", "iMX8MP");
+-	env_set("boot_device", board_boot_device(get_boot_device()));
+ #ifndef CONFIG_SPL_BUILD
++	env_set("boot_device", board_boot_device(get_boot_device()));
+ 	env_set("fn_key", gpio_get_value(FNKEY_1) ? "no" : "yes");
+ 	env_set_ulong("E_ram", gd->spl_handoff->arch.sku);
+ #endif
+diff --git a/include/configs/sp2imx8mp.h b/include/configs/sp2imx8mp.h
+index 9d34c54d66d2..7e75b96b3018 100644
+--- a/include/configs/sp2imx8mp.h
++++ b/include/configs/sp2imx8mp.h
+@@ -93,6 +93,7 @@
+ 	"bsp_script=boot.scr\0" \
+ 	"image=Image\0" \
+ 	"splashimage=0x50000000\0" \
++	"splashpos=m,m\0" \
+ 	"console=ttymxc1,115200\0" \
+ 	"fdt_addr_r=0x43000000\0"			\
+ 	"fdt_addr=0x43000000\0"			\
+-- 
+2.34.1
+
