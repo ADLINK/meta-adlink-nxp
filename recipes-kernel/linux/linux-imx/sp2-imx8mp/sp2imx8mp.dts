@@ -437,9 +437,6 @@
 			reset-deassert-us = <80000>;
 			realtek,aldps-enable;
 			realtek,clkout-disable;
-			interrupt-parent = <&gpio4>;
-			interrupts = <3 IRQ_TYPE_LEVEL_LOW>;
-			wakeup-source;
 		};
 	};
 };
@@ -483,6 +480,9 @@
 				regulator-ramp-delay = <3125>;
 				nxp,dvs-run-voltage = <950000>;
 				nxp,dvs-standby-voltage = <850000>;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
 			};
 
 			buck4: BUCK4{
@@ -491,6 +491,9 @@
 				regulator-max-microvolt = <3400000>;
 				regulator-boot-on;
 				regulator-always-on;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
 			};
 
 			buck5: BUCK5{
@@ -531,6 +534,9 @@
 				regulator-max-microvolt = <3300000>;
 				regulator-boot-on;
 				regulator-always-on;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
 			};
 
 			ldo4: LDO4 {
@@ -539,6 +545,9 @@
 				regulator-max-microvolt = <3300000>;
 				regulator-boot-on;
 				regulator-always-on;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
 			};
 
 			ldo5: LDO5 {
@@ -547,6 +556,9 @@
 				regulator-max-microvolt = <3300000>;
 				regulator-boot-on;
 				regulator-always-on;
+				regulator-state-mem {
+					regulator-off-in-suspend;
+				};
 			};
 		};
 	};
