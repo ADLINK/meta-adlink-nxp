@@ -50,6 +50,10 @@ do_replace () {
 }
 addtask replace before do_configure after do_patch
 
+do_replace:append:debug () {
+  sed -e 's|43000000|45000000|g' -i ${S}/include/configs/sp2imx8mp.h
+}
+
 do_configure:prepend () {
   # Additional CONFIG_XXX for u-boot config
   # E.g. in local.conf

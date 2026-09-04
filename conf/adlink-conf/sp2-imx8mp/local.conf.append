@@ -8,6 +8,8 @@ DISTRO_FEATURES:append = " sensors adlink"
 IMAGE_FEATURES:append = " ssh-server-openssh"
 IMAGE_INSTALL:append = " cinematicexperience-rhi"
 
+OVERRIDES:append = "${@bb.utils.contains('IMAGE_FEATURES', 'debug-tweaks', ':debug', '', d)}"
+
 INHERIT += "image-buildinfo"
 IMAGE_BUILDINFO_VARS = "DISTRO DISTRO_VERSION MACHINE DEVICE_MODEL DEVICE_TYPE IMX_GPU_VERSION RELEASE_VERSION"
 BUILDTAG ??= "v2.01.03"
