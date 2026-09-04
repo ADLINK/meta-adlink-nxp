@@ -1,7 +1,7 @@
 # Real-time Edge base conf for SP2-IMX8MP
 
 #DISTRO = "nxp-real-time-edge"
-DISTROOVERRIDES:append = " :real-time-edge"
+DISTROOVERRIDES:append = ":real-time-edge"
 #DISTRO_NAME = "NXP Real-time Edge Distro"
 #DISTRO_VERSION = "3.1"
 
