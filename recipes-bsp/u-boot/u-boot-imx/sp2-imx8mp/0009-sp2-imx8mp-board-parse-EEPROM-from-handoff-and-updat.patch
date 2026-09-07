@@ -1,4 +1,4 @@
-From 17a4d1a15d6deb645f9fea7c0ed6cf70220235fe Mon Sep 17 00:00:00 2001
+From 0331dba030cec45d0b34eb02641c853cdf24fb52 Mon Sep 17 00:00:00 2001
 From: "po.cheng" <po.cheng@adlinktech.com>
 Date: Tue, 1 Sep 2026 13:08:20 +0800
 Subject: [PATCH] sp2-imx8mp: board: parse EEPROM from handoff and update dts
@@ -7,9 +7,9 @@ Subject: [PATCH] sp2-imx8mp: board: parse EEPROM from handoff and update dts
 Signed-off-by: po.cheng <po.cheng@adlinktech.com>
 ---
  arch/arm/mach-imx/imx8m/soc.c      |  12 +++-
- board/adlink/sp2imx8mp/sp2imx8mp.c | 104 ++++++++++++++++++++---------
+ board/adlink/sp2imx8mp/sp2imx8mp.c | 105 ++++++++++++++++++++---------
  include/msgpack/zone.h             |   2 +-
- 3 files changed, 84 insertions(+), 34 deletions(-)
+ 3 files changed, 85 insertions(+), 34 deletions(-)
 
 diff --git a/arch/arm/mach-imx/imx8m/soc.c b/arch/arm/mach-imx/imx8m/soc.c
 index c3282ccc213d..8042fa2b7a82 100644
@@ -46,7 +46,7 @@ index c3282ccc213d..8042fa2b7a82 100644
  #endif
  #endif
 diff --git a/board/adlink/sp2imx8mp/sp2imx8mp.c b/board/adlink/sp2imx8mp/sp2imx8mp.c
-index 0b60ed654eb4..809589834252 100644
+index 0b60ed654eb4..dbedb62dda87 100644
 --- a/board/adlink/sp2imx8mp/sp2imx8mp.c
 +++ b/board/adlink/sp2imx8mp/sp2imx8mp.c
 @@ -83,37 +83,6 @@ struct efi_capsule_update_info update_info = {
@@ -87,7 +87,7 @@ index 0b60ed654eb4..809589834252 100644
  int board_early_init_f(void)
  {
  	struct wdog_regs *wdog = (struct wdog_regs *)WDOG1_BASE_ADDR;
-@@ -134,6 +103,79 @@ int board_early_init_f(void)
+@@ -134,6 +103,80 @@ int board_early_init_f(void)
  	return 0;
  }
  
@@ -159,8 +159,9 @@ index 0b60ed654eb4..809589834252 100644
 +				printf("%s: FDT Error: %s\n", __func__, fdt_strerror(nodeoff));
 +			}
 +		}
++		return ret;
 +	}
-+	return ret;
++	return 0;
 +}
 +#endif
 +
