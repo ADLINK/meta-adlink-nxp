@@ -1,0 +1,13 @@
+diff --git a/arch/arm/mach-imx/imx9/native/soc.c b/arch/arm/mach-imx/imx9/native/soc.c
+index a50be0651c2..20a7635b9e8 100644
+--- a/arch/arm/mach-imx/imx9/native/soc.c
++++ b/arch/arm/mach-imx/imx9/native/soc.c
+@@ -691,7 +691,7 @@ static int disable_npu_nodes(void *blob)
+ {
+ 	static const char * const nodes_path_npu[] = {
+ 		"/ethosu",
+-		"/reserved-memory/ethosu_region@C0000000"
++		"/reserved-memory/ethosu_region@9c000000"
+ 	};
+ 
+ 	return delete_fdt_nodes(blob, nodes_path_npu, ARRAY_SIZE(nodes_path_npu));
