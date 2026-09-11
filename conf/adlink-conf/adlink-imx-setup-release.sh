@@ -4,6 +4,21 @@ CWD=$(pwd)
 DISTRO_NAME="$DISTRO"
 MACHINE_NAME="$MACHINE"
 
+# Patch BitBake crate fetcher for crates.io CDN compatibility (backport from upstream Wrynose)
+CRATE_FETCHER="$CWD/../sources/poky/bitbake/lib/bb/fetch2/crate.py"
+if [ ! -f "$CRATE_FETCHER" ]; then
+    CRATE_FETCHER="$CWD/sources/poky/bitbake/lib/bb/fetch2/crate.py"
+fi
+
+if [ -f "$CRATE_FETCHER" ]; then
+    if grep -q "host = 'crates.io/api/v1/crates'" "$CRATE_FETCHER"; then
+        sed -i "s|host = 'crates.io/api/v1/crates'|cdn_host = 'static.crates.io/crates'\n        else:\n            cdn_host = host|g" "$CRATE_FETCHER"
+        sed -i 's|ud.url = "https://%s/%s/%s/download" % (host, name, version)|ud.url = "https://%s/%s/%s/download" % (cdn_host, name, version)|g' "$CRATE_FETCHER"
+    fi
+fi
+
+
+
 if [ "$DISTRO" = "imx-desktop-xwayland" ]; then
 	PROGNAME="$CWD/imx-setup-desktop.sh"
 else
