@@ -34,6 +34,11 @@ if test -n ${E_eth}; then
     setenv overlays ${overlays} eth0-overlay.dtbo;
   fi
 fi;
+if test -n ${E_wol}; then
+  if test ${E_wol} = 1; then
+    setenv overlays ${overlays} wol-overlay.dtbo;
+  fi;
+fi;
 if test -n ${E_wl}; then
   if test ${E_wl} = sur; then
     setenv overlays ${overlays} awcm276masur-overlay.dtbo;
