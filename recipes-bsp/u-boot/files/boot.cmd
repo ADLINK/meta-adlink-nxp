@@ -19,6 +19,21 @@ else
 	exit
 fi
 
+# Automatic rollback: U-Boot ran altbootcmd because the boot counter exceeded
+# bootlimit, which set ostree_rollback=1. Swap in the second deployment's
+# variables so we boot the previous, known-good deployment instead.
+if test "${ostree_rollback}" = "1"; then
+	if test -n "${kernel_image2}"; then
+		echo "OSTree: BOOT LIMIT EXCEEDED - booting ROLLBACK deployment"
+		setenv kernel_image ${kernel_image2}
+		setenv ramdisk_image ${ramdisk_image2}
+		setenv fdt_file ${fdt_file2}
+		setenv bootargs ${bootargs2}
+	else
+		echo "OSTree: rollback requested but no second deployment available"
+	fi
+fi
+
 if test -z "${kernel_image}"; then
 	echo "OSTree: uEnv.txt has no kernel_image - falling back to BSP boot"
 	exit
