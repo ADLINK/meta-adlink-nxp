@@ -1,0 +1,13 @@
+# short-description: LEC-iMX95 OSTree/OTA SD card image
+# long-description:
+# NXP i.MX layout (imx-boot blob at IMX_BOOT_SEEK plus a vfat boot partition)
+# with the rootfs replaced by an OSTree physical sysroot.
+#
+# The root partition is a rawcopy of the prebuilt .ota-ext4 image, which already
+# carries the "otaroot" label OSTREE_KERNEL_ARGS refers to. Do not set --label.
+
+part u-boot --source rawcopy --sourceparams="file=imx-boot.tagged" --ondisk mmcblk --no-table --align ${IMX_BOOT_SEEK}
+part /boot --source bootimg-partition --ondisk mmcblk --fstype=vfat --label boot --active --align 8192 --fixed-size 256
+part / --source otaimage --ondisk mmcblk --fstype=ext4 --align 8192
+
+bootloader --ptable msdos
