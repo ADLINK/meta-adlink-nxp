@@ -1,0 +1,64 @@
+From 9206e51a376d6fba765a765efc1b82e7e177a216 Mon Sep 17 00:00:00 2001
+From: "shangavelan.m" <shivashankar.t@adlinktech.com>
+Date: Fri, 9 Oct 2026 15:46:32 +0530
+Subject: [PATCH] Do not disable RTC output clock
+Upstream-Status: Inappropriate [ADLINK specific]
+Do not disable CLKOUT line from RTC PCF8563. Set
+CLKOUT register 0x0D to 0x80. Also default CPU RTC
+driver (CONFIG_RTC_DRV_SNVS) is disabled in kernel config
+
+---
+ drivers/rtc/rtc-pcf8563.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/rtc/rtc-pcf8563.c b/drivers/rtc/rtc-pcf8563.c
+index b281e9489df1..a27792087e14 100644
+--- a/drivers/rtc/rtc-pcf8563.c
++++ b/drivers/rtc/rtc-pcf8563.c
+@@ -147,7 +147,7 @@ static irqreturn_t pcf8563_irq(int irq, void *dev_id)
+ static int pcf8563_rtc_read_time(struct device *dev, struct rtc_time *tm)
+ {
+ 	struct pcf8563 *pcf8563 = dev_get_drvdata(dev);
+-	unsigned char buf[9];
++	unsigned char buf[9], buf1;
+ 	int err;
+ 
+ 	err = regmap_bulk_read(pcf8563->regmap, PCF8563_REG_ST1, buf,
+@@ -186,6 +186,11 @@ static int pcf8563_rtc_read_time(struct device *dev, struct rtc_time *tm)
+ 		tm->tm_sec, tm->tm_min, tm->tm_hour,
+ 		tm->tm_mday, tm->tm_mon, tm->tm_year, tm->tm_wday);
+ 
++	err = i2c_smbus_read_block_data(client, PCF8563_REG_CLKO, 1, &buf1);
++	pr_debug("Reg 0x0D value - %0x\n", buf1);
++	if (err)
++		return err;
++
+ 	return 0;
+ }
+ 
+@@ -397,7 +402,8 @@ static int pcf8563_clkout_prepare(struct clk_hw *hw)
+ 
+ static void pcf8563_clkout_unprepare(struct clk_hw *hw)
+ {
+-	pcf8563_clkout_control(hw, 0);
++	//TBD: Do not disable CLKOUT line fow now
++	//pcf8563_clkout_control(hw, 0);
+ }
+ 
+ static int pcf8563_clkout_is_prepared(struct clk_hw *hw)
+@@ -451,6 +457,12 @@ static struct clk *pcf8563_clkout_register_clk(struct pcf8563 *pcf8563)
+ 	if (!IS_ERR(clk))
+ 		of_clk_add_provider(node, of_clk_src_simple_get, clk);
+ 
++	/*Enable CLKOUT line*/
++	buf = 0x80;
++	ret = i2c_smbus_read_block_data(client, PCF8563_REG_CLKO, 1, &buf);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
+ 	return clk;
+ }
+ #endif
+-- 
+2.43.0
+

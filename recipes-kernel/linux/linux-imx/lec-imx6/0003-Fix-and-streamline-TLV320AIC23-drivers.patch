@@ -1,0 +1,287 @@
+From 65aa131a52eef3971c08e209ab06a11f3f241147 Mon Sep 17 00:00:00 2001
+From: "aravindlal" <aravindlal.mh@adlinktech.com>
+Date: Fri, 9 Oct 2026 11:53:50 +0530
+Subject: [PATCH] Fix and streamline TLV320AIC23 drivers
+Upstream-Status: Inappropriate [ADLINK specific]
+The iMX-TLV320AIC23 driver isn't from Freescale, but from a company named
+Eukrea Electromatique, originally for their own boards.
+
+- Fix a bug in the codec driver's routing table causing 9 error messages.
+- Remove Eukrea naming, i.MX is from Freescale, TLV320AIC23 is from TI,
+  driver was written by Eukrea, but it's DT capable, so it's not exclusive:
+  - Kconfig option title
+  - 'model' option
+  - driver 'compatible' string
+- Other options just have changed over time, this driver remaining (one of)
+  the last with the old semantics:
+  - 'audio-codec' option (also moved from ssi node)
+  - 'mux-int/ext-port' options
+- All options stay backwards compatible, the DT binding documents new and
+  old names.
+- Reverted back the bit clock calculation using slot number and width method
+- set_sysclk() is used to override the output bit clock rate
+---
+ .../bindings/sound/eukrea-tlv320.txt          | 28 +++++++----
+ sound/soc/fsl/Kconfig                         |  2 +-
+ sound/soc/fsl/eukrea-tlv320.c                 | 32 ++++++++----
+ sound/soc/fsl/fsl_ssi.c                       | 50 +++++++++++++------
+ 4 files changed, 78 insertions(+), 34 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt b/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt
+index 6dfa88c4dc1e..0fe722b7996e 100644
+--- a/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt
++++ b/Documentation/devicetree/bindings/sound/eukrea-tlv320.txt
+@@ -2,15 +2,24 @@ Audio complex for Eukrea boards with tlv320aic23 codec.
+ 
+ Required properties:
+ 
+-  - compatible		: "eukrea,asoc-tlv320"
++  - compatible        	: "fsl,imx-audio-tlv320aic23" or
++			 "eukrea,asoc-tlv320" (deprecated)
+ 
+-  - eukrea,model	: The user-visible name of this sound complex.
++  - model		: The user-visible name of this sound complex.
++
++  - eukrea,model       	: Dito, deprecated.
+ 
+   - ssi-controller	: The phandle of the SSI controller.
+ 
+-  - fsl,mux-int-port	: The internal port of the i.MX audio muxer (AUDMUX).
++  - mux-int-port	: The internal port of the i.MX audio muxer (AUDMUX).
++
++  - fsl,mux-int-port   	: Dito, deprecated.
++
++  - mux-ext-port	: The external port of the i.MX audio muxer.
++
++  - fsl,mux-ext-port   	: Dito, deprecated.
+ 
+-  - fsl,mux-ext-port	: The external port of the i.MX audio muxer.
++  - audio-codec         : The phandle of the audio codec.
+ 
+ Note: The AUDMUX port numbering should start at 1, which is consistent with
+ hardware manual.
+@@ -18,9 +27,10 @@ hardware manual.
+ Example:
+ 
+ 	sound {
+-		compatible = "eukrea,asoc-tlv320";
+-		eukrea,model = "imx51-eukrea-tlv320aic23";
+-		ssi-controller = <&ssi2>;
+-		fsl,mux-int-port = <2>;
+-		fsl,mux-ext-port = <3>;
++		compatible = "fsl,imx-audio-tlv320aic23";
++		model = "imx51-eukrea-tlv320aic23";
++		si-controller = <&ssi2>;
++		mux-int-port = <2>;
++		mux-ext-port = <3>;
++		audio-codec = <&codec>;
+ 	};
+diff --git a/sound/soc/fsl/Kconfig b/sound/soc/fsl/Kconfig
+index ed25a7c05789..95df65cc7c88 100644
+--- a/sound/soc/fsl/Kconfig
++++ b/sound/soc/fsl/Kconfig
+@@ -278,7 +278,7 @@ config SND_SOC_IMX_HDMI_DMA
+ 	select SND_SOC_IMX_PCM_DMA
+ 
+ config SND_SOC_EUKREA_TLV320
+-	tristate "Eukrea TLV320"
++	tristate "SoC Audio support for i.MX boards with TLV320AIC23"
+ 	depends on ARCH_MXC && !ARM64 && I2C
+ 	select SND_SOC_TLV320AIC23_I2C
+ 	select SND_SOC_IMX_AUDMUX
+diff --git a/sound/soc/fsl/eukrea-tlv320.c b/sound/soc/fsl/eukrea-tlv320.c
+index 6be074ea0b3f..e8adac249946 100644
+--- a/sound/soc/fsl/eukrea-tlv320.c
++++ b/sound/soc/fsl/eukrea-tlv320.c
+@@ -91,10 +91,13 @@ static int eukrea_tlv320_probe(struct platform_device *pdev)
+ 	eukrea_tlv320.dev = &pdev->dev;
+ 	if (np) {
+ 		ret = snd_soc_of_parse_card_name(&eukrea_tlv320,
+-						 "eukrea,model");
++						 "model");
++		if (ret) /* backwards compatible */
++			ret = snd_soc_of_parse_card_name(&eukrea_tlv320,
++						"eukrea,model");
+ 		if (ret) {
+ 			dev_err(&pdev->dev,
+-				"eukrea,model node missing or invalid.\n");
++				"model node missing or invalid.\n");
+ 			goto err;
+ 		}
+ 
+@@ -107,22 +110,32 @@ static int eukrea_tlv320_probe(struct platform_device *pdev)
+ 			goto err;
+ 		}
+ 
+-		codec_np = of_parse_phandle(ssi_np, "codec-handle", 0);
++		codec_np = of_parse_phandle(pdev->dev.of_node, "audio-codec", 0);
++		if (!codec_np) /* backwards compatible */
++			codec_np = of_parse_phandle(ssi_np, "codec-handle", 0);
++
+ 		if (codec_np)
+ 			eukrea_tlv320_dai.codecs->of_node = codec_np;
+ 		else
+-			dev_err(&pdev->dev, "codec-handle node missing or invalid.\n");
++			dev_err(&pdev->dev, "audio-codec node missing or invalid.\n");
++
++		ret = of_property_read_u32(np, "mux-int-port", &int_port);
++		if (ret) /* backwards compatible */
++			ret = of_property_read_u32(np, "fsl,mux-int-port", &int_port);
+ 
+-		ret = of_property_read_u32(np, "fsl,mux-int-port", &int_port);
+ 		if (ret) {
+ 			dev_err(&pdev->dev,
+-				"fsl,mux-int-port node missing or invalid.\n");
++				"mux-int-port node missing or invalid.\n");
+ 			goto err;
+ 		}
+-		ret = of_property_read_u32(np, "fsl,mux-ext-port", &ext_port);
++
++		ret = of_property_read_u32(np, "mux-ext-port", &ext_port);
++		if (ret) /* backwards compatible */
++			ret = of_property_read_u32(np, "fsl,mux-ext-port", &ext_port);
++
+ 		if (ret) {
+ 			dev_err(&pdev->dev,
+-				"fsl,mux-ext-port node missing or invalid.\n");
++				"mux-ext-port node missing or invalid.\n");
+ 			goto err;
+ 		}
+ 
+@@ -206,7 +219,8 @@ static int eukrea_tlv320_probe(struct platform_device *pdev)
+ }
+ 
+ static const struct of_device_id imx_tlv320_dt_ids[] = {
+-	{ .compatible = "eukrea,asoc-tlv320"},
++	{ .compatible = "eukrea,asoc-tlv320"},	/* backwards compatible */
++	{ .compatible = "fsl,imx-audio-tlv320aic23"},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, imx_tlv320_dt_ids);
+diff --git a/sound/soc/fsl/fsl_ssi.c b/sound/soc/fsl/fsl_ssi.c
+index 54ca65dd140d..a7847bf1e673 100644
+--- a/sound/soc/fsl/fsl_ssi.c
++++ b/sound/soc/fsl/fsl_ssi.c
+@@ -263,13 +263,14 @@ struct fsl_ssi {
+ 	bool use_dyna_fifo;
+ 	bool has_ipg_clk_name;
+ 	unsigned int fifo_depth;
+-	unsigned int slot_width;
+-	unsigned int slots;
++/*	unsigned int slot_width;*/
++	unsigned int slots;	
+ 	struct fsl_ssi_regvals regvals[2];
+ 
+ 	struct clk *clk;
+ 	struct clk *baudclk;
+ 	unsigned int baudclk_streams;
++	unsigned int bitclk_freq;
+ 
+ 	u32 regcache_sfcsr;
+ 	u32 regcache_sacnt;
+@@ -675,8 +676,10 @@ static void fsl_ssi_shutdown(struct snd_pcm_substream *substream,
+  * Notes: This function can be only called when using SSI as DAI master
+  *
+  * Quick instruction for parameters:
+- * freq: Output BCLK frequency = samplerate * slots * slot_width
+- *       (In 2-channel I2S Master mode, slot_width is fixed 32)
++ * freq: Output BCLK frequency = samplerate * 32 (fixed) * channels
++ * dir: SND_SOC_CLOCK_OUT -> TxBCLK, SND_SOC_CLOCK_IN -> RxBCLK.
++ * //freq: Output BCLK frequency = samplerate * slots * slot_width
++ * //      (In 2-channel I2S Master mode, slot_width is fixed 32)
+  */
+ static int fsl_ssi_set_bclk(struct snd_pcm_substream *substream,
+ 			    struct snd_soc_dai *dai,
+@@ -687,27 +690,33 @@ static int fsl_ssi_set_bclk(struct snd_pcm_substream *substream,
+ 	struct regmap *regs = ssi->regs;
+ 	u32 pm = 999, div2, psr, stccr, mask, afreq, factor, i;
+ 	unsigned long clkrate, baudrate, tmprate;
+-	unsigned int channels = params_channels(hw_params);
+-	unsigned int slot_width = params_width(hw_params);
++	//unsigned int channels = params_channels(hw_params);
++	//unsigned int slot_width = params_width(hw_params);
+ 	unsigned int slots = 2;
+ 	u64 sub, savesub = 100000;
+ 	unsigned int freq;
+ 	bool baudclk_is_used;
+ 	int ret;
+ 
++	/* Prefer the explicitly set bitclock frequency */
++	if (ssi->bitclk_freq)
++		freq = ssi->bitclk_freq;
++	else
++		freq = params_channels(hw_params) * 32 * params_rate(hw_params);
++
+ 	/* Override slots and slot_width if being specifically set... */
+-	if (ssi->slots)
++/*	if (ssi->slots)
+ 		slots = ssi->slots;
+ 	if (ssi->slot_width)
+-		slot_width = ssi->slot_width;
++		slot_width = ssi->slot_width;*/
+ 
+ 	/* ...but force 32 bits for stereo audio using I2S Master Mode */
+-	if (channels == 2 &&
++/*	if (channels == 2 &&
+ 	    (ssi->i2s_net & SSI_SCR_I2S_MODE_MASK) == SSI_SCR_I2S_MODE_MASTER)
+-		slot_width = 32;
++		slot_width = 32;*/
+ 
+ 	/* Generate bit clock based on the slot number and slot width */
+-	freq = slots * slot_width * params_rate(hw_params);
++/*	freq = slots * slot_width * params_rate(hw_params);*/
+ 
+ 	/* Don't apply it to any non-baudclk circumstance */
+ 	if (IS_ERR(ssi->baudclk))
+@@ -789,6 +798,16 @@ static int fsl_ssi_set_bclk(struct snd_pcm_substream *substream,
+ 	return 0;
+ }
+ 
++static int fsl_ssi_set_dai_sysclk(struct snd_soc_dai *cpu_dai,
++                int clk_id, unsigned int freq, int dir)
++{
++        struct fsl_ssi *ssi = snd_soc_dai_get_drvdata(cpu_dai);
++
++        ssi->bitclk_freq = freq;
++
++        return 0;
++}
++
+ /**
+  * fsl_ssi_hw_params - Configure SSI based on PCM hardware parameters
+  * @substream: ASoC substream
+@@ -1064,10 +1083,10 @@ static int fsl_ssi_set_dai_tdm_slot(struct snd_soc_dai *dai, u32 tx_mask,
+ 	u32 val;
+ 
+ 	/* The word length should be 8, 10, 12, 16, 18, 20, 22 or 24 */
+-	if (slot_width & 1 || slot_width < 8 || slot_width > 24) {
++/*	if (slot_width & 1 || slot_width < 8 || slot_width > 24) {
+ 		dev_err(dai->dev, "invalid slot width: %d\n", slot_width);
+ 		return -EINVAL;
+-	}
++	}*/
+ 
+ 	/* The slot number should be >= 2 if using Network mode or I2S mode */
+ 	if (ssi->i2s_net && slots < 2) {
+@@ -1091,8 +1110,8 @@ static int fsl_ssi_set_dai_tdm_slot(struct snd_soc_dai *dai, u32 tx_mask,
+ 	/* Restore the value of SSIEN bit */
+ 	regmap_update_bits(regs, REG_SSI_SCR, SSI_SCR_SSIEN, val);
+ 
+-	ssi->slot_width = slot_width;
+-	ssi->slots = slots;
++/*	ssi->slot_width = slot_width;
++	ssi->slots = slots;	*/
+ 
+ 	return 0;
+ }
+@@ -1160,6 +1179,7 @@ static const struct snd_soc_dai_ops fsl_ssi_dai_ops = {
+ 	.hw_params = fsl_ssi_hw_params,
+ 	.hw_free = fsl_ssi_hw_free,
+ 	.set_fmt = fsl_ssi_set_dai_fmt,
++	.set_sysclk     = fsl_ssi_set_dai_sysclk,
+ 	.set_tdm_slot = fsl_ssi_set_dai_tdm_slot,
+ 	.trigger = fsl_ssi_trigger,
+ };
+-- 
+2.43.0
+
