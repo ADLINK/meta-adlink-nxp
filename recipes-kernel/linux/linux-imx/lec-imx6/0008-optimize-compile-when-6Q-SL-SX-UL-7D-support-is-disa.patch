@@ -1,5 +1,5 @@
 From a7e60e472043020282304f689077be03b1b39419 Mon Sep 17 00:00:00 2001
-From: "shangavelan.m" <shivashankar.t@adlinktech.com>
+From: "aravindlal" <aravindlal.mh@adlinktech.com>
 Date: Fri, 9 Oct 2026 15:10:28 +0530
 Subject: [PATCH] optimize compile when 6Q/SL/SX/UL/7D support is disabled
 Upstream-Status: Inappropriate [ADLINK specific]
