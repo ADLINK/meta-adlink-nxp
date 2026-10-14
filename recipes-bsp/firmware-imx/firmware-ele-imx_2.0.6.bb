@@ -39,7 +39,4 @@ FILES:${PN} = "${nonarch_base_libdir}/firmware"
 RREPLACES:${PN} = "firmware-sentinel"
 RPROVIDES:${PN} = "firmware-sentinel"
 
-# Only osm-imx95: this layer has a higher priority than meta-imx, so every
-# other i.MX95 machine (e.g. lec-imx95) would pick this recipe too.
-# DEFAULT_PREFERENCE cannot prevent that across layers.
-COMPATIBLE_MACHINE = "(osm-imx95)"
+COMPATIBLE_MACHINE = "(osm-imx95|lec-imx95)"
