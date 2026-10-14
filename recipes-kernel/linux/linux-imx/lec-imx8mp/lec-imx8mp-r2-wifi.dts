@@ -6,7 +6,7 @@
  * Copyright (C) 2020 ADLINK Technology Inc. All Rights Reserved.
  */
 
-#include "lec-imx8mp-b1.dts"
+#include "lec-imx8mp-r2.dts"
 / {
 	model = "Adlink LEC-iMX8MP SOM module";
 	compatible = "fsl,imx8mp-evk", "fsl,imx8mp", "adlink,lec-imx8mp";
