@@ -1,0 +1,242 @@
+From db322b36c6d127e489138c79d8b8fb913b171b05 Mon Sep 17 00:00:00 2001
+From: "aravindlal" <aravindlal.mh@adlinktech.com>
+Date: Fri, 9 Oct 2026 12:34:57 +0530
+Subject: [PATCH] Adapt camera interfaces
+Upstream-Status: Inappropriate [ADLINK specific]
+- Add CONFIG vars to ease connecting OV564x cameras.
+- Use I2C_CAM aka i2c1.
+- We can't control the power supplies.
+- Different power-down and reset GPIOs. (Don't know what to do with
+  PCAM_FLD.)
+- Different pinmux for parallel interface: 10 bits instead of 8, but no
+  DATA_EN. We share the generic SMARC GPIOs, so these are already mapped.
+- Just drop everything related to MIPI-DSI (conflicting with camera pinmux).
+  We can't use the MIPI-DSI display interface.
+- Set up CSI2IPU muxes in board file to allow connecting both serial and
+  parallel cameras. See chapter "MIPI CSI to IPU gasket" in i.MX6 Reference
+  Manual.
+- Fix heavy flickering when moving camera window by adding a shortcut code path to the driver:
+  if already initialized and the overlay window's size is unchanged then just adjust the
+  position. Otherwise the full setup is done as before.
+- Work around OV564x cameras blocking I2C bus:
+	Whenever the Ovti OV564x camera chip exits Software Power Down, i.e. bit 6
+	of reg 0x3008 (SYSTEM CONTROL00) is changed 1->0, for some reason the I2C
+	bus gets blocked. The next transfer fails, even if aimed at a different
+	device (on the same bus).
+	As a workaround issue a dummy read immediately afterwards, any following
+	I2C access will then be fine again.
+---
+ arch/arm/mach-imx/mach-imx6q.c                | 34 ++++++++++++-------
+ .../platform/mxc/capture/ipu_fg_overlay_sdc.c | 27 ++++++++++-----
+ .../platform/mxc/capture/mxc_v4l2_capture.h   |  1 +
+ drivers/media/platform/mxc/capture/ov5640.c   | 14 ++++++++
+ .../media/platform/mxc/capture/ov5640_mipi.c  | 21 +++++++++---
+ 5 files changed, 73 insertions(+), 24 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index 855c6ce16a7b..694756e50410 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -149,19 +149,29 @@ static void __init imx6q_csi_mux_init(void)
+ 	struct regmap *gpr;
+ 
+ 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
+-	if (!IS_ERR(gpr)) {
+-		if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
+-			of_machine_is_compatible("fsl,imx6q-sabreauto") ||
+-			of_machine_is_compatible("fsl,imx6qp-sabresd") ||
+-			of_machine_is_compatible("fsl,imx6qp-sabreauto"))
+-			regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 1 << 19);
+-		else if (of_machine_is_compatible("fsl,imx6dl-sabresd") ||
+-			 of_machine_is_compatible("fsl,imx6dl-sabreauto"))
+-			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x0C);
+-	} else {
+-		pr_err("%s(): failed to find fsl,imx6q-iomux-gpr regmap\n",
+-		       __func__);
++
++
++	if (IS_ERR(gpr)) {
++		pr_err("failed to find fsl,imx6q-iomux-gpr regmap\n");
++		return;
+ 	}
++
++	if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
++			of_machine_is_compatible("fsl,imx6q-sabreauto"))
++		regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 1 << 19);
++	else if (of_machine_is_compatible("fsl,imx6dl-sabresd") ||
++			of_machine_is_compatible("fsl,imx6dl-sabreauto"))
++		regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x0C);
++
++	if (of_machine_is_compatible("adlink,lec-imx6")) {
++		if (of_machine_is_compatible("fsl,imx6q"))
++			regmap_update_bits(gpr, IOMUXC_GPR1, 0x3 << 19,
++					  (0 << 20) | /* IPU2 CSI1: 0=MIPI (virt.ch.=3), 1=parallel */
++					  (1 << 19)); /* IPU1 CSI0: 0=MIPI (virt.ch.=0), 1=parallel */
++		else                      /* "fsl,imx6dl" */
++			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F << 0,
++					  (1 << 3) | /* IPU CSI1: 0-3=MIPI virt.ch. nr., 4=parallel */
++					  (4 << 0)); /* IPU CSI0: 0-3=MIPI virt.ch. nr., 4=parallel */ }
+ }
+ 
+ static void __init imx6q_axi_init(void)
+diff --git a/drivers/media/platform/mxc/capture/ipu_fg_overlay_sdc.c b/drivers/media/platform/mxc/capture/ipu_fg_overlay_sdc.c
+index 54d892a0c7b0..35a660671b34 100644
+--- a/drivers/media/platform/mxc/capture/ipu_fg_overlay_sdc.c
++++ b/drivers/media/platform/mxc/capture/ipu_fg_overlay_sdc.c
+@@ -354,11 +354,6 @@ static int foreground_start(void *private)
+ 		return -EIO;
+ 	}
+ 
+-	if (cam->overlay_active == true) {
+-		pr_debug("already started.\n");
+-		return 0;
+-	}
+-
+ 	get_disp_ipu(cam);
+ 
+ 	for (i = 0; i < num_registered_fb; i++) {
+@@ -375,11 +370,22 @@ static int foreground_start(void *private)
+ 		return -EPERM;
+ 	}
+ 
++
++	/* Shortcut, eliminates heavy flickering when someone simply moves the
++	 * window. If resizing we still do the full setup. */
++	if (cam->overlay_active && fbi->var.xres == cam->win.w.width
++			&& fbi->var.yres == cam->win.w.height) {
++		ipu_disp_set_window_pos(disp_ipu, MEM_FG_SYNC, cam->win.w.left,
++				cam->win.w.top);
++		return 0;
++	}
++
+ 	fbvar = fbi->var;
+ 
+ 	/* Store the overlay frame buffer's original std */
+-	cam->fb_origin_std = fbvar.nonstd;
+-
++	if (!cam->overlay_active)
++		cam->fb_origin_std = fbvar.nonstd;
++	
+ 	if (cam->devtype == IMX5_V4L2 || cam->devtype == IMX6_V4L2) {
+ 		/* Use DP to do CSC so that we can get better performance */
+ 		vf_out_format = IPU_PIX_FMT_NV12;
+@@ -428,6 +434,12 @@ static int foreground_start(void *private)
+ 	ipu_update_channel_buffer(disp_ipu, MEM_FG_SYNC, IPU_INPUT_BUFFER,
+ 					1, fbi->fix.smem_start);
+ 
++	 
++	if (cam->overlay_active) {
++		pr_debug("already started.\n");
++		return 0;
++	}
++
+ 	err = csi_enc_enabling_tasks(cam);
+ 	if (err != 0) {
+ 		printk(KERN_ERR "Error csi enc enable fail\n");
+@@ -583,7 +595,6 @@ int foreground_sdc_select(void *private)
+ 		cam->vf_stop_sdc = foreground_stop;
+ 		cam->vf_enable_csi = foreground_enable_csi;
+ 		cam->vf_disable_csi = foreground_disable_csi;
+-		cam->overlay_active = false;
+ 	} else
+ 		err = -EIO;
+ 
+diff --git a/drivers/media/platform/mxc/capture/mxc_v4l2_capture.h b/drivers/media/platform/mxc/capture/mxc_v4l2_capture.h
+index 83c4e0465a68..a9b95ad9882f 100644
+--- a/drivers/media/platform/mxc/capture/mxc_v4l2_capture.h
++++ b/drivers/media/platform/mxc/capture/mxc_v4l2_capture.h
+@@ -236,6 +236,7 @@ struct sensor_data {
+ 	struct v4l2_pix_format pix;
+ 	struct v4l2_captureparm streamcap;
+ 	bool on;
++	bool sw_power_down; /* mirrors bit 6 of SYSTEM CONTROL00 reg */
+ 
+ 	/* control settings */
+ 	int brightness;
+diff --git a/drivers/media/platform/mxc/capture/ov5640.c b/drivers/media/platform/mxc/capture/ov5640.c
+index 509cdcb3d072..5907e8a74f48 100644
+--- a/drivers/media/platform/mxc/capture/ov5640.c
++++ b/drivers/media/platform/mxc/capture/ov5640.c
+@@ -702,6 +702,20 @@ static s32 ov5640_write_reg(u16 reg, u8 val)
+ 			__func__, reg, val);
+ 		return -1;
+ 	}
++	/* Weird issue: whenever the OV564x exits Software Power Down, i.e.
++	 * bit 6 of reg 0x3008 (SYSTEM CONTROL00) is changed 1->0, somehow the
++	 * I2C bus gets blocked. The next transfer fails, even if addressed
++	 * at a different device (on the same bus).
++	 * Workaround: issue a dummy read immediately afterwards, the following
++	 * I2C access will be fine again. */
++	if (reg == 0x3008) { /* SYSTEM CONTROL00 */
++		bool new_power_down = val & 0x40;
++		if (ov5640_data.sw_power_down && !new_power_down)
++		/* dummy read, is allowed to fail */
++			i2c_master_recv(ov5640_data.i2c_client, au8Buf, 1);
++		ov5640_data.sw_power_down = new_power_down;
++	}
++
+ 
+ 	return 0;
+ }
+diff --git a/drivers/media/platform/mxc/capture/ov5640_mipi.c b/drivers/media/platform/mxc/capture/ov5640_mipi.c
+index 76fbd5606c83..eaaedc70b4d1 100644
+--- a/drivers/media/platform/mxc/capture/ov5640_mipi.c
++++ b/drivers/media/platform/mxc/capture/ov5640_mipi.c
+@@ -734,14 +734,14 @@ static int ov5640_power_on(struct device *dev)
+ 				      OV5640_VOLTAGE_DIGITAL_IO);
+ 		ret = regulator_enable(io_regulator);
+ 		if (ret) {
+-			pr_err("%s:io set voltage error\n", __func__);
++			pr_err("%s:io set voltage\n", __func__);
+ 			return ret;
+ 		} else {
+ 			dev_dbg(dev,
+ 				"%s:io set voltage ok\n", __func__);
+ 		}
+ 	} else {
+-		pr_err("%s: cannot get io voltage error\n", __func__);
++		pr_err("%s: cannot get io voltage\n", __func__);
+ 		io_regulator = NULL;
+ 	}
+ 
+@@ -752,7 +752,7 @@ static int ov5640_power_on(struct device *dev)
+ 				      OV5640_VOLTAGE_DIGITAL_CORE);
+ 		ret = regulator_enable(core_regulator);
+ 		if (ret) {
+-			pr_err("%s:core set voltage error\n", __func__);
++			pr_err("%s:core set voltage\n", __func__);
+ 			return ret;
+ 		} else {
+ 			dev_dbg(dev,
+@@ -760,7 +760,7 @@ static int ov5640_power_on(struct device *dev)
+ 		}
+ 	} else {
+ 		core_regulator = NULL;
+-		pr_err("%s: cannot get core voltage error\n", __func__);
++		pr_err("%s: cannot get core voltage\n", __func__);
+ 	}
+ 
+ 	analog_regulator = devm_regulator_get(dev, "AVDD");
+@@ -814,6 +814,19 @@ static s32 ov5640_write_reg(u16 reg, u8 val)
+ 		return -1;
+ 	}
+ 
++	/* Weird issue: whenever the OV564x exits Software Power Down, i.e.
++	 * bit 6 of reg 0x3008 (SYSTEM CONTROL00) is changed 1->0, somehow the
++	 * I2C bus gets blocked. The next transfer fails, even if addressed
++	 * at a different device (on the same bus).
++	 * Workaround: issue a dummy read immediately afterwards, the following
++	 * I2C access will be fine again. */
++	if (reg == 0x3008) { /* SYSTEM CONTROL00 */
++		bool new_power_down = val & 0x40;
++		if (ov5640_data.sw_power_down && !new_power_down)
++			/* dummy read, is allowed to fail */
++			i2c_master_recv(ov5640_data.i2c_client, au8Buf, 1);
++		ov5640_data.sw_power_down = new_power_down;
++	}
+ 	return 0;
+ }
+ 
+-- 
+2.43.0
+

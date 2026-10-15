@@ -1,0 +1,4 @@
+
+MACHINE_FEATURES:remove = "optee"
+DISTRO_FEATURES:remove = "optee"
+
