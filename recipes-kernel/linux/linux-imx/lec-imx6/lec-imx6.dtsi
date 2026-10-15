@@ -7,6 +7,7 @@
 /* On-module multiplexer: 0 enables SMARC SPI0, !=0 enables I2S0 instead:
  * 1=TI TLV320AIC23 on LEC-Base R1 carrier, 2=Freescale SGTL5000 on LEC-Base R2 */
 #define CONFIG_I2S_AUDIO       1
+//#define CONFIG_I2S_AUDIO       2
 
 /* The LEC-Base carrier doesn't include cameras, but allows connecting some. */
 #define CONFIG_SER_CAMERA      3c /* I2C addr of serial camera, hex without "0x" */
@@ -29,6 +30,12 @@
 
 
 / {
+	osc_19m2: clock-osc-19m2 {
+        compatible = "fixed-clock";
+        #clock-cells = <0>;
+        clock-frequency = <19200000>;
+        clock-output-names = "osc_19m2";
+    };
 	aliases {
 		mxcfb0 = &mxcfb1;
 		mxcfb1 = &mxcfb2;
@@ -99,11 +106,10 @@
 		enable-active-high;
 		regulator-boot-on;
 	};
-
 #if CONFIG_I2S_AUDIO == 2
-	/* Power supplies on the LEC-Base R2 carrier. They cannot be
-	 * controlled, but the SGTL5000 driver won't work without
-	 * regulator definitions. */
+       /* Power supplies on the LEC-Base R2 carrier. They cannot be
+        * controlled, but the SGTL5000 driver won't work without
+        * regulator definitions. */
 	reg_base_1v8: regulator-base-1v8 {
 		compatible = "regulator-fixed";
 		regulator-name = "base_1v8";
@@ -122,6 +128,19 @@
 		regulator-always-on;
 	};
 #endif
+	codec_3v3: regulator-codec-tlv320aic3x {
+                compatible = "regulator-fixed";
+                regulator-name = "codec_3v3";
+                startup-delay-us = <100>;
+                enable-active-high;
+        };
+
+	codec_1v8: regulator-codec-tlv320 {
+                compatible = "regulator-fixed";
+                regulator-name = "codec_1v8";
+                startup-delay-us = <100>;
+                enable-active-high;
+        };
 
     reg_hdmi: regulator-hdmi {
 		compatible = "regulator-fixed";
@@ -168,14 +187,19 @@
 	};
 
 #if CONFIG_I2S_AUDIO == 1
-	sound-i2s {     /* Audio codec on LEC-Base R1 carrier */
-		compatible = "fsl,imx-audio-tlv320aic23";
-		model = "imx-tlv320aic23";
-		ssi-controller = <&ssi2>;
-		mux-int-port = <2>;
-		mux-ext-port = <3>;
-		audio-codec = <&codec>;
-	};
+sound-i2s {     /* Audio codec on LEC-Base R1 carrier */
+                compatible = "fsl,imx-audio-tlv320aic3x";
+                model = "imx-tlv320aic3x";
+                cpu-dai = <&ssi2>;
+                mux-int-port = <2>;
+                mux-ext-port = <3>;
+                audio-codec = <&codec>;
+                audio-routing =
+                        "MIC3L", "Mic Jack",
+                        "Mic Jack", "Mic Bias",
+                        "Headphone Jack", "HPLOUT",
+                        "Headphone Jack", "HPROUT";
+        };
 #elif CONFIG_I2S_AUDIO == 2
 	sound-i2s {     /* Audio codec on LEC-Base R2 carrier */
 		compatible = "fsl,imx-audio-sgtl5000";
@@ -193,7 +217,6 @@
 			"Line Out Jack", "LINE_OUT";
 	};
 #endif
-
 	sound-hdmi {
 		compatible = "fsl,imx6qdl-audio-hdmi";
 		model = "imx-audio-hdmi";
@@ -552,6 +575,24 @@
 		compatible = "plx,pex8605";	/* guessing, no driver found */
 		reg = <0x58>;
 	};
+#if CONFIG_I2S_AUDIO == 1
+codec: tlv320aic3x@1a {
+                #sound-dai-cells = <0>;
+                compatible = "ti,tlv320aic3x";
+                reg = <0x1a>;
+                clocks = <&osc_19m2>;
+                clock-names = "mclk";
+
+                AVDD-supply = <&codec_3v3>;
+                IOVDD-supply = <&codec_1v8>;
+                DRVDD-supply = <&codec_3v3>;
+                DVDD-supply = <&codec_1v8>;
+
+                ai3x-micbias-vg = <1>;
+                ai3x-ocmv = <3>;
+                status = "okay";
+        };
+#endif
 
 #if CONFIG_I2S_AUDIO == 2
 	codec: sgtl5000@0a {            /* Audio codec on LEC-Base R2 carrier */
@@ -731,15 +772,6 @@
 			};
 		};
 	};
-
-#if CONFIG_I2S_AUDIO == 1
-	codec: tlv320aic23@1a {         /* Audio codec on LEC-Base R1 carrier */
-		compatible = "ti,tlv320aic23";
-		reg = <0x1a>;
-		clocks = <&clks IMX6QDL_CLK_CKO>; /* SMARC AUDIO_MCK, actually unused on carrier */
-		status = "okay";
-	};
-#endif
 
 #if CONFIG_I2S_AUDIO == 2
 	codec: sgtl5000@0a {            /* Audio codec on LEC-Base R2 carrier */
@@ -1352,3 +1384,4 @@
 	fsl,ext-reset-output;
 	status = "okay";
 };
+
