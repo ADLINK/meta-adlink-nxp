@@ -2,12 +2,12 @@
  * Copyright 2020 NXP
  */
 
-#include "lec-imx8mp-b1.dts"
+#include "lec-imx8mp-r2.dts"
 
 / {
 	lvds0_panel {
 		status = "okay";
-		compatible = "hydis,hv150ux2-100";
+		compatible = "auo,g101eat02p6";
 		backlight = <&lvds_backlight>;
 
 		enable-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
@@ -22,14 +22,14 @@
 	lvds_backlight {
 		enable-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 	};
+
 };
 
 &ldb {
 	status = "okay";
-	fsl,dual-channel;
 
 	lvds-channel@0 {
-		fsl,data-mapping = "jeida";
+		fsl,data-mapping = "spwg";
 		fsl,data-width = <24>;
 		status = "okay";
 
