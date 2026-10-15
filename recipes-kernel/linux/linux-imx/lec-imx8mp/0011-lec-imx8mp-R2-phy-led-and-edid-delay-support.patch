@@ -1,12 +1,12 @@
-Upstream-Status: Inappropriate [ADLINK LEC-i.MX8MP B1 board-specific]
+Upstream-Status: Inappropriate [ADLINK LEC-i.MX8MP R2 board-specific]
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Asuvath MS <asuvath.monikandan@adlinktech.com>
 Date: Thu, 30 Jul 2026 11:27:49 +0530
-Subject: [PATCH 11/12] lec-imx8mp: B1: phy led and edid delay support
+Subject: [PATCH 11/12] lec-imx8mp: R2: phy led and edid delay support
 
 - dw-hdmi.c: add 150ms delay before EDID read.
 - dp83867.c: SMARC LED LEDCR2 value 0x0000 -> 0x444 (on top of the
-  non-B1 SMARC LED block).
+  non-R2 SMARC LED block).
 ---
  drivers/gpu/drm/bridge/synopsys/dw-hdmi.c | 2 ++
  drivers/net/phy/dp83867.c                 | 4 ++--
