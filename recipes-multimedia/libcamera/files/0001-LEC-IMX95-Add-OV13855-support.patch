@@ -1,0 +1,520 @@
+From 424b45932f5058388c9713e9a0eb4db6ec0cea2b Mon Sep 17 00:00:00 2001
+From: "shangavelan.m" <shangavelan.m@adlinktech.com>
+Date: Fri, 16 Oct 2026 12:46:18 +0530
+Subject: [PATCH] LEC-IMX95: Add OV13855 support
+
+Signed-off-by: shangavelan.m <shangavelan.m@adlinktech.com>
+Upstream-Status: Inappropriate [board-specific]
+---
+ .../nxp/cam_helper/camera_helper_ov13855.cpp  | 327 ++++++++++++++++++
+ src/ipa/nxp/cam_helper/meson.build            |   1 +
+ src/ipa/nxp/neo/data/meson.build              |   3 +-
+ src/ipa/nxp/neo/data/ov13855.yaml             | 119 +++++++
+ .../pipeline/nxp/neo/data/config.yaml         |   1 +
+ 5 files changed, 450 insertions(+), 1 deletion(-)
+ create mode 100644 src/ipa/nxp/cam_helper/camera_helper_ov13855.cpp
+ create mode 100644 src/ipa/nxp/neo/data/ov13855.yaml
+
+diff --git a/src/ipa/nxp/cam_helper/camera_helper_ov13855.cpp b/src/ipa/nxp/cam_helper/camera_helper_ov13855.cpp
+new file mode 100644
+index 000000000..51fa0ae2e
+--- /dev/null
++++ b/src/ipa/nxp/cam_helper/camera_helper_ov13855.cpp
+@@ -0,0 +1,327 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * camera_helper_ov13855.c
++ * Helper class that performs sensor-specific parameter computations
++ * for Omnivision OV13855 sensor
++ * Copyright 2024-2025 NXP
++ */
++
++#include <cmath>
++
++#include <linux/v4l2-controls.h>
++
++#include <libcamera/base/log.h>
++
++#include "camera_helper.h"
++
++using namespace std::literals::chrono_literals;
++
++namespace libcamera {
++
++#ifndef V4L2_CID_EXPOSURE_MULTI
++#define V4L2_CID_EXPOSURE_MULTI (V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 10)
++#define V4L2_CID_AGAIN_MULTI (V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 11)
++#define V4L2_CID_DGAIN_MULTI (V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 12)
++#endif
++
++LOG_DECLARE_CATEGORY(NxpCameraHelper)
++
++namespace nxp {
++
++class CameraHelperOv13855 : public CameraHelper
++{
++public:
++	CameraHelperOv13855()
++	{
++		/* gainType_ / gainConstants_ are unused */
++
++		/* Adapt the default delayedControls for the ov13855 custom controls */
++		attributes_.delayedControlParams = {
++			{ V4L2_CID_ANALOGUE_GAIN, { 2, false } },
++			{ V4L2_CID_EXPOSURE, { 2, false } },
++			{ V4L2_CID_AGAIN_MULTI, { 2, false } },
++			{ V4L2_CID_EXPOSURE_MULTI, { 2, false } },
++		};
++	}
++
++	uint32_t gainCode(double gain) const override;
++	double gain(uint32_t gainCode) const override;
++	void controlListSetAGC(
++        	ControlList *ctrls,
++        	Span<const Duration> exposures, Span<const double> gains) override;
++	int sensorControlsToMetaData(
++		const ControlList *sensorCtrls, ControlList *mdCtrls) const override;
++	void controlInfoMapGetExposureRange(
++		const ControlInfoMap *ctrls, std::vector<Duration> *minExposure,
++		std::vector<Duration> *maxExposure, std::vector<Duration> *defExposure) const override;
++	void controlInfoMapGetAnalogGainRange(
++		const ControlInfoMap *ctrls, std::vector<double> *minGain,
++		std::vector<double> *maxGain, std::vector<double> *defGain) const override;
++
++private:
++	uint32_t maxExposureLines() const;
++
++	/* min/max analog real gain value */
++	static constexpr double kMinAnalogGain = 1.0;
++	static constexpr double kMaxAnalogGain = 15.5;
++	static constexpr double kDefAnalogGain = 5.0;
++	/* min/max exposures */
++	/*
++	 * Set min short exposure lines to 1 (versus 0) to prevent division by 0
++	 * when distributing total exposure between long and short captures.
++	 */
++	static constexpr uint32_t kMinShortExposureLines = 1;
++	/*
++	 * A VS exposure greater than 4 can cause color distorsion
++	 * around moving object under certain light conditions.
++	 * Hence the VS exposure is limited to 4 lines maximum.
++	 */
++	static constexpr uint32_t kMaxShortExposureLines = 4;
++	static constexpr uint32_t kMinLongExposureLines = 8;
++
++	static constexpr uint32_t kRatioL2S = 16;
++};
++
++uint32_t CameraHelperOv13855::gainCode(double gain) const
++{
++	uint32_t code;
++
++	/*
++	 * Real gain
++	 * code           real gain
++	 * 0x0080-0x00FF  INT(code/8)/16
++	 * 0x0100-0x01FF  INT(code/16)/8
++	 * 0x0200-0x03FF  INT(code/32)/4
++	 * 0x0400-0x07FF  INT(code/64)/2
++	 */
++	if (gain >= 15.5)
++		gain = 15.5;
++	else if (gain < 1.0)
++		gain = 1.0;
++
++	if (gain >= 8.0)
++		code = (static_cast<int>(std::ceil(gain * 2.0 * 64.0)));
++	else if (gain >= 4.0)
++		code = (static_cast<int>(std::ceil(gain * 4.0 * 32.0)));
++	else if (gain >= 2.0)
++		code = (static_cast<int>(std::ceil(gain * 8.0 * 16.0)));
++	else
++		code = (static_cast<int>(std::ceil(gain * 16.0 * 8.0)));
++
++	return code;
++}
++
++double CameraHelperOv13855::gain(uint32_t gainCode) const
++{
++	double gain;
++
++	/*
++	 * See gainCode() for format (inverse transform)
++	 */
++	gainCode &= 0x7FFU;
++	if (gainCode >= 0x400U)
++		gain = std::floor(gainCode / 64) / 2.0;
++	else if (gainCode >= 0x200)
++		gain = std::floor(gainCode / 32) / 4.0;
++	else if (gainCode >= 0x100)
++		gain = std::floor(gainCode / 16) / 8.0;
++	else
++		gain = std::floor(gainCode / 8) / 16.0;
++
++	return gain;
++}
++
++void CameraHelperOv13855::controlListSetAGC(
++    ControlList *ctrls, Span<const Duration> exposures, Span<const double> gains)
++{
++	/* In non-HDR mode, the standard single-capture controls are used. */
++	if (mode_.streamMode != SensorStreamMode::Hdr)
++		return CameraHelper::controlListSetAGC(ctrls, exposures, gains);
++	if (exposures.empty() || gains.empty())
++                return;
++	Duration exposure = exposures[0];
++        double gain = gains[0];
++
++	/* In HDR mode, the multi-capture controls are used. */
++
++	/* Exposure time and gain provided by AGC apply to long capture. */
++	uint32_t expRowsLong = exposureLines(exposure, hblankToLineLength(mode_.hblank));
++	double aGainLong = gain;
++	uint32_t expRowsShort = std::clamp(maxExposureLines() - expRowsLong,
++					   kMinShortExposureLines,
++					   kMaxShortExposureLines);
++	double aGainShort;
++	double expTotalLong = expRowsLong * gain;
++	/* Total short exposure is total long exposure divided by ratio. */
++	double expTotalShort = expTotalLong / kRatioL2S;
++
++	aGainShort = expTotalShort / expRowsShort;
++	if (aGainShort < kMinAnalogGain) {
++		/*
++		 * If short gain is below minimum, set short gain to minimum and
++		 * reduce short exposure to obtain same short total exposure.
++		 */
++		aGainShort = kMinAnalogGain;
++		expRowsShort = std::max(static_cast<uint32_t>(std::round(expTotalShort / aGainShort)),
++					kMinShortExposureLines);
++	} else if (aGainShort > kMaxAnalogGain) {
++		/*
++		 * If short gain is above maximum, set short gain to maximum and
++		 * reduce long gain to keep ratio between long and short total exposure.
++		 */
++		aGainShort = kMaxAnalogGain;
++		aGainLong = (aGainShort * kRatioL2S) /
++			    (static_cast<double>(expRowsLong) / expRowsShort);
++		if (aGainLong < kMinAnalogGain) {
++			/* Increase long gain to min. */
++			aGainLong = kMinAnalogGain;
++			/* Decrease long exposure based on ratio. */
++			expRowsLong = static_cast<uint32_t>(
++				std::round((aGainShort * expRowsShort * kRatioL2S) / aGainLong));
++		}
++	}
++
++	std::array<uint32_t, 2> multiExposures = { expRowsLong, expRowsShort };
++	ctrls->set(V4L2_CID_EXPOSURE_MULTI, Span<uint32_t>(multiExposures));
++
++	std::array<uint32_t, 2> multiGains = { gainCode(aGainLong),
++					       gainCode(aGainShort) };
++	ctrls->set(V4L2_CID_AGAIN_MULTI, Span<uint32_t>(multiGains));
++}
++
++void CameraHelperOv13855::controlInfoMapGetExposureRange(
++	const ControlInfoMap *ctrls, std::vector<Duration> *minExposure,
++	std::vector<Duration> *maxExposure, std::vector<Duration> *defExposure) const
++{
++	(void)ctrls;
++
++	/*
++	 * In non-HDR mode, the exposure range comes from
++	 * the standard single-capture controls.
++	 */
++	if (mode_.streamMode != SensorStreamMode::Hdr)
++		return CameraHelper::controlInfoMapGetExposureRange(ctrls, minExposure,
++								    maxExposure, defExposure);
++
++	/*
++	 * In HDR mode, the exposure range is provided from the long exposure
++	 * which is the one computed by the AGC. This is hard coded setting
++	 * depending on the sensor mode.
++	 */
++	/*
++	 * When maximum exposure is required, we should ensure to reach
++	 * as high value as possible for both long and short exposures.
++	 * Hence the long exposure should be clamped to the maximum supported
++	 * according to both constraints:
++	 * - T_long + T_short <= maxExposureLines
++	 * - T_short is set to maximum for short capture
++	 */
++	uint32_t maxLongExposureLines = maxExposureLines() - kMaxShortExposureLines;
++
++	Duration lineLength = hblankToLineLength(mode_.hblank);
++	minExposure->clear();
++	minExposure->push_back(exposure(kMinLongExposureLines, lineLength));
++
++	maxExposure->clear();
++	maxExposure->push_back(exposure(maxLongExposureLines, lineLength));
++
++	defExposure->clear();
++	defExposure->push_back(exposure((kMinLongExposureLines + maxLongExposureLines) / 2, lineLength));
++}
++
++void CameraHelperOv13855::controlInfoMapGetAnalogGainRange(
++	const ControlInfoMap *ctrls, std::vector<double> *minGain,
++	std::vector<double> *maxGain, std::vector<double> *defGain) const
++{
++	(void)ctrls;
++
++	/*
++	 * In non-HDR mode, the analog gain range comes from
++	 * the standard single-capture controls.
++	 */
++	if (mode_.streamMode != SensorStreamMode::Hdr)
++		return CameraHelper::controlInfoMapGetAnalogGainRange(ctrls, minGain,
++								      maxGain, defGain);
++
++	/* In HDR mode, the analog gain range is provided from hard coded setting.
++	 */
++	minGain->clear();
++	minGain->push_back(kMinAnalogGain);
++
++	maxGain->clear();
++	maxGain->push_back(kMaxAnalogGain);
++
++	defGain->clear();
++	defGain->push_back(kDefAnalogGain);
++}
++
++int CameraHelperOv13855::sensorControlsToMetaData(const ControlList *sensorCtrls,
++						  ControlList *mdCtrls) const
++{
++	int ret = 0;
++
++	/* In non-HDR mode, the standard single-capture controls are used. */
++	if (mode_.streamMode != SensorStreamMode::Hdr)
++		return CameraHelper::sensorControlsToMetaData(sensorCtrls, mdCtrls);
++
++	/* In HDR mode, the multi-capture controls are used. */
++	const ControlValue &aGainCtrl = sensorCtrls->get(V4L2_CID_AGAIN_MULTI);
++	std::array<float, 2> aGainsArray = { 1.0f, 1.0f };
++	if (!aGainCtrl.isNone()) {
++		Span<const uint32_t> aGainCodes = aGainCtrl.get<Span<const uint32_t>>();
++		ASSERT(aGainCodes.size() == 2);
++		aGainsArray[0] = gain(aGainCodes[0]);
++		aGainsArray[1] = gain(aGainCodes[1]);
++	} else {
++		LOG(NxpCameraHelper, Warning) << "Invalid analog gain control";
++		ret = -EINVAL;
++	}
++	mdCtrls->set(md::AnalogueGain, Span<float>(aGainsArray));
++
++	/* Unitary gain for digital gain */
++	std::array<float, 1> dGainsArray = { 1.0f };
++	mdCtrls->set(md::DigitalGain, Span<float>(dGainsArray));
++
++	const ControlValue &exposureCtrl = sensorCtrls->get(V4L2_CID_EXPOSURE_MULTI);
++	std::array<float, 2> exposureArray = { 0.0f, 0.0f };
++	if (!exposureCtrl.isNone()) {
++		Span<const uint32_t> exposures = exposureCtrl.get<Span<const uint32_t>>();
++		ASSERT(exposures.size() == 2);
++		Duration lineLength= hblankToLineLength(mode_.hblank);
++		exposureArray[0] = exposure(exposures[0], lineLength) / 1.0s;
++		exposureArray[1] = exposure(exposures[1], lineLength) / 1.0s;
++	} else {
++		LOG(NxpCameraHelper, Warning) << "Invalid exposure control";
++		ret = -EINVAL;
++	}
++	mdCtrls->set(md::Exposure, Span<float>(exposureArray));
++
++	/* Unitary gains for white balance */
++	std::array<float, 4> wbGains = { 1.0f, 1.0f, 1.0f, 1.0f };
++	mdCtrls->set(md::WhiteBalanceGain, Span<float>(wbGains));
++
++	/* Arbitrary temperature value */
++	mdCtrls->set(md::Temperature, 25.0);
++
++	return ret;
++}
++
++/**
++ * \brief Returns the maximum total exposure combining short and long captures
++ *        Datasheet mentions T_long + T_short <= frame_length(VTS) - 4
++ *        However image is improper if reaching (frame_length(VTS) - 4) - 1.
++ *        Images are correct if maximum total exposure is clamped with (frame_length(VTS) - 8)
++ *
++ * \return Maximum total exposure combining short and long captures
++ */
++uint32_t CameraHelperOv13855::maxExposureLines() const
++{
++	uint32_t vts = mode_.height + mode_.vblank;
++	return vts - 8;
++}
++
++REGISTER_CAMERA_HELPER("ov13855", CameraHelperOv13855)
++
++} /* namespace nxp */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/nxp/cam_helper/meson.build b/src/ipa/nxp/cam_helper/meson.build
+index 0c6993188..01c97f13b 100644
+--- a/src/ipa/nxp/cam_helper/meson.build
++++ b/src/ipa/nxp/cam_helper/meson.build
+@@ -14,6 +14,7 @@ nxp_ipa_cam_helper_sources = files([
+     'camera_helper_os08a20.cpp',
+     'camera_helper_ox05b1s.cpp',
+     'camera_helper_vivid.cpp',
++    'camera_helper_ov13855.cpp',
+     'md_parser_ox.cpp',
+ ])
+ 
+diff --git a/src/ipa/nxp/neo/data/meson.build b/src/ipa/nxp/neo/data/meson.build
+index abb7e397f..aed5cbeff 100644
+--- a/src/ipa/nxp/neo/data/meson.build
++++ b/src/ipa/nxp/neo/data/meson.build
+@@ -8,10 +8,11 @@ conf_files = files([
+     'mx95mbcam.yaml',
+     'os08a20.yaml',
+     'ox05b1s.yaml',
++    'ov13855.yaml',
+     'uncalibrated.yaml',
+     'vivid.yaml',
+ ])
+ 
+ install_data(conf_files,
+              install_dir : ipa_data_dir / 'nxp' / 'neo',
+-             install_tag : 'runtime')
+\ No newline at end of file
++             install_tag : 'runtime')
+diff --git a/src/ipa/nxp/neo/data/ov13855.yaml b/src/ipa/nxp/neo/data/ov13855.yaml
+new file mode 100644
+index 000000000..da28d3670
+--- /dev/null
++++ b/src/ipa/nxp/neo/data/ov13855.yaml
+@@ -0,0 +1,119 @@
++# SPDX-License-Identifier: CC0-1.0
++%YAML 1.1
++---
++version: 1
++algorithms:
++  - PipeConf:
++  - HdrDecomp:
++  - Awb:
++  - BlackLevelCorrection:
++      # Configured in sensor at 64
++      # Listed value is offset for a 12-bit camera pixel format, using libcamera
++      # representation for BLC offset that 16-bit signed: 64 * 2^(16 - 12)
++      reference-bitdepth: 12
++      R: 1024
++      Gr: 1024
++      Gb: 1024
++      B: 1024
++  - Agc:
++      AeConstraintMode:
++        ConstraintHighlight:
++          lower:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: 0.5
++          upper:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: 0.8
++  - Ccm:
++      ccms: [
++          {
++              ct: 2630,
++              ccm:
++              [
++                  2.500, -2.207, 0.707,
++                  -0.281, 0.500, 0.781,
++                  -0.051, -2.383, 3.434,
++              ],
++              offsets: [ 0, 0, 0 ]
++          },
++          {
++              ct: 2901,
++              ccm:
++              [
++                  2.203, -1.547, 0.344,
++                  -0.277, 0.973, 0.305,
++                  0.066, -1.926, 2.859,
++              ],
++              offsets: [ 0, 0, 0 ]
++          },
++          {
++              ct: 4284,
++              ccm:
++              [
++                  2.090, -0.945, -0.145,
++                  -0.258, 1.340, -0.082,
++                  0.047, -1.281, 2.234,
++              ],
++              offsets: [ 0, 0, 0 ]
++          },
++          {
++              ct: 5446,
++              ccm:
++              [
++                  2.117, -1.023, -0.094,
++                  -0.188, 1.391, -0.203,
++                  0.074, -1.031, 1.957,
++              ],
++              offsets: [ 0, 0, 0 ]
++          },
++          {
++              ct: 6439,
++              ccm:
++              [
++                  2.121, -0.933, -0.188,
++                  -0.141, 1.414, -0.273,
++                  0.078, -0.977, 1.898,
++              ],
++              offsets: [ 0, 0, 0 ]
++          },
++      ]
++  - Drc:
++      # Global DRC control mode. Select among the following options:
++      # 0 - copy. Data is copied from input to output of the DRC block,
++      #     no dynamic range compression is done (default)
++      # 1 - pre-configured. LUT with 416 entries needs to be specified in this config file
++      #     under 'gbl-lut'. If not configured, falls back to mode 0.
++      # 2 - dynamic. LUT determined per frame according to input data.
++      gbl-mode: 2
++      # Global DRC alpha. Selects between histogram equalization (=0) and histogram stretching (=256)
++      gdrc-alpha: 128
++      # Global DRC gamma. Controls the strength of dynamic range compression with histogram stretching
++      gdrc-gamma: 180
++      # Global DRC fixed gamma. Controls the default compression curve which GDRC works with
++      fixed-gamma: 180
++  - GammaOutCorrection:
++  - HdrMerge:
++      # HDR tuned parameters based on following input values:
++      # - input data format of the HDR merge bloc: 12 bits
++      # - HDR ratio: 16
++      # - sensor black level: 64
++      # - low blending threshold: 30%
++      # - high blending threshold: 85%
++      ratio-long2short: 16
++      obpp: 3
++      motion-fix-en: 1
++      blend-3x3: 1
++      gain-bpp: [ 3, 3 ]
++      gain-offset: [ 0, 0 ]
++      gain-scale: [ 2081, 2081]
++      gain-shift: [ 7, 3 ]
++      luma-th0: 19661
++      luma-scale: 7447
++      luma-scale-shift: 20
++      luma-scale-th-shift: 0
++      downscale: [ 0, 0 ]
++      upscale: [ 0, 0 ]
++      postscale: 0
++...
+diff --git a/src/libcamera/pipeline/nxp/neo/data/config.yaml b/src/libcamera/pipeline/nxp/neo/data/config.yaml
+index 9c24692d6..7530d949c 100644
+--- a/src/libcamera/pipeline/nxp/neo/data/config.yaml
++++ b/src/libcamera/pipeline/nxp/neo/data/config.yaml
+@@ -94,6 +94,7 @@ global:
+   buffer-count: 8
+ cameras:
+   - model: os08a20
++  - model: ov13855
+ # Uncomment the line below to enable os08a20 HDR operation
+ #    streams: [image1]
+   - model: mx95mbcam
+-- 
+2.43.0
+
