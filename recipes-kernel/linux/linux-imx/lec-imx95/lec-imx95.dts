@@ -515,6 +515,17 @@
 		interrupts = <13 IRQ_TYPE_EDGE_FALLING>; // MCU_INTB1_1V8 , PC2
 
 	};
+
+	rtc_i2c: rtc@32 {
+                compatible = "epson,rx8130";
+                reg = <0x32>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&pinctrl_i2c3_rtc>;
+                #clock-cells = <0>;
+                interrupt-parent = <&gpio4>;
+                interrupts = <14 IRQ_TYPE_EDGE_FALLING>;
+                wakeup-source;
+        };
 	/*U2401 RTC PCF8563BS/4_NXP */
 	pcf8563: rtc@51 {
 		compatible = "nxp,pcf8563";
