@@ -15,19 +15,21 @@ You can follow the same steps to build your own customized BSP based on your int
 
 # 2. Available Branches
 
-1. [scarthgap](https://github.com/ADLINK/meta-adlink-nxp/tree/scarthgap)
+1. [Wrynose](https://github.com/ADLINK/meta-adlink-nxp/tree/wrynose)
 
-2. [Mickledore](https://github.com/ADLINK/meta-adlink-nxp/tree/mickledore)
+2. [Scarthgap](https://github.com/ADLINK/meta-adlink-nxp/tree/scarthgap)
 
-3. [Kirkstone](https://github.com/ADLINK/meta-adlink-nxp/tree/kirkstone)
+3. [Mickledore](https://github.com/ADLINK/meta-adlink-nxp/tree/mickledore)
 
-4. [Hardkott](https://github.com/ADLINK/meta-adlink-nxp/tree/hardknott)
+4. [Kirkstone](https://github.com/ADLINK/meta-adlink-nxp/tree/kirkstone)
 
-5. [Zeus](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus)
+5. [Hardkott](https://github.com/ADLINK/meta-adlink-nxp/tree/hardknott)
 
-6. [Sumo](https://github.com/ADLINK/meta-adlink-nxp/tree/sumo)
+6. [Zeus](https://github.com/ADLINK/meta-adlink-nxp/tree/zeus)
 
-7. [Warrior](https://github.com/ADLINK/meta-adlink-nxp/tree/warrior)
+7. [Sumo](https://github.com/ADLINK/meta-adlink-nxp/tree/sumo)
+
+8. [Warrior](https://github.com/ADLINK/meta-adlink-nxp/tree/warrior)
 
 # 3. Adlink Supported Patches
 
