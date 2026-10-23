@@ -26,7 +26,7 @@ S = "${WORKDIR}"
 
 do_compile () {
 	# update boot arguments for overlay
-	sed -i 's|#EXTRA_BOOT_ARGS#|${EXTRA_BOOT_ARGS}|g' ${S}/overlay.scr
+	sed -i 's|#EXTRA_BOOT_ARGS#|${EXTRA_BOOT_ARGS}|g' ${S}/${UBOOT_BOOT_SCRIPT}
 
 	# build all boot scripts
 	for script in ${S}/*.scr; do
