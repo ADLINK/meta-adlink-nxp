@@ -17,3 +17,8 @@ OSTREE_COMMIT_VERSION[vardepsexclude] = "DATETIME"
 # Defaults beside the sources; override in local.conf to publish elsewhere.
 OSTREE_REPO = "${@os.path.dirname(d.getVar('TOPDIR'))}/ostree-repo/${MACHINE}"
 
+# OSTree keeps the running deployment and its rollback target on the same
+# filesystem, but wic sizes the rootfs partition for one.
+# Reserve more room for the second parition: without it there is no space
+# for an update and every "ostree admin upgrade" fails on the device.
+IMAGE_ROOTFS_EXTRA_SPACE = "2097152"
