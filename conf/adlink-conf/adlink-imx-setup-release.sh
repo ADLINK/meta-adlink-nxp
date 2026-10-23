@@ -141,8 +141,15 @@ if [ "$RTEDGE" = "1" ]; then
             hook_in_layer meta-real-time-edge
         fi
         if [ -f ../sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/real-time-edge.inc ]; then
-            echo "include \${BSPDIR}/sources/meta-adlink-nxp/conf/adlink-conf/$MACHINE/real-time-edge.inc" >> ./conf/local.conf
+            echo "include conf/adlink-conf/$MACHINE/real-time-edge.inc" >> ./conf/local.conf
         fi
     fi
 fi
 
+# hook the ota-ostree meta-updater
+if [ "$OTA" = "1" ]; then
+    if [ -d ../sources/meta-updater ]; then
+        hook_in_layer meta-updater
+        echo "include conf/machine/include/ota-ostree.inc" >> ./conf/local.conf
+    fi
+fi
