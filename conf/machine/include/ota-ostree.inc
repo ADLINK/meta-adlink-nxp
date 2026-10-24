@@ -22,3 +22,9 @@ OSTREE_REPO = "${@os.path.dirname(d.getVar('TOPDIR'))}/ostree-repo/${MACHINE}"
 # Reserve more room for the second parition: without it there is no space
 # for an update and every "ostree admin upgrade" fails on the device.
 IMAGE_ROOTFS_EXTRA_SPACE = "2097152"
+
+UBOOT_EXTRA_CONFIGS:append:sota = ' \
+CONFIG_BOOTCOUNT_LIMIT \
+CONFIG_BOOTCOUNT_ENV \
+CONFIG_BOOTCOUNT_BOOTLIMIT=3 \
+CONFIG_BOOTCOUNT_ALTBOOTCMD="setenv ostree_rollback 1; run bootcmd"'

@@ -1,0 +1,12 @@
+[Unit]
+Description=Confirm successful OSTree boot to U-Boot
+After=multi-user.target
+ConditionPathExists=/etc/fw_env.config
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/ostree-boot-success
+
+[Install]
+WantedBy=multi-user.target
