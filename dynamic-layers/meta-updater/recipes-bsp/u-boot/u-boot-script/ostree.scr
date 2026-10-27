@@ -8,53 +8,204 @@
 # OSTree rewrites /boot/loader/uEnv.txt on every deployment, supplying
 # kernel_image, ramdisk_image, fdt_file and bootargs for the current one.
 
+#
 # p1 = vfat boot, p2 = ext4 otaroot, per ota-ostree.wks.in
-
+#
 setenv ostree_part 2
 
-setenv load_env 'echo "OSTree: reading uEnv.txt from ${devtype} ${devnum}:${ostree_part}";
+#
+# set device tree overlays according to eeprom settings
+#
+setenv set_overlays 'echo "EEPROM env variable: E_ram:${E_ram} E_disp:${E_disp} E_eth:${E_eth} E_wl:${E_wl} E_snd:${E_snd} E_cma:${E_cma}...";
+if test -n ${E_ram}; then
+  if test ${E_ram} = 2; then
+    setenv overlays ${overlays} gpu128mb-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_disp}; then
+  if test ${E_disp} = 7; then
+    setenv overlays ${overlays} 7inch-overlay.dtbo;
+  elif test ${E_disp} = 2070001; then
+    setenv overlays ${overlays} 7inch-overlay.dtbo;
+  elif test ${E_disp} = 7d; then
+    setenv overlays ${overlays} 7dsi-overlay.dtbo;
+  elif test ${E_disp} = 7r; then
+    setenv overlays ${overlays} 7rlcd-overlay.dtbo;
+  elif test ${E_disp} = 10; then
+    setenv overlays ${overlays} 10inch-overlay.dtbo;
+  elif test ${E_disp} = 2100002; then
+    setenv overlays ${overlays} 10inch-overlay.dtbo;
+  elif test ${E_disp} = 100301; then
+    setenv overlays ${overlays} 10auo-overlay.dtbo;
+  elif test ${E_disp} = 23; then
+    setenv overlays ${overlays} 23inch-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_eth}; then
+  if test ${E_eth} = 0; then
+    setenv overlays ${overlays} eth1-overlay.dtbo;
+  fi
+  if test ${E_eth} = 1; then
+    setenv overlays ${overlays} eth0-overlay.dtbo;
+  fi
+fi;
+if test -n ${E_wol}; then
+  if test ${E_wol} = 1; then
+    setenv overlays ${overlays} wol-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_wl}; then
+  if test ${E_wl} = sur; then
+    setenv overlays ${overlays} awcm276masur-overlay.dtbo;
+  elif test ${E_wl} = pur; then
+    setenv overlays ${overlays} awcm276mapur-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_snd}; then
+  if test ${E_snd} = s5k; then
+    setenv overlays ${overlays} snd-sgtl5000-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_cma}; then
+  if test ${E_cma} = 950; then
+    setenv overlays ${overlays} cma950mb-overlay.dtbo;
+  elif test ${E_cma} = 750; then
+    setenv overlays ${overlays} cma750mb-overlay.dtbo;
+  elif test ${E_cma} = 400; then
+    setenv overlays ${overlays} cma400mb-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_csi}; then
+  if test ${E_csi} = 678; then
+    setenv overlays ${overlays} csi678-overlay.dtbo;
+  fi;
+fi;
+if test -n ${E_ts}; then
+  if test ${E_ts} = ili; then
+    setenv overlays ${overlays} ts-ili2132-overlay.dtbo;
+  fi;
+fi;'
+
+#
+# set load_ostree_ov commands to load dtbo
+#
+setenv load_ostree_ov 'echo DT overlays: ${overlays};
+fdt address ${fdt_addr};
+fdt resize 8192;
+setexpr dtboaddr ${fdt_addr} + 0xF0000;
+for ov in ${overlays}; do
+  echo OSTree: Overlaying ${fdtdir}/${ov}...;
+  ext4load ${devtype} ${devnum}:${ostree_part} ${dtboaddr} ${fdtdir}/${ov} && fdt apply ${dtboaddr};
+done;'
+
+#
+# set load_overlays commands to load dtbo
+#
+setenv load_overlays 'echo DT overlays: ${overlays};
+fdt address ${fdt_addr};
+fdt resize 8192;
+setexpr dtboaddr ${fdt_addr} + 0xF0000;
+for ov in ${overlays}; do
+  echo Overlaying ${ov}...;
+  fatload mmc ${mmcdev}:${mmcpart} ${dtboaddr} ${ov} && fdt apply ${dtboaddr};
+done;'
+
+#
+# set load_env commands to load generated uEnv.txt
+#
+setenv load_env 'echo OSTree: reading uEnv.txt from ${devtype} ${devnum}:${ostree_part};
 if ext4load ${devtype} ${devnum}:${ostree_part} ${scriptaddr} /boot/loader/uEnv.txt; then
 	env import -t ${scriptaddr} ${filesize};
 else
-	echo "OSTree: no uEnv.txt - falling back to BSP boot";
+	echo OSTree: no uEnv.txt - falling back to BSP boot;
 	exit;
 fi;'
 
-# Automatic rollback: U-Boot ran altbootcmd because the boot counter exceeded
-# bootlimit, which set ostree_rollback=1. Swap in the second deployment's
-# variables so we boot the previous, known-good deployment instead.
-if test "${ostree_rollback}" = "1"; then
-	if test -n "${kernel_image2}"; then
-		echo "OSTree: BOOT LIMIT EXCEEDED - booting ROLLBACK deployment"
-		setenv kernel_image ${kernel_image2}
-		setenv ramdisk_image ${ramdisk_image2}
-		setenv fdt_file ${fdt_file2}
-		setenv bootargs ${bootargs2}
-	else
-		echo "OSTree: rollback requested but no second deployment available"
-	fi
-fi
-
+#
+# load ostree kernel, ramdisk, and dtb
+#
+# Capture the initrd size immediately after load ramdiskimage - any later load overwrites ${filesize}.
+setenv loadramdisk 'echo OSTree: load kernel, initrd, and fdt;
+run load_env;
 if test -z "${kernel_image}"; then
-	echo "OSTree: uEnv.txt has no kernel_image - falling back to BSP boot";
+	echo OSTree: uEnv.txt has no kernel_image - falling back to BSP boot;
 	exit;
 fi;
-echo "OSTree: kernel ${kernel_image}";
-echo "OSTree: initrd ${ramdisk_image}";
-echo "OSTree: fdt    ${fdt_file}";
+echo OSTree: load kernel: ${kernel_image};
 ext4load ${devtype} ${devnum}:${ostree_part} ${loadaddr} ${kernel_image};
-#
-# Capture the initrd size immediately - any later load overwrites ${filesize}.
-#
+echo OSTree: load initrd: ${ramdisk_image};
 ext4load ${devtype} ${devnum}:${ostree_part} ${initrd_addr} ${ramdisk_image};
 setenv initrd_size ${filesize};
-ext4load ${devtype} ${devnum}:${ostree_part} ${fdt_addr_r} ${fdt_file};'
+echo OSTree: load fdt: ${fdtdir}/${fdtfile}...;
+ext4load ${devtype} ${devnum}:${ostree_part} ${fdt_addr_r} ${fdtdir}/${fdtfile};'
 
 #
 # OSTree's bootargs already carry console= and root=LABEL=otaroot; only prepend
 # the i.MX-specific clock and mcore arguments.
 #
-setenv bootargs ${jh_clk} ${mcore_args} ${bootargs}
+setenv ostreeboot 'echo OSTree: OSTree: booting;
+setenv extraargs #EXTRA_BOOT_ARGS#;
+setenv bootargs ${jh_clk} ${mcore_args} ${bootargs} ${extraargs};
+if run load_ostree_ov; then
+  booti ${loadaddr} ${initrd_addr}:${initrd_size} ${fdt_addr_r};
+else
+  echo WARN: Cannot load the DTBO;
+fi;'
 
-echo "OSTree: booting"
-booti ${loadaddr} ${initrd_addr}:${initrd_size} ${fdt_addr_r}
+#
+# modified mmcboot
+#
+setenv emmcboot 'echo Booting from mmc ...;
+setenv bootargs ${jh_clk} ${mcore_clk} console=${console} ${extraargs} root=${mmcroot};
+echo Load fdtfile: ${fdtfile}...;
+if run loadfdt; then
+  if run load_overlays; then
+    booti ${loadaddr} - ${fdt_addr_r};
+  else
+    echo WARN: Cannot load the DTBO;
+  fi;
+else
+  echo WARN: Cannot load the DT;
+fi;'
+
+#
+# starting point
+#
+# fn key NOT pressed during u-boot => normal boot
+if test ${fn_key} = no; then
+  # Automatic rollback: U-Boot ran altbootcmd because the boot counter exceeded
+  # bootlimit, which set ostree_rollback=1. Swap in the second deployment's
+  # variables so we boot the previous, known-good deployment instead.
+  if test "${ostree_rollback}" = "1"; then
+    if test -n "${kernel_image2}"; then
+      echo OSTree: BOOT LIMIT EXCEEDED - booting ROLLBACK deployment
+      setenv kernel_image ${kernel_image2}
+      setenv ramdisk_image ${ramdisk_image2}
+      setenv fdt_file ${fdt_file2}
+      setenv bootargs ${bootargs2}
+    else
+      echo OSTree: rollback requested but no second deployment available
+    fi
+  fi
+
+  # 1. parse eeprom settings. e.g. sets up E_disp, E_prj, E_macs1, E_macs2, etc.
+  jsinfo;
+  # 2. set overlays based on eeprom settings
+  run set_overlays;
+  # 3. ostree boot
+  if run loadramdisk; then
+    run ostreeboot;
+  # 4. load kernel and boot (based on mmcboot or initdboot)
+  elif run loadimage; then
+    setenv ostree_part 1
+    run emmcboot;
+  # 5. fail to pxe boot
+  else
+    run netboot;
+  fi;
+# fn key pressed during u-boot => ums
+else
+  load mmc ${mmcdev}:${mmcpart} ${splashimage} ums.bmp;
+  bmp display ${splashimage};
+  ums 0 mmc 2;
+fi;
