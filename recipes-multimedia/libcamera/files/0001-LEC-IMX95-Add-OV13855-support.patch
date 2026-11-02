@@ -1,6 +1,6 @@
-From 424b45932f5058388c9713e9a0eb4db6ec0cea2b Mon Sep 17 00:00:00 2001
+From e16631f5447a2e8e3488f286bb8db39f36ed9c5c Mon Sep 17 00:00:00 2001
 From: "shangavelan.m" <shangavelan.m@adlinktech.com>
-Date: Fri, 16 Oct 2026 12:46:18 +0530
+Date: Fri, 30 Oct 2026 13:00:41 +0530
 Subject: [PATCH] LEC-IMX95: Add OV13855 support
 
 Signed-off-by: shangavelan.m <shangavelan.m@adlinktech.com>
@@ -9,9 +9,9 @@ Upstream-Status: Inappropriate [board-specific]
  .../nxp/cam_helper/camera_helper_ov13855.cpp  | 327 ++++++++++++++++++
  src/ipa/nxp/cam_helper/meson.build            |   1 +
  src/ipa/nxp/neo/data/meson.build              |   3 +-
- src/ipa/nxp/neo/data/ov13855.yaml             | 119 +++++++
+ src/ipa/nxp/neo/data/ov13855.yaml             |  73 ++++
  .../pipeline/nxp/neo/data/config.yaml         |   1 +
- 5 files changed, 450 insertions(+), 1 deletion(-)
+ 5 files changed, 404 insertions(+), 1 deletion(-)
  create mode 100644 src/ipa/nxp/cam_helper/camera_helper_ov13855.cpp
  create mode 100644 src/ipa/nxp/neo/data/ov13855.yaml
 
@@ -380,128 +380,82 @@ index abb7e397f..aed5cbeff 100644
 +             install_tag : 'runtime')
 diff --git a/src/ipa/nxp/neo/data/ov13855.yaml b/src/ipa/nxp/neo/data/ov13855.yaml
 new file mode 100644
-index 000000000..da28d3670
+index 000000000..4bf51c7a4
 --- /dev/null
 +++ b/src/ipa/nxp/neo/data/ov13855.yaml
-@@ -0,0 +1,119 @@
-+# SPDX-License-Identifier: CC0-1.0
+@@ -0,0 +1,73 @@
 +%YAML 1.1
 +---
 +version: 1
 +algorithms:
 +  - PipeConf:
-+  - HdrDecomp:
 +  - Awb:
 +  - BlackLevelCorrection:
-+      # Configured in sensor at 64
-+      # Listed value is offset for a 12-bit camera pixel format, using libcamera
-+      # representation for BLC offset that 16-bit signed: 64 * 2^(16 - 12)
 +      reference-bitdepth: 12
-+      R: 1024
-+      Gr: 1024
-+      Gb: 1024
-+      B: 1024
++      R: 4096
++      Gr: 4096
++      Gb: 4096
++      B: 4096
 +  - Agc:
-+      AeConstraintMode:
-+        ConstraintHighlight:
-+          lower:
-+            qLo: 0.98
-+            qHi: 1.0
-+            yTarget: 0.5
-+          upper:
-+            qLo: 0.98
-+            qHi: 1.0
-+            yTarget: 0.8
 +  - Ccm:
 +      ccms: [
 +          {
-+              ct: 2630,
++              ct: 2800,
 +              ccm:
 +              [
-+                  2.500, -2.207, 0.707,
-+                  -0.281, 0.500, 0.781,
-+                  -0.051, -2.383, 3.434,
++                1.2938,  0.1408, -0.4346,
++                -0.3951,  2.0184, -0.6233,
++                -0.346,  -0.7956,  2.1417,
 +              ],
 +              offsets: [ 0, 0, 0 ]
 +          },
 +          {
-+              ct: 2901,
++              ct: 3930,
 +              ccm:
 +              [
-+                  2.203, -1.547, 0.344,
-+                  -0.277, 0.973, 0.305,
-+                  0.066, -1.926, 2.859,
++                1.2529,  0.1696, -0.4225,
++                -0.4026,  2.0151, -0.6126,
++                -0.3433, -0.7773,  2.1206,
 +              ],
 +              offsets: [ 0, 0, 0 ]
 +          },
 +          {
-+              ct: 4284,
++              ct: 4150,
 +              ccm:
 +              [
-+                  2.090, -0.945, -0.145,
-+                  -0.258, 1.340, -0.082,
-+                  0.047, -1.281, 2.234,
++                1.2954,  0.0097, -0.305,
++                -0.3402,  1.9984, -0.6581,
++                -0.1989, -0.4953,  1.6942,
 +              ],
 +              offsets: [ 0, 0, 0 ]
 +          },
 +          {
-+              ct: 5446,
++              ct: 4800,
 +              ccm:
 +              [
-+                  2.117, -1.023, -0.094,
-+                  -0.188, 1.391, -0.203,
-+                  0.074, -1.031, 1.957,
++                1.3524, -0.0955, -0.2569,
++                -0.3189,  2.0072, -0.6882,
++                -0.1755, -0.5068,  1.6823,
 +              ],
 +              offsets: [ 0, 0, 0 ]
 +          },
 +          {
-+              ct: 6439,
++              ct: 6400,
 +              ccm:
 +              [
-+                  2.121, -0.933, -0.188,
-+                  -0.141, 1.414, -0.273,
-+                  0.078, -0.977, 1.898,
++                1.4394, -0.2132, -0.2262,
++                -0.2862,  2.0116, -0.7254,
++                -0.1563, -0.4723,  1.6286,
 +              ],
 +              offsets: [ 0, 0, 0 ]
 +          },
 +      ]
 +  - Drc:
-+      # Global DRC control mode. Select among the following options:
-+      # 0 - copy. Data is copied from input to output of the DRC block,
-+      #     no dynamic range compression is done (default)
-+      # 1 - pre-configured. LUT with 416 entries needs to be specified in this config file
-+      #     under 'gbl-lut'. If not configured, falls back to mode 0.
-+      # 2 - dynamic. LUT determined per frame according to input data.
-+      gbl-mode: 2
-+      # Global DRC alpha. Selects between histogram equalization (=0) and histogram stretching (=256)
-+      gdrc-alpha: 128
-+      # Global DRC gamma. Controls the strength of dynamic range compression with histogram stretching
-+      gdrc-gamma: 180
-+      # Global DRC fixed gamma. Controls the default compression curve which GDRC works with
-+      fixed-gamma: 180
++      -gbl-mode: 2
++      -gdrc-alpha: 64
++      -gdrc-gamma: 100
++      -fixed-gamma: 100
 +  - GammaOutCorrection:
-+  - HdrMerge:
-+      # HDR tuned parameters based on following input values:
-+      # - input data format of the HDR merge bloc: 12 bits
-+      # - HDR ratio: 16
-+      # - sensor black level: 64
-+      # - low blending threshold: 30%
-+      # - high blending threshold: 85%
-+      ratio-long2short: 16
-+      obpp: 3
-+      motion-fix-en: 1
-+      blend-3x3: 1
-+      gain-bpp: [ 3, 3 ]
-+      gain-offset: [ 0, 0 ]
-+      gain-scale: [ 2081, 2081]
-+      gain-shift: [ 7, 3 ]
-+      luma-th0: 19661
-+      luma-scale: 7447
-+      luma-scale-shift: 20
-+      luma-scale-th-shift: 0
-+      downscale: [ 0, 0 ]
-+      upscale: [ 0, 0 ]
-+      postscale: 0
 +...
 diff --git a/src/libcamera/pipeline/nxp/neo/data/config.yaml b/src/libcamera/pipeline/nxp/neo/data/config.yaml
 index 9c24692d6..7530d949c 100644
