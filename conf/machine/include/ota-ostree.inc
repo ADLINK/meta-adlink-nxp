@@ -16,6 +16,7 @@ OSTREE_COMMIT_VERSION[vardepsexclude] = "DATETIME"
 # otherwise destroy along with every deployed device's update history.
 # Defaults beside the sources; override in local.conf to publish elsewhere.
 OSTREE_REPO = "${@os.path.dirname(d.getVar('TOPDIR'))}/ostree-repo/${MACHINE}"
+OSTREE_UPDATE_SUMMARY = "1"
 
 # OSTree keeps the running deployment and its rollback target on the same
 # filesystem, but wic sizes the rootfs partition for one.
