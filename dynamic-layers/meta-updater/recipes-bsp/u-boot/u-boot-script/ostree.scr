@@ -145,7 +145,7 @@ ext4load ${devtype} ${devnum}:${ostree_part} ${fdt_addr_r} ${fdtdir}/${fdtfile};
 #
 setenv ostreeboot 'echo OSTree: OSTree: booting;
 setenv extraargs #EXTRA_BOOT_ARGS#;
-setenv bootargs ${jh_clk} ${mcore_args} ${bootargs} ${extraargs};
+setenv bootargs ${jh_clk} ${mcore_args} ${bootargs} ${extraargs} root=${mmcroot};
 if run load_ostree_ov; then
   booti ${loadaddr} ${initrd_addr}:${initrd_size} ${fdt_addr_r};
 else
