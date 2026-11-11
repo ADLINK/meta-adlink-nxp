@@ -170,11 +170,11 @@ index 000000000000..20f30bbe7608
 +{
 +	struct imx_tlv320aic3x_data *data = container_of(rtd->card,
 +					struct imx_tlv320aic3x_data, card);
-+	struct snd_soc_dai *codec_dai = asoc_rtd_to_cpu(rtd, 0);				
++	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
 +	struct device *dev = rtd->card->dev;
 +	int ret;
 +
-+	ret = snd_soc_dai_set_sysclk(asoc_rtd_to_codec(rtd, 0), 0,data->clk_frequency, SND_SOC_CLOCK_IN);
++	ret = snd_soc_dai_set_sysclk(codec_dai, 0,data->clk_frequency, SND_SOC_CLOCK_IN);
 +	if (ret) {
 +		dev_err(dev, "could not set codec driver clock params\n");
 +		return ret;
