@@ -38,4 +38,5 @@ IMAGE_FSTYPES += " wic.bmap wic.gz"
 
 BBMASK += "linux-intel_%.bbappend"
 
-EXTRA_USERS_PARAMS:append = " useradd -m -s /bin/bash weston; usermod -a -G video,render,wayland,input,root,sudo,dialout,dialout,tty,disk -p '$(openssl passwd weston)' weston;"
+# $(openssl passwd weston) => $1$PAjrvG0E$VH8TFeap2kju8uUL1wPxH0
+EXTRA_USERS_PARAMS:append = " groupadd -r wayland; useradd -m -s /bin/bash weston; usermod -a -G video,render,wayland,input,root,sudo,dialout,tty,disk,plugdev -p '\$1\$PAjrvG0E\$VH8TFeap2kju8uUL1wPxH0' weston;"
