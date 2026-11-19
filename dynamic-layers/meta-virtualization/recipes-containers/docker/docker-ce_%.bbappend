@@ -1,5 +1,9 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+FORCE_REMOVE_UBTUNUBASE_RDEPENDS ?= ""
+FORCE_REMOVE_UBTUNUBASE_RDEPENDS:ubuntu = "util-linux util-linux-uuid util-linux-unshare"
+RDEPENDS:${PN}:remove = "${FORCE_REMOVE_UBTUNUBASE_RDEPENDS}"
+
 SRC_URI += " \
 file://docker.service.template \
 file://docker.init.template \
