@@ -37,6 +37,14 @@ YOCTO-DEPENDS-LIST:remove = " \
 	libvulkan1 \
 	libvulkan-dev \
 "
+YOCTO-DEPENDS-LIST:append = " \
+	libc6-dev \
+	python3-2to3 \
+	python3-profile \
+	util-linux \
+	util-linux-libuuid \
+	util-linux-unshare \
+"
 
 #
 # apt-get packages pulled from ubuntu APT repo
@@ -90,6 +98,7 @@ APTGET_EXTRA_PACKAGES:append = " \
 	gfio \
 	wireless-regdb \
 	yad \
+	python3-pip \
 "
 # x11-xserver-utils
 
@@ -148,7 +157,9 @@ SRC_URI += "\
     file://ubuntu-base-startup \
 "
 
-inherit systemd
+EXCLUDE_FROM_SHLIBS = "1"
+
+inherit systemd mime-xdg
 
 SYSTEMD_PACKAGES += "${PN}"
 SYSTEMD_SERVICE:${PN} = "ubuntu-base.service"
