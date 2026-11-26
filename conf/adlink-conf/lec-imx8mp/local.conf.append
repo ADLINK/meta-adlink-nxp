@@ -24,7 +24,7 @@ DISTRO_FEATURES:append = " meta-virtualization"
 IMAGE_INSTALL:append = "${@bb.utils.contains_any('IMAGE_BASENAME', 'imx-image-full imx-image-multimedia', 'cinematicexperience-rhi docker tensorflow-lite \
 			tpm2-tss tpm2-abrmd tpm2-tools libtss2-tcti-device docker-moby-contrib docker-moby \
 			kernel-module-nxp-wlan nxp-wlan-apps firmware-nxp-wifi-nxp-common firmware-nxp-wifi-nxpaw693-sdio firmware-nxp-wifi-sd8997 \
-			powerled eth-lsoe v4lcap-mplane', '', d)}"
+			powerled eth-lsoe v4lcap-mplane litebmc-fwupd', '', d)}"
 
 BBMASK ="meta-freescale/recipes-multimedia/gstreamer/"
 
